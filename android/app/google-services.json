@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1039816519094",
+    "project_id": "cence-app",
+    "storage_bucket": "cence-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1039816519094:android:503149ab96e0f19fc22517",
+        "android_client_info": {
+          "package_name": "com.cence.cence_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA39k25atNcaOKYGW_KD-W1c0xxr2rb-0Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
