@@ -1,73 +1,77 @@
 import 'package:flutter/material.dart';
 
 class ServiceHistoryCard extends StatelessWidget {
-  const ServiceHistoryCard({Key? key}) : super(key: key);
+  final VoidCallback? onSeeAll;
+  const ServiceHistoryCard({Key? key, this.onSeeAll}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 2.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Son Servis İşlemleri',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF23408E),
+    return GestureDetector(
+      onTap: onSeeAll,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 2,
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Son Servis İşlemleri',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF23408E),
+                        ),
                       ),
                     ),
-                  ),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    onPressed: () {},
-                    child: const Text(
-                      'Tümünü Gör',
-                      style: TextStyle(
-                        color: Color(0xFF23408E),
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: null, // işlevsiz
+                      child: const Text(
+                        'Tümünü Gör',
+                        style: TextStyle(
+                          color: Color(0xFF23408E),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            _ServiceItem(
-              title: 'Defibrilatör XYZ',
-              serial: '#789123',
-              status: 'Tamamlandı',
-              statusColor: Color(0xFF43A047),
-            ),
-            _ServiceItem(
-              title: 'EKG Monitörü ABC',
-              serial: '#456789',
-              status: 'Beklemede',
-              statusColor: Color(0xFFFFB300),
-            ),
-            _ServiceItem(
-              title: 'Ventilatör V-500',
-              serial: '#123456',
-              status: 'Arızalı',
-              statusColor: Color(0xFFE53935),
-            ),
-          ],
+              const SizedBox(height: 10),
+              _ServiceItem(
+                title: 'Defibrilatör XYZ',
+                serial: '#789123',
+                status: 'Tamamlandı',
+                statusColor: Color(0xFF43A047),
+              ),
+              _ServiceItem(
+                title: 'EKG Monitörü ABC',
+                serial: '#456789',
+                status: 'Beklemede',
+                statusColor: Color(0xFFFFB300),
+              ),
+              _ServiceItem(
+                title: 'Ventilatör V-500',
+                serial: '#123456',
+                status: 'Arızalı',
+                statusColor: Color(0xFFE53935),
+              ),
+            ],
+          ),
         ),
       ),
     );
