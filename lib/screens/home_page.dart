@@ -6,6 +6,7 @@ import '../widgets/common/bottom_nav_bar.dart';
 import 'cihaz_sorgula_screen.dart';
 import 'yeni_servis_formu_screen.dart';
 import 'servis_gecmisi_screen.dart';
+import 'stok_takibi_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -87,11 +88,16 @@ class HomePage extends StatelessWidget {
                     );
                   },
                 ),
-                const QuickAccessCard(
+                QuickAccessCard(
                   icon: Icons.inventory_2_outlined,
                   label: 'Stok Takibi',
                   iconSize: 26,
-                  padding: EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const StokTakibiScreen()),
+                    );
+                  },
                 ),
               ],
             ),
