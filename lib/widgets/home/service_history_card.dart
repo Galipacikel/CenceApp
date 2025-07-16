@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:cence_app/screens/all_service_history_screen.dart';
+import 'package:cence_app/models/service_history.dart';
 
 class ServiceHistoryCard extends StatelessWidget {
   final VoidCallback? onSeeAll;
-  const ServiceHistoryCard({Key? key, this.onSeeAll}) : super(key: key);
+  final ServiceHistoryRepository repository;
+  ServiceHistoryCard({Key? key, this.onSeeAll, ServiceHistoryRepository? repository})
+      : repository = repository ?? MockServiceHistoryRepository(),
+        super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +43,13 @@ class ServiceHistoryCard extends StatelessWidget {
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      onPressed: null, // işlevsiz
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => AllServiceHistoryScreen(repository: repository),
+                          ),
+                        );
+                      },
                       child: const Text(
                         'Tümünü Gör',
                         style: TextStyle(
@@ -52,23 +63,25 @@ class ServiceHistoryCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              _ServiceItem(
-                title: 'Defibrilatör XYZ',
-                serial: '#789123',
-                status: 'Tamamlandı',
-                statusColor: Color(0xFF43A047),
-              ),
-              _ServiceItem(
-                title: 'EKG Monitörü ABC',
-                serial: '#456789',
-                status: 'Beklemede',
-                statusColor: Color(0xFFFFB300),
-              ),
-              _ServiceItem(
-                title: 'Ventilatör V-500',
-                serial: '#123456',
-                status: 'Arızalı',
-                statusColor: Color(0xFFE53935),
+              FutureBuilder<List<ServiceHistory>>(
+                future: repository.getRecent(count: 3),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Text('Kayıt bulunamadı.');
+                  }
+                  final items = snapshot.data!;
+                  return Column(
+                    children: items.map((item) => _ServiceItem(
+                      title: '${item.type} - ${item.description}',
+                      serial: '',
+                      status: item.status,
+                      statusColor: _getStatusColor(item.status),
+                    )).toList(),
+                  );
+                },
               ),
             ],
           ),
@@ -131,5 +144,19 @@ class _ServiceItem extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+Color _getStatusColor(String status) {
+  switch (status) {
+    case 'Tamamlandı':
+    case 'Başarılı':
+      return const Color(0xFF43A047);
+    case 'Beklemede':
+      return const Color(0xFFFFB300);
+    case 'Arızalı':
+      return const Color(0xFFE53935);
+    default:
+      return const Color(0xFFBDBDBD);
   }
 } 

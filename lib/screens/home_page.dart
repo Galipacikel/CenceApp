@@ -84,7 +84,7 @@ class HomePage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ServisGecmisiScreen()),
+                      MaterialPageRoute(builder: (_) => ServisGecmisiScreen()),
                     );
                   },
                 ),
@@ -95,7 +95,7 @@ class HomePage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const StokTakibiScreen()),
+                      MaterialPageRoute(builder: (_) => StokTakibiScreen()),
                     );
                   },
                 ),

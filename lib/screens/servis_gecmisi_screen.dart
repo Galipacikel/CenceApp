@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import '../models/service_history.dart';
 
 class ServisGecmisiScreen extends StatefulWidget {
-  const ServisGecmisiScreen({Key? key}) : super(key: key);
+  final ServiceHistoryRepository repository;
+  ServisGecmisiScreen({Key? key, ServiceHistoryRepository? repository})
+      : repository = repository ?? MockServiceHistoryRepository(),
+        super(key: key);
 
   @override
   State<ServisGecmisiScreen> createState() => _ServisGecmisiScreenState();
@@ -14,98 +18,36 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
   String searchText = '';
   final TextEditingController _searchController = TextEditingController();
 
-  final List<Map<String, dynamic>> allKayitlar = [];
-  bool isLoading = true;
+  late Future<List<ServiceHistory>> _futureHistory;
+  List<ServiceHistory> _allHistory = [];
 
   @override
   void initState() {
     super.initState();
-    // Yükleniyor animasyonu için örnek gecikme
-    Future.delayed(const Duration(milliseconds: 900), () {
-      setState(() {
-        allKayitlar.addAll(_mockKayitlar);
-        isLoading = false;
-      });
-    });
+    _futureHistory = widget.repository.getAll();
   }
 
-  static const List<Map<String, dynamic>> _mockKayitlar = [
-    {
-      'tarih': '15 Mart 2024',
-      'baslik': 'Periyodik Bakım',
-      'aciklama': 'Yıllık kalibrasyon ve parça kontrolü yapıldı.',
-      'kisi': 'Ahmet Yılmaz',
-      'durum': 'Başarılı',
-      'durumRenk': Color(0xFF43A047),
-      'etiketRenk': Color(0xFFE8F5E9),
-      'cihaz': 'Defibrilatör XYZ',
-    },
-    {
-      'tarih': '28 Ocak 2024',
-      'baslik': 'Arıza Onarımı',
-      'aciklama': 'Ekran görüntü vermiyordu, ekran kartı değiştirildi.',
-      'kisi': 'Mehmet Oztürk',
-      'durum': 'Tamamlandı',
-      'durumRenk': Color(0xFFE53935),
-      'etiketRenk': Color(0xFFFFEBEE),
-      'cihaz': 'EKG Monitörü ABC',
-    },
-    {
-      'tarih': '10 Aralık 2023',
-      'baslik': 'Yazılım Güncelleme',
-      'aciklama': 'v2.1.5 sürümüne güncellendi, performans iyileştirmeleri yapıldı.',
-      'kisi': 'Ayşe Kaya',
-      'durum': 'Başarılı',
-      'durumRenk': Color(0xFF43A047),
-      'etiketRenk': Color(0xFFE8F5E9),
-      'cihaz': 'Ventilatör V-500',
-    },
-  ];
-
-  List<String> get cihazListesi => allKayitlar.map((k) => k['cihaz'] as String).toSet().toList();
+  List<String> get cihazListesi => _allHistory.map((k) => k.type).toSet().toList();
 
   List<String> get filteredCihazlar {
     if (searchText.isEmpty) return cihazListesi;
     return cihazListesi.where((c) => c.toLowerCase().contains(searchText.toLowerCase())).toList();
   }
 
-  List<Map<String, dynamic>> get filteredKayitlar {
-    List<Map<String, dynamic>> list = List.from(allKayitlar);
+  List<ServiceHistory> get filteredHistory {
+    List<ServiceHistory> list = List.from(_allHistory);
     if (selectedStatus != null) {
-      list = list.where((k) => k['durum'] == selectedStatus).toList();
+      list = list.where((k) => k.status == selectedStatus).toList();
     }
     if (selectedDevice != null) {
-      list = list.where((k) => k['cihaz'] == selectedDevice).toList();
+      list = list.where((k) => k.type == selectedDevice).toList();
     }
     if (selectedSort == 'Tarih (Yeni > Eski)') {
-      list.sort((a, b) => _parseDate(b['tarih']).compareTo(_parseDate(a['tarih'])));
+      list.sort((a, b) => b.date.compareTo(a.date));
     } else if (selectedSort == 'Tarih (Eski > Yeni)') {
-      list.sort((a, b) => _parseDate(a['tarih']).compareTo(_parseDate(b['tarih'])));
+      list.sort((a, b) => a.date.compareTo(b.date));
     }
     return list;
-  }
-
-  DateTime _parseDate(String date) {
-    // Türkçe tarihleri DateTime'a çevir
-    final months = {
-      'Ocak': 1,
-      'Şubat': 2,
-      'Mart': 3,
-      'Nisan': 4,
-      'Mayıs': 5,
-      'Haziran': 6,
-      'Temmuz': 7,
-      'Ağustos': 8,
-      'Eylül': 9,
-      'Ekim': 10,
-      'Kasım': 11,
-      'Aralık': 12,
-    };
-    final parts = date.split(' ');
-    final day = int.parse(parts[0]);
-    final month = months[parts[1]]!;
-    final year = int.parse(parts[2]);
-    return DateTime(year, month, day);
   }
 
   void _showFilterDialog() async {
@@ -154,10 +96,10 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                     selected: selectedDevice == null,
                     onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': null}),
                   ),
-                  ...allKayitlar.map((k) => k['cihaz']).toSet().map((cihaz) => FilterChip(
-                    label: Text(cihaz),
-                    selected: selectedDevice == cihaz,
-                    onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': cihaz}),
+                  ..._allHistory.map((k) => FilterChip(
+                    label: Text(k.type),
+                    selected: selectedDevice == k.type,
+                    onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': k.type}),
                   )),
                 ],
               ),
@@ -225,18 +167,40 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
     }
   }
 
-  void guncelleKayit(Map<String, dynamic> eski, Map<String, dynamic> yeni) {
+  void guncelleKayit(ServiceHistory eski, Map<String, dynamic> yeni) {
     setState(() {
-      final idx = allKayitlar.indexOf(eski);
+      final idx = _allHistory.indexOf(eski);
       if (idx != -1) {
-        allKayitlar[idx] = yeni;
+        _allHistory[idx] = ServiceHistory(
+          id: eski.id,
+          date: _parseDate(yeni['tarih']),
+          type: yeni['cihaz'] ?? '',
+          description: ((yeni['baslik'] ?? '') + (yeni['aciklama'] != null ? ' - ${yeni['aciklama']}' : '')),
+          technician: yeni['kisi'] ?? '',
+          status: yeni['durum'] ?? '',
+        );
       }
     });
   }
-  void silKayit(Map<String, dynamic> kayit) {
+  void silKayit(ServiceHistory kayit) {
     setState(() {
-      allKayitlar.remove(kayit);
+      _allHistory.remove(kayit);
     });
+  }
+
+  DateTime _parseDate(String? date) {
+    if (date == null) return DateTime.now();
+    final months = {
+      'Ocak': 1, 'Şubat': 2, 'Mart': 3, 'Nisan': 4, 'Mayıs': 5, 'Haziran': 6,
+      'Temmuz': 7, 'Ağustos': 8, 'Eylül': 9, 'Ekim': 10, 'Kasım': 11, 'Aralık': 12,
+    };
+    final parts = date.split(' ');
+    if (parts.length != 3) return DateTime.now();
+    final day = int.tryParse(parts[0]);
+    final month = months[parts[1]];
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) return DateTime.now();
+    return DateTime(year, month, day);
   }
 
   @override
@@ -265,7 +229,14 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
           );
           if (yeniKayit != null) {
             setState(() {
-              allKayitlar.add(yeniKayit);
+              _allHistory.add(ServiceHistory(
+                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                date: _parseDate(yeniKayit['tarih']),
+                type: yeniKayit['cihaz'] ?? '',
+                description: ((yeniKayit['baslik'] ?? '') + (yeniKayit['aciklama'] != null ? ' - ${yeniKayit['aciklama']}' : '')),
+                technician: yeniKayit['kisi'] ?? '',
+                status: yeniKayit['durum'] ?? '',
+              ));
             });
           }
         },
@@ -273,159 +244,172 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
         label: const Text('Yeni Kayıt Ekle'),
         backgroundColor: const Color(0xFF23408E),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: isWide ? MediaQuery.of(context).size.width * 0.2 : 16,
-                vertical: 16,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Cihaz Seçimi
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Cihaz Seçimi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                        const SizedBox(height: 8),
-                        Stack(
-                          children: [
-                            TextField(
-                              controller: _searchController,
-                              decoration: InputDecoration(
-                                hintText: 'Cihaz ara veya listeden seç...',
-                                prefixIcon: const Icon(Icons.search),
-                                filled: true,
-                                fillColor: const Color(0xFFF5F6FA),
-                                contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide.none,
-                                ),
-                                suffixIcon: selectedDevice != null
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear),
-                                        onPressed: () {
-                                          setState(() {
-                                            selectedDevice = null;
-                                            _searchController.clear();
-                                            searchText = '';
-                                          });
-                                        },
-                                      )
-                                    : null,
+      body: FutureBuilder<List<ServiceHistory>>(
+        future: _futureHistory,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('Kayıt bulunamadı.'));
+          }
+          // Only set _allHistory if it's empty, to avoid overwriting user changes
+          if (_allHistory.isEmpty) {
+            _allHistory = snapshot.data!;
+          }
+          return SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isWide ? MediaQuery.of(context).size.width * 0.2 : 16,
+              vertical: 16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Cihaz Seçimi
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Cihaz Seçimi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                      const SizedBox(height: 8),
+                      Stack(
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Cihaz ara veya listeden seç...',
+                              prefixIcon: const Icon(Icons.search),
+                              filled: true,
+                              fillColor: const Color(0xFFF5F6FA),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
                               ),
-                              onChanged: (val) {
-                                setState(() {
-                                  searchText = val;
-                                });
-                              },
-                              onTap: () {
-                                setState(() {
-                                  searchText = _searchController.text;
-                                });
-                              },
-                              readOnly: selectedDevice != null,
+                              suffixIcon: selectedDevice != null
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        setState(() {
+                                          selectedDevice = null;
+                                          _searchController.clear();
+                                          searchText = '';
+                                        });
+                                      },
+                                    )
+                                  : null,
                             ),
-                            if (searchText.isNotEmpty && selectedDevice == null)
-                              Positioned(
-                                left: 0,
-                                right: 0,
-                                top: 54,
-                                child: Material(
-                                  elevation: 2,
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: ListView(
-                                    shrinkWrap: true,
-                                    padding: EdgeInsets.zero,
-                                    children: filteredCihazlar.isEmpty
-                                        ? [
-                                            const ListTile(
-                                              title: Text('Sonuç bulunamadı'),
-                                            ),
-                                          ]
-                                        : filteredCihazlar.map((cihaz) => ListTile(
-                                              title: Text(cihaz),
-                                              onTap: () {
-                                                setState(() {
-                                                  selectedDevice = cihaz;
-                                                  _searchController.text = cihaz;
-                                                  searchText = '';
-                                                });
-                                              },
-                                            )).toList(),
-                                  ),
+                            onChanged: (val) {
+                              setState(() {
+                                searchText = val;
+                              });
+                            },
+                            onTap: () {
+                              setState(() {
+                                searchText = _searchController.text;
+                              });
+                            },
+                            readOnly: selectedDevice != null,
+                          ),
+                          if (searchText.isNotEmpty && selectedDevice == null)
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              top: 54,
+                              child: Material(
+                                elevation: 2,
+                                borderRadius: BorderRadius.circular(10),
+                                child: ListView(
+                                  shrinkWrap: true,
+                                  padding: EdgeInsets.zero,
+                                  children: filteredCihazlar.isEmpty
+                                      ? [
+                                          const ListTile(
+                                            title: Text('Sonuç bulunamadı'),
+                                          ),
+                                        ]
+                                      : filteredCihazlar.map((cihaz) => ListTile(
+                                            title: Text(cihaz),
+                                            onTap: () {
+                                              setState(() {
+                                                selectedDevice = cihaz;
+                                                _searchController.text = cihaz;
+                                                searchText = '';
+                                              });
+                                            },
+                                          )).toList(),
                                 ),
                               ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // Servis Kayıtları başlık ve filtre/sırala
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  child: Row(
+                    children: [
+                      const Text('Servis Kayıtları', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.filter_alt_outlined, size: 22),
+                        onPressed: _showFilterDialog,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.sort, size: 22),
+                        onPressed: _showSortDialog,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                // Servis kayıtları listesi veya boş ekran
+                filteredHistory.isEmpty
+                    ? Container(
+                        margin: const EdgeInsets.only(top: 40),
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.inbox_rounded, size: 60, color: Color(0xFFB0B6C3)),
+                            SizedBox(height: 16),
+                            Text('Kayıt bulunamadı', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF23408E))),
+                            SizedBox(height: 8),
+                            Text('Seçili filtre veya arama ile eşleşen servis kaydı yok.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Colors.black54)),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  // Servis Kayıtları başlık ve filtre/sırala
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                    child: Row(
-                      children: [
-                        const Text('Servis Kayıtları', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                        const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.filter_alt_outlined, size: 22),
-                          onPressed: _showFilterDialog,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.sort, size: 22),
-                          onPressed: _showSortDialog,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  // Servis kayıtları listesi veya boş ekran
-                  filteredKayitlar.isEmpty
-                      ? Container(
-                          margin: const EdgeInsets.only(top: 40),
-                          padding: const EdgeInsets.all(32),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.inbox_rounded, size: 60, color: Color(0xFFB0B6C3)),
-                              SizedBox(height: 16),
-                              Text('Kayıt bulunamadı', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF23408E))),
-                              SizedBox(height: 8),
-                              Text('Seçili filtre veya arama ile eşleşen servis kaydı yok.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Colors.black54)),
-                            ],
-                          ),
-                        )
-                      : _ServisKayitListesi(kayitlar: filteredKayitlar),
-                ],
-              ),
+                      )
+                    : _ServisKayitListesi(kayitlar: filteredHistory),
+              ],
             ),
+          );
+        },
+      ),
     );
   }
 }
 
 class _ServisKayitListesi extends StatelessWidget {
-  final List<Map<String, dynamic>> kayitlar;
+  final List<ServiceHistory> kayitlar;
   const _ServisKayitListesi({required this.kayitlar, Key? key}) : super(key: key);
 
   @override
@@ -437,7 +421,7 @@ class _ServisKayitListesi extends StatelessWidget {
 }
 
 class _ServisKayitCard extends StatelessWidget {
-  final Map<String, dynamic> kayit;
+  final ServiceHistory kayit;
   const _ServisKayitCard({required this.kayit, Key? key}) : super(key: key);
 
   @override
@@ -467,7 +451,7 @@ class _ServisKayitCard extends StatelessWidget {
               Icon(Icons.calendar_month, size: isWide ? 26 : 20, color: const Color(0xFF23408E)),
               const SizedBox(width: 6),
               Text(
-                kayit['tarih'],
+                kayit.date.toString().split(' ')[0], // Tarihi formatla
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: isWide ? 16 : 14, color: Colors.black87),
               ),
               const Spacer(),
@@ -479,7 +463,7 @@ class _ServisKayitCard extends StatelessWidget {
                     context: context,
                     builder: (ctx) => YeniKayitDialog(
                       cihazlar: parentState.cihazListesi,
-                      mevcutKayit: kayit,
+                      mevcutKayit: kayit.toJson(),
                     ),
                   );
                   if (guncelKayit != null) {
@@ -516,13 +500,13 @@ class _ServisKayitCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
-                  color: kayit['etiketRenk'],
+                  color: kayit.status == 'Başarılı' ? const Color(0xFF43A047) : const Color(0xFFE53935),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  kayit['durum'],
-                  style: TextStyle(
-                    color: kayit['durumRenk'],
+                  kayit.status,
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -533,17 +517,17 @@ class _ServisKayitCard extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              Icon(Icons.label_important_rounded, size: isWide ? 22 : 16, color: kayit['durumRenk']),
+              Icon(Icons.label_important_rounded, size: isWide ? 22 : 16, color: kayit.status == 'Başarılı' ? const Color(0xFF43A047) : const Color(0xFFE53935)),
               const SizedBox(width: 4),
               Text(
-                kayit['baslik'],
+                kayit.type,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: isWide ? 17 : 15, color: Colors.black),
               ),
             ],
           ),
           const SizedBox(height: 2),
           Text(
-            kayit['aciklama'],
+            kayit.description,
             style: TextStyle(fontSize: isWide ? 15 : 13, color: Colors.black87),
           ),
           const SizedBox(height: 10),
@@ -552,7 +536,7 @@ class _ServisKayitCard extends StatelessWidget {
               Icon(Icons.person, size: isWide ? 22 : 18, color: const Color(0xFF23408E)),
               const SizedBox(width: 6),
               Text(
-                kayit['kisi'],
+                kayit.technician,
                 style: TextStyle(fontSize: isWide ? 15 : 13, color: Colors.black87, fontWeight: FontWeight.w500),
               ),
               const Spacer(),
@@ -580,7 +564,7 @@ class _ServisKayitCard extends StatelessWidget {
 }
 
 class ServisKaydiDetayScreen extends StatelessWidget {
-  final Map<String, dynamic> kayit;
+  final ServiceHistory kayit;
   const ServisKaydiDetayScreen({required this.kayit, Key? key}) : super(key: key);
 
   @override
@@ -614,13 +598,13 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                         decoration: BoxDecoration(
-                          color: kayit['etiketRenk'],
+                          color: kayit.status == 'Başarılı' ? const Color(0xFF43A047) : const Color(0xFFE53935),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          kayit['durum'],
-                          style: TextStyle(
-                            color: kayit['durumRenk'],
+                          kayit.status,
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -628,19 +612,19 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        kayit['tarih'],
+                        kayit.date.toString().split(' ')[0], // Tarihi formatla
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    kayit['baslik'],
+                    kayit.type,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    kayit['aciklama'],
+                    kayit.description,
                     style: const TextStyle(fontSize: 15, color: Colors.black87),
                   ),
                   const SizedBox(height: 18),
@@ -649,7 +633,7 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                       const Icon(Icons.devices, size: 20, color: Color(0xFF23408E)),
                       const SizedBox(width: 8),
                       Text(
-                        kayit['cihaz'],
+                        kayit.type,
                         style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -660,7 +644,7 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                       const Icon(Icons.person, size: 20, color: Color(0xFF23408E)),
                       const SizedBox(width: 8),
                       Text(
-                        kayit['kisi'],
+                        kayit.technician,
                         style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -721,18 +705,18 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
       tarih = _parseDate(widget.mevcutKayit!['tarih']);
     }
   }
-  DateTime? _parseDate(String? date) {
-    if (date == null) return null;
+  DateTime _parseDate(String? date) {
+    if (date == null) return DateTime.now();
     final months = {
       'Ocak': 1, 'Şubat': 2, 'Mart': 3, 'Nisan': 4, 'Mayıs': 5, 'Haziran': 6,
       'Temmuz': 7, 'Ağustos': 8, 'Eylül': 9, 'Ekim': 10, 'Kasım': 11, 'Aralık': 12,
     };
     final parts = date.split(' ');
-    if (parts.length != 3) return null;
+    if (parts.length != 3) return DateTime.now();
     final day = int.tryParse(parts[0]);
     final month = months[parts[1]];
     final year = int.tryParse(parts[2]);
-    if (day == null || month == null || year == null) return null;
+    if (day == null || month == null || year == null) return DateTime.now();
     return DateTime(year, month, day);
   }
 
@@ -829,8 +813,6 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
                 'aciklama': aciklama,
                 'kisi': kisi,
                 'durum': durum,
-                'durumRenk': durum == 'Başarılı' ? const Color(0xFF43A047) : const Color(0xFFE53935),
-                'etiketRenk': durum == 'Başarılı' ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
                 'cihaz': cihaz,
               });
             }
@@ -839,5 +821,20 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
         ),
       ],
     );
+  }
+}
+
+// Duruma göre renk döndüren yardımcı fonksiyon
+Color getStatusColor(String status) {
+  switch (status) {
+    case 'Başarılı':
+    case 'Tamamlandı':
+      return const Color(0xFF43A047);
+    case 'Beklemede':
+      return const Color(0xFFFFB300);
+    case 'Arızalı':
+      return const Color(0xFFE53935);
+    default:
+      return Colors.grey;
   }
 } 
