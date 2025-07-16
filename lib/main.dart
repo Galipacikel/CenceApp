@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/login_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'providers/app_state_provider.dart';
+import 'screens/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,22 +18,20 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Teknik Servis Takip',
-      theme: ThemeData(
-       
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return ChangeNotifierProvider(
+      create: (_) => AppStateProvider(),
+      child: Consumer<AppStateProvider>(
+        builder: (context, appState, _) {
+          return MaterialApp(
+            title: 'Cence App',
+            theme: ThemeData.light(),
+            darkTheme: ThemeData.dark(),
+            themeMode: appState.appSettings.themeMode,
+            home: const LoginScreen(),
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
-      localizationsDelegates: [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('tr', 'TR'),
-        Locale('en', 'US'),
-      ],
-      home: const LoginScreen(), // Login ekranı ana ekran olarak gösterilecek
     );
   }
 }
