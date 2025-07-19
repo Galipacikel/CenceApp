@@ -221,29 +221,6 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
         ),
         centerTitle: true,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final yeniKayit = await showDialog<Map<String, dynamic>>(
-            context: context,
-            builder: (ctx) => YeniKayitDialog(cihazlar: cihazListesi),
-          );
-          if (yeniKayit != null) {
-            setState(() {
-              _allHistory.add(ServiceHistory(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                date: _parseDate(yeniKayit['tarih']),
-                type: yeniKayit['cihaz'] ?? '',
-                description: ((yeniKayit['baslik'] ?? '') + (yeniKayit['aciklama'] != null ? ' - ${yeniKayit['aciklama']}' : '')),
-                technician: yeniKayit['kisi'] ?? '',
-                status: yeniKayit['durum'] ?? '',
-              ));
-            });
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Yeni Kayıt Ekle'),
-        backgroundColor: const Color(0xFF23408E),
-      ),
       body: FutureBuilder<List<ServiceHistory>>(
         future: _futureHistory,
         builder: (context, snapshot) {
@@ -500,13 +477,13 @@ class _ServisKayitCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
-                  color: kayit.status == 'Başarılı' ? const Color(0xFF43A047) : const Color(0xFFE53935),
+                  color: getStatusBgColor(kayit.status),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  kayit.status,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  getStatusLabel(kayit.status),
+                  style: TextStyle(
+                    color: getStatusTextColor(kayit.status),
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -517,7 +494,7 @@ class _ServisKayitCard extends StatelessWidget {
           const SizedBox(height: 6),
           Row(
             children: [
-              Icon(Icons.label_important_rounded, size: isWide ? 22 : 16, color: kayit.status == 'Başarılı' ? const Color(0xFF43A047) : const Color(0xFFE53935)),
+              Icon(Icons.label_important_rounded, size: isWide ? 22 : 16, color: getStatusBgColor(kayit.status)),
               const SizedBox(width: 4),
               Text(
                 kayit.type,
@@ -598,11 +575,11 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                         decoration: BoxDecoration(
-                          color: kayit.status == 'Başarılı' ? const Color(0xFF43A047) : const Color(0xFFE53935),
+                          color: getStatusBgColor(kayit.status),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          kayit.status,
+                          getStatusLabel(kayit.status),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -837,4 +814,34 @@ Color getStatusColor(String status) {
     default:
       return Colors.grey;
   }
+}
+
+Color getStatusBgColor(String status) {
+  switch (status) {
+    case 'Başarılı':
+      return const Color(0xFF43A047); // Yeşil
+    case 'Beklemede':
+      return const Color(0xFFFFC107); // Modern sarı
+    case 'Arızalı':
+      return const Color(0xFFE53935); // Kırmızı
+    default:
+      return const Color(0xFF43A047);
+  }
+}
+
+String getStatusLabel(String status) {
+  switch (status) {
+    case 'Başarılı':
+      return 'Başarılı';
+    case 'Beklemede':
+      return 'Beklemede';
+    case 'Arızalı':
+      return 'Arızalı';
+    default:
+      return status;
+  }
+}
+
+Color getStatusTextColor(String status) {
+  return Colors.white;
 } 

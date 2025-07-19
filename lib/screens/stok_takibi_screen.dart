@@ -1208,18 +1208,18 @@ class _StockPartDetailModalState extends State<_StockPartDetailModal> {
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('İptal', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            ),
+                      ),
             onPressed: () => Navigator.pop(ctx, true),
             icon: const Icon(Icons.delete, color: Colors.white, size: 20),
             label: const Text('Sil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+                    ),
+                  ],
+                ),
     );
     if (confirm == true) {
       final stokTakibiState = context.findAncestorStateOfType<_StokTakibiScreenState>();
@@ -1512,7 +1512,7 @@ class _CriticalStockSummary extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
+        decoration: BoxDecoration(
         color: bgColor,
         border: Border.all(color: borderColor, width: 1.5),
         borderRadius: BorderRadius.circular(14),

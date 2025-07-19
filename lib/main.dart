@@ -31,6 +31,15 @@ class MyApp extends StatelessWidget {
             themeMode: appState.appSettings.themeMode,
             home: const LoginScreen(),
             debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('tr', 'TR'),
+              Locale('en', 'US'),
+            ],
           );
         },
       ),

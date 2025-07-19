@@ -93,4 +93,8 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     await Future.delayed(const Duration(milliseconds: 100));
     return _mockList.take(count).toList();
   }
+
+  Future<void> add(ServiceHistory history) async {
+    _mockList.insert(0, history);
+  }
 } 

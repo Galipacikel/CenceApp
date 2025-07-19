@@ -72,6 +72,7 @@ class StockPart {
 
 abstract class StockPartRepository {
   Future<List<StockPart>> getAll();
+  Future<void> decreaseQuantity(String partCode, int amount);
 }
 
 class MockStockPartRepository implements StockPartRepository {
@@ -111,5 +112,35 @@ class MockStockPartRepository implements StockPartRepository {
   Future<List<StockPart>> getAll() async {
     await Future.delayed(const Duration(milliseconds: 200));
     return List<StockPart>.from(_mockList);
+  }
+
+  @override
+  Future<void> decreaseQuantity(String partCode, int amount) async {
+    final index = _mockList.indexWhere((part) => part.code == partCode);
+    if (index != -1) {
+      final part = _mockList[index];
+      final newQuantity = (part.quantity - amount).clamp(0, part.quantity);
+      
+      // Stok hareketi ekle
+      final movement = StockMovement(
+        type: 'Çıkış',
+        amount: amount,
+        date: '${DateTime.now().day.toString().padLeft(2, '0')}.${DateTime.now().month.toString().padLeft(2, '0')}.${DateTime.now().year}',
+        description: 'Servis formu ile kullanıldı',
+      );
+      
+      final updatedMovements = <StockMovement>[...(part.movements ?? []), movement];
+      
+      _mockList[index] = StockPart(
+        name: part.name,
+        code: part.code,
+        quantity: newQuantity,
+        lastUpdate: '${DateTime.now().day.toString().padLeft(2, '0')}.${DateTime.now().month.toString().padLeft(2, '0')}.${DateTime.now().year}',
+        criticalLevel: part.criticalLevel,
+        description: part.description,
+        category: part.category,
+        movements: updatedMovements,
+      );
+    }
   }
 } 
