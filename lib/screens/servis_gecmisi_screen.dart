@@ -27,7 +27,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
     _futureHistory = widget.repository.getAll();
   }
 
-  List<String> get cihazListesi => _allHistory.map((k) => k.type).toSet().toList();
+  List<String> get cihazListesi => _allHistory.map((k) => k.cihazId).toSet().toList();
 
   List<String> get filteredCihazlar {
     if (searchText.isEmpty) return cihazListesi;
@@ -40,7 +40,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
       list = list.where((k) => k.status == selectedStatus).toList();
     }
     if (selectedDevice != null) {
-      list = list.where((k) => k.type == selectedDevice).toList();
+      list = list.where((k) => k.cihazId == selectedDevice).toList();
     }
     if (selectedSort == 'Tarih (Yeni > Eski)') {
       list.sort((a, b) => b.date.compareTo(a.date));
@@ -78,11 +78,6 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                     selected: selectedStatus == 'Başarılı',
                     onSelected: (_) => Navigator.pop(ctx, {'status': 'Başarılı', 'device': selectedDevice}),
                   ),
-                  FilterChip(
-                    label: const Text('Tamamlandı'),
-                    selected: selectedStatus == 'Tamamlandı',
-                    onSelected: (_) => Navigator.pop(ctx, {'status': 'Tamamlandı', 'device': selectedDevice}),
-                  ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -97,9 +92,9 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                     onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': null}),
                   ),
                   ..._allHistory.map((k) => FilterChip(
-                    label: Text(k.type),
-                    selected: selectedDevice == k.type,
-                    onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': k.type}),
+                    label: Text(k.cihazId),
+                    selected: selectedDevice == k.cihazId,
+                    onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': k.cihazId}),
                   )),
                 ],
               ),
@@ -174,7 +169,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
         _allHistory[idx] = ServiceHistory(
           id: eski.id,
           date: _parseDate(yeni['tarih']),
-          type: yeni['cihaz'] ?? '',
+          cihazId: 'CIHAZ-001', // Geçici sabit değer, ileride servis formundan alınacak
           description: ((yeni['baslik'] ?? '') + (yeni['aciklama'] != null ? ' - ${yeni['aciklama']}' : '')),
           technician: yeni['kisi'] ?? '',
           status: yeni['durum'] ?? '',
@@ -497,7 +492,7 @@ class _ServisKayitCard extends StatelessWidget {
               Icon(Icons.label_important_rounded, size: isWide ? 22 : 16, color: getStatusBgColor(kayit.status)),
               const SizedBox(width: 4),
               Text(
-                kayit.type,
+                kayit.cihazId,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: isWide ? 17 : 15, color: Colors.black),
               ),
             ],
@@ -596,7 +591,7 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    kayit.type,
+                    kayit.cihazId,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
                   ),
                   const SizedBox(height: 8),
@@ -610,7 +605,7 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                       const Icon(Icons.devices, size: 20, color: Color(0xFF23408E)),
                       const SizedBox(width: 8),
                       Text(
-                        kayit.type,
+                        kayit.cihazId,
                         style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -746,7 +741,6 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
                 value: durum,
                 items: const [
                   DropdownMenuItem(value: 'Başarılı', child: Text('Başarılı')),
-                  DropdownMenuItem(value: 'Tamamlandı', child: Text('Tamamlandı')),
                 ],
                 onChanged: (v) => setState(() => durum = v),
                 validator: (v) => v == null ? 'Durum seçin' : null,
@@ -805,7 +799,6 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
 Color getStatusColor(String status) {
   switch (status) {
     case 'Başarılı':
-    case 'Tamamlandı':
       return const Color(0xFF43A047);
     case 'Beklemede':
       return const Color(0xFFFFB300);

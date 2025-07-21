@@ -6,11 +6,12 @@ import '../widgets/common/bottom_nav_bar.dart';
 import 'cihaz_sorgula_screen.dart';
 import 'yeni_servis_formu_screen.dart';
 import 'servis_gecmisi_screen.dart';
-import 'stok_takibi_screen.dart';
+import 'package:cence_app/screens/stok_takibi_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
 import 'service_history_detail_screen.dart';
 import '../models/service_history.dart';
+import '../models/stock_part.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -44,10 +45,10 @@ class _HomePageState extends State<HomePage> {
     if (result != null && result is Map<String, dynamic>) {
       final int formTipi = result['formTipi'] ?? 0;
       String type = 'Kurulum';
-      String status = 'Tamamlandı';
+      String status = 'Başarılı';
       if (formTipi == 1) {
         type = 'Bakım';
-        status = 'Tamamlandı';
+        status = 'Başarılı';
       } else if (formTipi == 2) {
         type = 'Arıza';
         status = 'Arızalı';
@@ -55,10 +56,18 @@ class _HomePageState extends State<HomePage> {
       final newHistory = ServiceHistory(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: result['tarih'] ?? DateTime.now(),
-        type: type,
+        cihazId: result['cihazId'] ?? 'CIHAZ-001',
         description: result['aciklama'] ?? '',
         technician: result['teknisyen'] ?? '',
         status: status,
+        kullanilanParcalar: (result['kullanilanParcalar'] as List?)?.map((p) => StockPart(
+          id: p['parcaKodu'] ?? '',
+          parcaAdi: p['parcaAdi'] ?? '',
+          parcaKodu: p['parcaKodu'] ?? '',
+          stokAdedi: p['adet'] ?? 1,
+          tedarikci: '',
+          sonGuncelleme: DateTime.now(),
+        )).toList() ?? [],
       );
       await _repository.add(newHistory);
       await _loadHistory();
@@ -133,21 +142,21 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildMainContent(BuildContext context, bool isWide) {
     final width = MediaQuery.of(context).size.width;
-    final cardHeight = isWide ? 160.0 : 120.0;
-    final cardIconSize = isWide ? 44.0 : 32.0;
+    final cardHeight = isWide ? 140.0 : 100.0;
+    final cardIconSize = isWide ? 36.0 : 26.0;
     final gridCrossAxisCount = width > 1100 ? 5 : width > 800 ? 4 : isWide ? 3 : 2;
-    final gridSpacing = isWide ? 28.0 : 16.0;
+    final gridSpacing = isWide ? 24.0 : 12.0;
     final iconColor = const Color(0xFF23408E);
     return Container(
       color: const Color(0xFFF5F6FA),
       child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: isWide ? 40 : 18, vertical: isWide ? 28 : 14),
+        padding: EdgeInsets.symmetric(horizontal: isWide ? 40 : 14, vertical: isWide ? 24 : 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Selamlama ve özet
             _WelcomeSummary(),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             // Hızlı Erişim Kartları (animasyonlu)
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 400),
@@ -157,7 +166,7 @@ class _HomePageState extends State<HomePage> {
                 shrinkWrap: true,
                 mainAxisSpacing: gridSpacing,
                 crossAxisSpacing: gridSpacing,
-                childAspectRatio: isWide ? 1.18 : 1.05,
+                childAspectRatio: isWide ? 1.18 : 1.15, // Daha kısa kartlar
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _ModernQuickAccessCard(
@@ -224,10 +233,18 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 18),
-            _ModernServiceHistoryCard(items: _serviceHistoryList.take(3).toList()),
+            if (_serviceHistoryList.isEmpty)
+              const _ModernServiceHistoryCard()
+            else
+              Column(
+                children: _serviceHistoryList
+                    .take(3)
+                    .map((item) => _ModernServiceCard(item: item))
+                    .toList(),
+              ),
             // Watermark
             Align(
-              alignment: Alignment.bottomRight,
+              alignment: Alignment.bottomCenter,
               child: Opacity(
                 opacity: 0.07,
                 child: Padding(
@@ -356,38 +373,45 @@ class _ModernQuickAccessCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16), // Küçük radius
         onTap: onTap,
-        splashColor: Colors.black12,
+        splashColor: iconColor.withOpacity(0.12),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: const Duration(milliseconds: 220),
           curve: Curves.easeOut,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16), // Küçük radius
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.07),
+                color: Colors.black.withOpacity(0.08),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
             ],
-            border: Border.all(color: Colors.grey.shade100),
+            border: Border.all(color: Colors.grey.shade100, width: 1.2),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10), // Daha az padding
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: iconSize, color: iconColor),
-              const SizedBox(height: 14),
+              Container(
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.07),
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(10), // Daha az padding
+                child: Icon(icon, size: iconSize, color: iconColor), // Küçük ikon
+              ),
+              const SizedBox(height: 10), // Daha az spacing
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Color(0xFF1C1C1C),
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                  letterSpacing: 0.2,
+                  fontSize: 15, // Küçük font
+                  letterSpacing: 0.1,
                 ),
               ),
             ],
@@ -399,34 +423,36 @@ class _ModernQuickAccessCard extends StatelessWidget {
 }
 
 class _ModernServiceHistoryCard extends StatelessWidget {
-  final List<ServiceHistory> items;
-  const _ModernServiceHistoryCard({required this.items, Key? key}) : super(key: key);
+  const _ModernServiceHistoryCard({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return Container(
-        margin: const EdgeInsets.only(top: 24),
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.inbox_rounded, size: 60, color: Color(0xFF23408E)),
-            SizedBox(height: 16),
-            Text('Kayıt bulunamadı', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF23408E))),
-            SizedBox(height: 8),
-            Text('Son servis işlemi kaydı yok.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Colors.black54)),
-          ],
-        ),
-      );
-    }
-    return Column(
-      children: items.map((item) => _ModernServiceCard(item: item)).toList(),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16), // küçültüldü
+        border: Border.all(color: Colors.grey.shade100, width: 1.2), // inceltildi
+      ),
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.inbox_outlined,
+            size: 56, // küçültüldü
+            color: Color(0xFFB0B3C0),
+          ),
+          SizedBox(height: 16), // azaltıldı
+          Text(
+            'Henüz servis kaydı yok',
+            style: TextStyle(
+              fontSize: 16, // küçültüldü
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6F7489),
+            ),
+          )
+        ],
+      ),
     );
   }
 }
@@ -435,90 +461,111 @@ class _ModernServiceCard extends StatelessWidget {
   final ServiceHistory item;
   const _ModernServiceCard({required this.item, Key? key}) : super(key: key);
 
-  String get statusLabel {
-    switch (item.status) {
-      case 'Tamamlandı':
-        return 'Tamamlandı';
+  Map<String, dynamic> getStatusData(String status) {
+    switch (status) {
+      case 'Başarılı':
+        return {
+          'label': 'Başarılı',
+          'color': Colors.white,
+          'bgColor': const Color(0xFF43A047),
+          'icon': Icons.check_circle_outline,
+        };
       case 'Beklemede':
-        return 'Beklemede';
+        return {
+          'label': 'Beklemede',
+          'color': Colors.white,
+          'bgColor': Color(0xFFFFD600), // Canlı sarı
+          'icon': Icons.hourglass_bottom_outlined,
+        };
       case 'Arızalı':
-        return 'Arızalı';
+        return {
+          'label': 'Arızalı',
+          'color': Colors.white,
+          'bgColor': const Color(0xFFE53935), // Kırmızı
+          'icon': Icons.error_outline,
+        };
       default:
-        return item.status;
-    }
-  }
-
-  Color get statusBgColor {
-    switch (item.status) {
-      case 'Tamamlandı':
-        return const Color(0xFF23408E); // Lacivert
-      case 'Beklemede':
-        return Color(0xFFFFD600); // Canlı sarı
-      case 'Arızalı':
-        return const Color(0xFFE53935); // Kırmızı
-      default:
-        return const Color(0xFF23408E);
+        return {
+          'label': item.status,
+          'color': Colors.white,
+          'bgColor': const Color(0xFF23408E),
+          'icon': Icons.info_outline,
+        };
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ServiceHistoryDetailScreen(serviceHistory: item),
-            ),
-          );
-        },
+    final statusData = getStatusData(item.status);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16.0),
+      onTap: () {
+        Navigator.of(context).push(
+          PageRouteBuilder(
+            pageBuilder: (_, __, ___) => ServiceHistoryDetailScreen(serviceHistory: item),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+          ),
+        );
+      },
+      child: Card(
+        elevation: 0,
+        margin: const EdgeInsets.symmetric(vertical: 6.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.0),
+          side: BorderSide(color: Colors.grey.shade100, width: 1.2),
+        ),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 22),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.07),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
-            border: Border.all(color: Colors.grey.shade100),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             leading: Icon(
-              item.status == 'Tamamlandı'
-                  ? Icons.check_circle_rounded
-                  : item.status == 'Beklemede'
-                      ? Icons.hourglass_bottom_rounded
-                      : item.status == 'Arızalı'
-                          ? Icons.error_rounded
-                          : Icons.info_outline_rounded,
-              color: const Color(0xFF23408E),
+              statusData['icon'],
+              color: statusData['bgColor'],
               size: 32,
             ),
-            title: Text('${item.type} - ${item.description}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1C1C1C))),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Tarih: ${item.date.day.toString().padLeft(2, '0')}.${item.date.month.toString().padLeft(2, '0')}.${item.date.year}', style: const TextStyle(fontSize: 13, color: Color(0xFF23408E))),
-                Text('Teknisyen: ${item.technician}', style: const TextStyle(fontSize: 13, color: Color(0xFF23408E))),
-              ],
+            title: Text(
+              '${item.cihazId} - ${item.description}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: Color(0xFF1C1C1C),
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Text(
+                'Teknisyen: ${item.technician}',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 13,
+                ),
+              ),
             ),
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: statusBgColor,
+                color: statusData['bgColor'],
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                statusLabel,
-                style: const TextStyle(
-                  color: Colors.white,
+                statusData['label'],
+                style: TextStyle(
+                  color: statusData['color'],
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),

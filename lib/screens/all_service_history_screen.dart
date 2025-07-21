@@ -11,8 +11,8 @@ class AllServiceHistoryScreen extends StatelessWidget {
 
   String getStatusLabel(String status) {
     switch (status) {
-      case 'Tamamlandı':
-        return 'Tamamlandı';
+      case 'Başarılı':
+        return 'Başarılı';
       case 'Beklemede':
         return 'Beklemede';
       case 'Arızalı':
@@ -24,10 +24,10 @@ class AllServiceHistoryScreen extends StatelessWidget {
 
   Color getStatusColor(String status) {
     switch (status) {
-      case 'Tamamlandı':
-        return const Color(0xFF23408E); // Lacivert
+      case 'Başarılı':
+        return const Color(0xFF43A047);
       case 'Beklemede':
-       return const Color.fromARGB(255, 223, 238, 20); 
+       return const Color.fromARGB(255, 223, 238, 20);
       case 'Arızalı':
         return const Color(0xFFE53935); // Kırmızı
       default:
@@ -37,8 +37,8 @@ class AllServiceHistoryScreen extends StatelessWidget {
 
   Color getStatusBgColor(String status) {
     switch (status) {
-      case 'Tamamlandı':
-        return const Color(0xFF23408E); // Lacivert
+      case 'Başarılı':
+        return const Color(0xFF43A047);
       case 'Beklemede':
         return Color(0xFFFFD600); // Canlı sarı
       case 'Arızalı':
@@ -54,7 +54,7 @@ class AllServiceHistoryScreen extends StatelessWidget {
 
   IconData getStatusIcon(String status) {
     switch (status) {
-      case 'Tamamlandı':
+      case 'Başarılı':
         return Icons.check_circle_rounded;
       case 'Beklemede':
         return Icons.hourglass_bottom_rounded;
@@ -109,7 +109,7 @@ class AllServiceHistoryScreen extends StatelessWidget {
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
                   leading: Icon(statusIcon, color: const Color(0xFF23408E), size: 32),
-                  title: Text('${item.type} - ${item.description}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1C1C1C))),
+                  title: Text('${item.cihazId} - ${item.description}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1C1C1C))),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -125,6 +125,16 @@ class AllServiceHistoryScreen extends StatelessWidget {
                     ),
                     child: Text(statusLabel, style: TextStyle(color: statusTextColor, fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => ServiceHistoryDetailScreen(serviceHistory: item),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(opacity: animation, child: child);
+                        },
+                      ),
+                    );
+                  },
                 ),
               );
             },

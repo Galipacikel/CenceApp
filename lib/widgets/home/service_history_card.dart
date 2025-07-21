@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cence_app/screens/all_service_history_screen.dart';
 import 'package:cence_app/models/service_history.dart';
+import 'package:cence_app/models/stock_part.dart';
 
 class ServiceHistoryCard extends StatelessWidget {
   final VoidCallback? onSeeAll;
@@ -75,7 +76,7 @@ class ServiceHistoryCard extends StatelessWidget {
                   final items = snapshot.data!;
                   return Column(
                     children: items.map((item) => _ServiceItem(
-                      title: '${item.type} - ${item.description}',
+                      title: '${item.cihazId} - ${item.description}',
                       serial: '',
                       status: item.status,
                       statusColor: _getStatusColor(item.status),
@@ -96,12 +97,14 @@ class _ServiceItem extends StatelessWidget {
   final String serial;
   final String status;
   final Color statusColor;
+  final List<StockPart> kullanilanParcalar;
 
   const _ServiceItem({
     required this.title,
     required this.serial,
     required this.status,
     required this.statusColor,
+    this.kullanilanParcalar = const [],
     Key? key,
   }) : super(key: key);
 
@@ -118,6 +121,17 @@ class _ServiceItem extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                ),
+                if (kullanilanParcalar.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2.0),
+                    child: Wrap(
+                      spacing: 8,
+                      children: kullanilanParcalar.map((p) => Chip(
+                        label: Text('${p.parcaAdi ?? ''} x${p.stokAdedi ?? ''}', style: const TextStyle(fontSize: 12)),
+                        backgroundColor: Colors.grey.shade100,
+                      )).toList(),
+                    ),
                 ),
                 Text(
                   'Seri No: $serial',
@@ -149,7 +163,6 @@ class _ServiceItem extends StatelessWidget {
 
 Color _getStatusColor(String status) {
   switch (status) {
-    case 'Tamamlandı':
     case 'Başarılı':
       return const Color(0xFF43A047);
     case 'Beklemede':

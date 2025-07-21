@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../models/stock_part.dart';
+import '../models/cihaz.dart';
 
 class YeniServisFormuScreen extends StatefulWidget {
   final StockPartRepository? stockRepository;
-  const YeniServisFormuScreen({Key? key, this.stockRepository}) : super(key: key);
+  final CihazRepository? cihazRepository;
+  const YeniServisFormuScreen({Key? key, this.stockRepository, this.cihazRepository}) : super(key: key);
 
   @override
   State<YeniServisFormuScreen> createState() => _YeniServisFormuScreenState();
+}
+
+class SelectedPart {
+  final StockPart part;
+  int adet;
+  SelectedPart({required this.part, this.adet = 1});
 }
 
 class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
@@ -27,7 +35,15 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
   List<StockPart> _allParts = [];
   List<StockPart> _filteredParts = [];
   bool _showPartSuggestions = false;
-  final StockPartRepository _stockRepository = MockStockPartRepository();
+  final StockPartRepository _stockRepository = MockStockRepository();
+  
+  // Cihaz seçimi için
+  Cihaz? _selectedCihaz;
+  final TextEditingController _cihazSearchController = TextEditingController();
+  List<Cihaz> _allCihazlar = [];
+  List<Cihaz> _filteredCihazlar = [];
+  bool _showCihazSuggestions = false;
+  final CihazRepository _cihazRepository = MockCihazRepository();
   
   // Kategori seçimi için
   String? _selectedCategory;
@@ -47,11 +63,14 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     'Diğer': const Color(0xFFB0B6C3),
   };
 
+  List<SelectedPart> _selectedParts = [];
+
   @override
   void initState() {
     super.initState();
     _tarihController = TextEditingController();
     _loadParts();
+    _loadCihazlar();
   }
 
   @override
@@ -72,6 +91,14 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     });
   }
 
+  Future<void> _loadCihazlar() async {
+    final cihazlar = await _cihazRepository.getAll();
+    setState(() {
+      _allCihazlar = cihazlar;
+      _filteredCihazlar = cihazlar;
+    });
+  }
+
   void _selectCategory(String category) {
     setState(() {
       _selectedCategory = category;
@@ -84,18 +111,11 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
         _filteredParts = _allParts;
       } else {
         _filteredParts = _allParts.where((part) => 
-          (part.category ?? 'Diğer') == category
+          (part.tedarikci ?? 'Diğer') == category
         ).toList();
       }
-      
-      // En çok kullanılan parçaları üste taşı (stok miktarı düşük olanlar)
       _filteredParts.sort((a, b) {
-        final aIsCritical = a.criticalLevel > 0 && a.quantity <= a.criticalLevel;
-        final bIsCritical = b.criticalLevel > 0 && b.quantity <= b.criticalLevel;
-        
-        if (aIsCritical && !bIsCritical) return -1;
-        if (!aIsCritical && bIsCritical) return 1;
-        return a.name.compareTo(b.name);
+        return a.parcaAdi.compareTo(b.parcaAdi);
       });
     });
   }
@@ -108,7 +128,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
         baseParts = _allParts;
       } else {
         baseParts = _allParts.where((part) => 
-          (part.category ?? 'Diğer') == _selectedCategory
+          (part.tedarikci ?? 'Diğer') == _selectedCategory
         ).toList();
       }
       
@@ -116,29 +136,45 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
         _filteredParts = baseParts;
       } else {
         _filteredParts = baseParts.where((part) =>
-          part.name.toLowerCase().contains(query.toLowerCase()) ||
-          part.code.toLowerCase().contains(query.toLowerCase())
+          part.parcaAdi.toLowerCase().contains(query.toLowerCase()) ||
+          part.parcaKodu.toLowerCase().contains(query.toLowerCase())
         ).toList();
       }
-      
-      // En çok kullanılan parçaları üste taşı (stok miktarı düşük olanlar)
       _filteredParts.sort((a, b) {
-        final aIsCritical = a.criticalLevel > 0 && a.quantity <= a.criticalLevel;
-        final bIsCritical = b.criticalLevel > 0 && b.quantity <= b.criticalLevel;
-        
-        if (aIsCritical && !bIsCritical) return -1;
-        if (!aIsCritical && bIsCritical) return 1;
-        return a.name.compareTo(b.name);
+        return a.parcaAdi.compareTo(b.parcaAdi);
       });
+    });
+  }
+
+  void _filterCihazlar(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredCihazlar = _allCihazlar;
+      } else {
+        _filteredCihazlar = _allCihazlar.where((cihaz) =>
+          cihaz.modelAdi.toLowerCase().contains(query.toLowerCase()) ||
+          cihaz.seriNumarasi.toLowerCase().contains(query.toLowerCase()) ||
+          cihaz.musteriBilgisi.toLowerCase().contains(query.toLowerCase())
+        ).toList();
+      }
+      _showCihazSuggestions = true;
     });
   }
 
   void _selectPart(StockPart part) {
     setState(() {
       _selectedPart = part;
-      _partSearchController.text = '${part.name} (${part.code})';
+      _partSearchController.text = '${part.parcaAdi} (${part.parcaKodu})';
       _showPartSuggestions = false;
       _noPartInstalled = false;
+    });
+  }
+
+  void _selectCihaz(Cihaz cihaz) {
+    setState(() {
+      _selectedCihaz = cihaz;
+      _cihazSearchController.text = '${cihaz.modelAdi} (${cihaz.seriNumarasi})';
+      _showCihazSuggestions = false;
     });
   }
 
@@ -181,36 +217,48 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     }
   }
 
+  void _addOrUpdateSelectedPart(StockPart part, int adet) {
+    setState(() {
+      final idx = _selectedParts.indexWhere((sp) => sp.part.parcaKodu == part.parcaKodu);
+      if (idx >= 0) {
+        _selectedParts[idx].adet = adet;
+      } else {
+        _selectedParts.add(SelectedPart(part: part, adet: adet));
+      }
+    });
+  }
+
+  void _removeSelectedPart(StockPart part) {
+    setState(() {
+      _selectedParts.removeWhere((sp) => sp.part.parcaKodu == part.parcaKodu);
+    });
+  }
+
   void _onKaydet() async {
-    if (_cihazController.text.isEmpty || _teknisyenController.text.isEmpty || _aciklamaController.text.isEmpty || _tarih == null) {
+    if (_selectedCihaz == null || _teknisyenController.text.isEmpty || _aciklamaController.text.isEmpty || _tarih == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen tüm alanları doldurun.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }
-
     // Parça seçimi kontrolü
-    if (!_noPartInstalled && _selectedPart == null) {
+    if (_selectedParts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen kullanılan parçayı seçin veya "Parça Takılmadı" işaretleyin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Lütfen en az bir parça ve adet seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }
-
-    // Eğer parça seçilmişse stoktan eksilt
-    if (_selectedPart != null && !_noPartInstalled) {
-      await _stockRepository.decreaseQuantity(_selectedPart!.code, 1);
+    // Stoktan düşme işlemi
+    for (final sp in _selectedParts) {
+      await _stockRepository.decreaseQuantity(sp.part.parcaKodu, sp.adet);
     }
-
-    // Mock veri olarak üst seviyeye dön
     Navigator.pop(context, {
       'formTipi': _formTipi,
-      'cihaz': _cihazController.text,
+      'cihazId': _selectedCihaz!.id,
       'teknisyen': _teknisyenController.text,
       'aciklama': _aciklamaController.text,
       'tarih': _tarih,
-      'kullanilanParca': _selectedPart?.name,
-      'parcaKodu': _selectedPart?.code,
+      'kullanilanParcalar': _selectedParts.map((sp) => {'parcaKodu': sp.part.parcaKodu, 'parcaAdi': sp.part.parcaAdi, 'adet': sp.adet}).toList(),
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Kayıt başarıyla eklendi!'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
@@ -218,9 +266,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
   }
 
   Color _getStockStatusColor(StockPart part) {
-    if (part.criticalLevel > 0 && part.quantity <= part.criticalLevel) {
-      return const Color(0xFFFF7043); // Kırmızı - Kritik
-    } else if (part.quantity <= 5) {
+    if (part.stokAdedi <= 5) {
       return const Color(0xFFFFC107); // Sarı - Düşük
     } else {
       return const Color(0xFF43A047); // Yeşil - Normal
@@ -228,9 +274,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
   }
 
   String _getStockStatusText(StockPart part) {
-    if (part.criticalLevel > 0 && part.quantity <= part.criticalLevel) {
-      return 'Kritik';
-    } else if (part.quantity <= 5) {
+    if (part.stokAdedi <= 5) {
       return 'Düşük';
     } else {
       return 'Normal';
@@ -292,11 +336,17 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
             const SizedBox(height: 8),
             const Text('Cihaz', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
+            // Responsive cihaz seçimi
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
             TextField(
-              controller: _cihazController,
-              keyboardType: TextInputType.text,
+                      controller: _cihazSearchController,
+                      readOnly: false,
               decoration: InputDecoration(
-                hintText: 'Cihaz seri numarası veya adı',
+                        hintText: 'Model, seri no veya müşteri ile ara...',
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
@@ -304,7 +354,58 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
-              ),
+                        suffixIcon: _selectedCihaz != null
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedCihaz = null;
+                                    _cihazSearchController.clear();
+                                    _showCihazSuggestions = false;
+                                  });
+                                },
+                              )
+                            : null,
+                      ),
+                      onChanged: _filterCihazlar,
+                      onTap: () {
+                        setState(() {
+                          _showCihazSuggestions = true;
+                        });
+                      },
+                    ),
+                    if (_showCihazSuggestions && _filteredCihazlar.isNotEmpty)
+                      Container(
+                        constraints: BoxConstraints(
+                          maxHeight: constraints.maxHeight > 300 ? 300 : constraints.maxHeight * 0.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _filteredCihazlar.length,
+                          itemBuilder: (context, index) {
+                            final cihaz = _filteredCihazlar[index];
+                            return ListTile(
+                              title: Text('${cihaz.modelAdi} (${cihaz.seriNumarasi})'),
+                              subtitle: Text('Müşteri: ${cihaz.musteriBilgisi}'),
+                              onTap: () => _selectCihaz(cihaz),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 18),
             // Fotoğraf ekleme alanı
@@ -390,154 +491,213 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
             ),
             const SizedBox(height: 12),
             // Kullanılan Parça başlığı
-            const Text('Kullanılan Parça', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text('Kullanılan Parçalar', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
-            // Parça Takılmadı checkbox
-            Row(
-              children: [
-                Checkbox(
-                  value: _noPartInstalled,
-                  onChanged: (value) {
-                    setState(() {
-                      _noPartInstalled = value ?? false;
-                      if (_noPartInstalled) {
-                        _selectedPart = null;
-                        _partSearchController.clear();
-                        _showPartSuggestions = false;
-                        _selectedCategory = null;
-                      }
-                    });
-                  },
-                  activeColor: const Color(0xFF23408E),
+            // Parça arama kutusu
+            TextField(
+              controller: _partSearchController,
+              decoration: InputDecoration(
+                hintText: 'Parça adı veya kodu ile ara...',
+                prefixIcon: Icon(Icons.search, color: Color(0xFF23408E)),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
-                const Text('Parça Takılmadı', style: TextStyle(fontSize: 14)),
-              ],
-            ),
-            // Parça seçimi alanı
-            if (!_noPartInstalled) ...[
-              // Kategori seçimi
-              const SizedBox(height: 8),
-              const Text('Kategori Seçin:', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((category) => _CategoryChip(
-                  label: category,
-                  selected: _selectedCategory == category,
-                  icon: _categoryIcons[category] ?? Icons.category,
-                  color: _categoryColors[category] ?? const Color(0xFFB0B6C3),
-                  onTap: () => _selectCategory(category),
-                )).toList(),
+                suffixIcon: _partSearchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Color(0xFF23408E)),
+                        onPressed: () {
+                          setState(() {
+                            _partSearchController.clear();
+                            _filterParts('');
+                          });
+                        },
+                      )
+                    : null,
               ),
-              const SizedBox(height: 12),
-              // Parça listesi
-              if (_selectedCategory != null) ...[
-                // Parça arama kutusu
-                TextField(
-                  controller: _partSearchController,
-                  enabled: !_noPartInstalled,
-                  keyboardType: TextInputType.text,
-                  decoration: InputDecoration(
-                    hintText: '${_selectedCategory} kategorisinde parça ara...',
-                    filled: true,
-                    fillColor: Colors.white,
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onChanged: _filterParts,
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  constraints: const BoxConstraints(maxHeight: 300),
-                  child: _filteredParts.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Center(
-                            child: Text(
-                              'Bu kategoride parça bulunamadı',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _filteredParts.length,
-                          itemBuilder: (context, index) {
-                            final part = _filteredParts[index];
-                            final statusColor = _getStockStatusColor(part);
-                            final statusText = _getStockStatusText(part);
-                            final isSelected = _selectedPart?.code == part.code;
-                            
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFE3F2FD) : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                border: isSelected ? Border.all(color: const Color(0xFF23408E), width: 2) : null,
-                              ),
-                              child: ListTile(
-                                leading: Container(
-                                  width: 12,
-                                  height: 12,
+              onChanged: (val) => _filterParts(val),
+            ),
+            const SizedBox(height: 8),
+            // Modern kart tabanlı çoklu parça seçimi
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      constraints: const BoxConstraints(maxHeight: 320),
+                      child: _filteredParts.isEmpty
+                          ? const Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Center(child: Text('Aradığınız parça bulunamadı', style: TextStyle(color: Colors.grey))),
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: _filteredParts.length,
+                              separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade100),
+                              itemBuilder: (context, index) {
+                                final part = _filteredParts[index];
+                                final selected = _selectedParts.firstWhere(
+                                  (sp) => sp.part.parcaKodu == part.parcaKodu,
+                                  orElse: () => SelectedPart(part: part, adet: 0),
+                                );
+                                final isSelected = selected.adet > 0;
+                                final isOutOfStock = part.stokAdedi == 0;
+                                return AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: statusColor,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                title: Text(
-                                  part.name,
-                                  style: TextStyle(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Kod: ${part.code}'),
-                                    Row(
-                                      children: [
-                                        Text('Stok: ${part.quantity}'),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: statusColor.withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            statusText,
-                                            style: TextStyle(
-                                              color: statusColor,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    color: isOutOfStock
+                                        ? Colors.grey.shade100
+                                        : isSelected
+                                            ? const Color(0xFFE3F6ED)
+                                            : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF43A047)
+                                          : isOutOfStock
+                                              ? Colors.grey.shade300
+                                              : Colors.grey.shade200,
+                                      width: isSelected ? 2 : 1,
                                     ),
-                                  ],
-                                ),
-                                trailing: isSelected 
-                                    ? const Icon(Icons.check_circle, color: Color(0xFF23408E))
-                                    : null,
-                                onTap: () => _selectPart(part),
-                              ),
-                            );
-                          },
+                                    boxShadow: [
+                                      if (isSelected)
+                                        BoxShadow(
+                                          color: const Color(0xFF43A047).withOpacity(0.08),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: isOutOfStock
+                                            ? null
+                                            : () {
+                                                if (isSelected) {
+                                                  _removeSelectedPart(part);
+                                                } else {
+                                                  _addOrUpdateSelectedPart(part, 1);
+                                                }
+                                              },
+                                        child: Container(
+                                          width: 28,
+                                          height: 28,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: isSelected ? const Color(0xFF43A047) : Colors.grey.shade400,
+                                              width: 2,
+                                            ),
+                                            color: isSelected ? const Color(0xFF43A047) : Colors.white,
+                                          ),
+                                          child: isSelected
+                                              ? const Icon(Icons.check, color: Colors.white, size: 18)
+                                              : null,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(part.parcaAdi, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: isOutOfStock ? Colors.grey : Colors.black)),
+                                                if (isOutOfStock)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(left: 8.0),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red.shade100,
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: const Text('Stokta Yok', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade100,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text('Kod: ${part.parcaKodu}', style: const TextStyle(fontSize: 12, color: Color(0xFF23408E))),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade100,
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text('Stok: ${part.stokAdedi}', style: const TextStyle(fontSize: 12, color: Color(0xFF23408E))),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (!isOutOfStock && isSelected)
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.remove_circle_outline, size: 24, color: Color(0xFF23408E)),
+                                              splashRadius: 20,
+                                              onPressed: selected.adet > 1
+                                                  ? () => _addOrUpdateSelectedPart(part, selected.adet - 1)
+                                                  : null,
+                                            ),
+                                            Text('${selected.adet}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                            IconButton(
+                                              icon: const Icon(Icons.add_circle_outline, size: 24, color: Color(0xFF23408E)),
+                                              splashRadius: 20,
+                                              onPressed: part.stokAdedi > selected.adet
+                                                  ? () => _addOrUpdateSelectedPart(part, selected.adet + 1)
+                                                  : null,
+                                            ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    if (_selectedParts.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, left: 2),
+                        child: Wrap(
+                          spacing: 8,
+                          children: _selectedParts.map((sp) => Chip(
+                            label: Text('${sp.part.parcaAdi} x${sp.adet}'),
+                            backgroundColor: const Color(0xFFE3F6ED),
+                            labelStyle: const TextStyle(color: Color(0xFF23408E), fontWeight: FontWeight.w600),
+                            deleteIcon: const Icon(Icons.close, size: 18, color: Color(0xFF23408E)),
+                            onDeleted: () => _removeSelectedPart(sp.part),
+                          )).toList(),
                         ),
-                ),
-              ],
-            ],
+                      ),
+                  ],
+                );
+              },
+            ),
             const SizedBox(height: 12),
             // Açıklama başlığı
             const Text('Açıklama', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),

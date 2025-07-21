@@ -1,30 +1,37 @@
+import 'package:cence_app/models/cihaz.dart';
+import 'package:cence_app/models/stock_part.dart';
+
 class ServiceHistory {
   final String id;
   final DateTime date;
-  final String type;
+  final String cihazId; // Artık Cihaz nesnesine referans
   final String description;
   final String technician;
   final String status;
+  final List<StockPart> kullanilanParcalar; // Kullanılan parçaların listesi
 
   ServiceHistory({
     required this.id,
     required this.date,
-    required this.type,
+    required this.cihazId,
     required this.description,
     required this.technician,
     required this.status,
+    this.kullanilanParcalar = const [],
   });
 
+  // Json işlemleri şimdilik basitleştirildi, ileride detaylandırılacak
   factory ServiceHistory.fromJson(Map<String, dynamic> json) {
     return ServiceHistory(
       id: json['id'] ?? '',
-      date: json['date'] is DateTime
-          ? json['date']
-          : DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
-      type: json['type'] ?? '',
+      date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+      cihazId: json['cihazId'] ?? '',
       description: json['description'] ?? '',
       technician: json['technician'] ?? '',
       status: json['status'] ?? '',
+      kullanilanParcalar: (json['kullanilanParcalar'] as List? ?? [])
+          .map((item) => StockPart.fromJson(item))
+          .toList(),
     );
   }
 
@@ -32,10 +39,11 @@ class ServiceHistory {
     return {
       'id': id,
       'date': date.toIso8601String(),
-      'type': type,
+      'cihazId': cihazId,
       'description': description,
       'technician': technician,
       'status': status,
+      'kullanilanParcalar': kullanilanParcalar.map((p) => p.toJson()).toList(),
     };
   }
 }
@@ -43,7 +51,7 @@ class ServiceHistory {
 abstract class ServiceHistoryRepository {
   Future<List<ServiceHistory>> getAll();
   Future<List<ServiceHistory>> getRecent({int count = 3});
-  // İleride eklenebilecek: getById, add, update, delete vs.
+  Future<void> add(ServiceHistory history);
 }
 
 class MockServiceHistoryRepository implements ServiceHistoryRepository {
@@ -51,15 +59,19 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '1',
       date: DateTime(2024, 3, 15),
-      type: 'Periyodik Bakım',
+      cihazId: 'CIHAZ-001', // Örnek cihaz ID'si
       description: 'Yıllık kalibrasyon ve parça kontrolü yapıldı.',
       technician: 'Ahmet Yılmaz',
-      status: 'Tamamlandı',
+      status: 'Başarılı',
+      kullanilanParcalar: [
+        // Örnek kullanılan parça
+        StockPart(id: '3', parcaAdi: 'Kablo', parcaKodu: '67890', stokAdedi: 1, tedarikci: 'DEF', sonGuncelleme: DateTime.now())
+      ]
     ),
     ServiceHistory(
       id: '2',
       date: DateTime(2024, 2, 28),
-      type: 'Arıza Onarımı',
+      cihazId: 'CIHAZ-002',
       description: 'Güç kaynağı değiştirildi.',
       technician: 'Mehmet Demir',
       status: 'Başarılı',
@@ -67,7 +79,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '3',
       date: DateTime(2024, 1, 10),
-      type: 'Yazılım Güncelleme',
+      cihazId: 'CIHAZ-001',
       description: 'Cihaz yazılımı v2.1.0 sürümüne güncellendi.',
       technician: 'Elif Kaya',
       status: 'Beklemede',
@@ -75,7 +87,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '4',
       date: DateTime(2023, 12, 5),
-      type: 'Periyodik Bakım',
+      cihazId: 'CIHAZ-003',
       description: 'Filtreler değiştirildi, genel temizlik yapıldı.',
       technician: 'Ahmet Yılmaz',
       status: 'Arızalı',
@@ -94,6 +106,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     return _mockList.take(count).toList();
   }
 
+  @override
   Future<void> add(ServiceHistory history) async {
     _mockList.insert(0, history);
   }
