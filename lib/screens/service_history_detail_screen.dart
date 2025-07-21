@@ -56,6 +56,8 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text('İşlem Tipi: ${serviceHistory.cihazId}', style: const TextStyle(fontSize: 16, color: Color(0xFF1C1C1C))),
             const SizedBox(height: 8),
+            Text('Müşteri/Kurum: ${serviceHistory.musteri}', style: const TextStyle(fontSize: 16, color: Color(0xFF23408E), fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
             Text('Açıklama: ${serviceHistory.description}', style: const TextStyle(fontSize: 16, color: Color(0xFF1C1C1C))),
             const SizedBox(height: 8),
             if (serviceHistory.kullanilanParcalar.isNotEmpty)

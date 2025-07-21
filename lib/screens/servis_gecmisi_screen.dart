@@ -169,7 +169,8 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
         _allHistory[idx] = ServiceHistory(
           id: eski.id,
           date: _parseDate(yeni['tarih']),
-          cihazId: 'CIHAZ-001', // Geçici sabit değer, ileride servis formundan alınacak
+          cihazId: yeni['cihaz'] ?? 'CIHAZ-001',
+          musteri: yeni['musteri'] ?? '',
           description: ((yeni['baslik'] ?? '') + (yeni['aciklama'] != null ? ' - ${yeni['aciklama']}' : '')),
           technician: yeni['kisi'] ?? '',
           status: yeni['durum'] ?? '',
@@ -663,6 +664,7 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
   String? aciklama;
   String? kisi;
   String? durum;
+  String? musteri;
   DateTime? tarih;
 
   @override
@@ -674,6 +676,7 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
       aciklama = widget.mevcutKayit!['aciklama'];
       kisi = widget.mevcutKayit!['kisi'];
       durum = widget.mevcutKayit!['durum'];
+      musteri = widget.mevcutKayit!['musteri'];
       tarih = _parseDate(widget.mevcutKayit!['tarih']);
     }
   }
@@ -736,6 +739,12 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
                 onChanged: (v) => kisi = v,
                 validator: (v) => v == null || v.isEmpty ? 'Teknisyen girin' : null,
               ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'Müşteri/Kurum'),
+                initialValue: musteri,
+                onChanged: (v) => musteri = v,
+                validator: (v) => v == null || v.isEmpty ? 'Müşteri/Kurum girin' : null,
+              ),
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Durum'),
                 value: durum,
@@ -785,6 +794,7 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
                 'kisi': kisi,
                 'durum': durum,
                 'cihaz': cihaz,
+                'musteri': musteri,
               });
             }
           },

@@ -53,7 +53,6 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
     final parcaAdiCtrl = TextEditingController();
     final parcaKoduCtrl = TextEditingController();
     final stokAdediCtrl = TextEditingController();
-    final tedarikciCtrl = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -91,11 +90,6 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                       return null;
                     },
                     ),
-                    TextFormField(
-                    controller: tedarikciCtrl,
-                    decoration: const InputDecoration(labelText: 'Tedarikçi'),
-                    validator: (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                    ),
                     const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () async {
@@ -105,8 +99,6 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                           parcaAdi: parcaAdiCtrl.text,
                           parcaKodu: parcaKoduCtrl.text,
                           stokAdedi: int.parse(stokAdediCtrl.text),
-                          tedarikci: tedarikciCtrl.text,
-                          sonGuncelleme: DateTime.now(),
                         );
                               setState(() {
                           _parcaListesi.insert(0, yeniParca);
@@ -130,8 +122,6 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
     final _formKey = GlobalKey<FormState>();
     final modelAdiCtrl = TextEditingController();
     final seriNoCtrl = TextEditingController();
-    final musteriCtrl = TextEditingController();
-    DateTime kurulumTarihi = DateTime.now();
 
     showModalBottomSheet(
       context: context,
@@ -160,30 +150,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                       decoration: const InputDecoration(labelText: 'Seri Numarası'),
                       validator: (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
                       ),
-                      TextFormField(
-                      controller: musteriCtrl,
-                      decoration: const InputDecoration(labelText: 'Müşteri Bilgisi'),
-                      validator: (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                      ),
-                    const SizedBox(height: 16),
-                    ListTile(
-                      title: Text('Kurulum Tarihi: ${DateFormat('dd/MM/yyyy').format(kurulumTarihi)}'),
-                      trailing: const Icon(Icons.calendar_today),
-                        onTap: () async {
-                        final pickedDate = await showDatePicker(
-                            context: context,
-                          initialDate: kurulumTarihi,
-                            firstDate: DateTime(2000),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
-                        );
-                        if (pickedDate != null) {
-                          setModalState(() {
-                            kurulumTarihi = pickedDate;
-                          });
-                        }
-                      },
-                      ),
-                      const SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () async {
                             if (_formKey.currentState!.validate()) {
@@ -191,8 +158,6 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                             id: 'CIHAZ-${DateTime.now().millisecondsSinceEpoch}',
                             modelAdi: modelAdiCtrl.text,
                             seriNumarasi: seriNoCtrl.text,
-                            musteriBilgisi: musteriCtrl.text,
-                            kurulumTarihi: kurulumTarihi,
                           );
                               setState(() {
                              _cihazListesi.insert(0, yeniCihaz);
@@ -312,7 +277,6 @@ class _StockPartDetailModalState extends State<_StockPartDetailModal> {
             const SizedBox(height: 12),
             Text('Adı: ${widget.part.parcaAdi}', style: const TextStyle(fontWeight: FontWeight.bold)),
             Text('Kod: ${widget.part.parcaKodu}'),
-            Text('Tedarikçi: ${widget.part.tedarikci}'),
             Text('Stok: ${widget.part.stokAdedi}'),
             const SizedBox(height: 18),
             Text('Kullanıldığı Servisler:', style: Theme.of(context).textTheme.titleMedium),
@@ -433,7 +397,7 @@ class _YedekParcaListesiState extends State<YedekParcaListesi> {
                   child: ListTile(
                     onTap: () => widget.onTap(part),
                     title: Text(part.parcaAdi, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Kod: ${part.parcaKodu}\nTedarikçi: ${part.tedarikci}'),
+                    subtitle: Text('Kod: ${part.parcaKodu}'),
                     trailing: Text('Stok: ${part.stokAdedi}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     isThreeLine: true,
                   ),
@@ -471,8 +435,7 @@ class _CizhazListesiState extends State<CihazListesi> {
     if (search.isNotEmpty) {
       cihazlar = cihazlar.where((c) =>
         c.modelAdi.toLowerCase().contains(search.toLowerCase()) ||
-        c.seriNumarasi.toLowerCase().contains(search.toLowerCase()) ||
-        c.musteriBilgisi.toLowerCase().contains(search.toLowerCase())
+        c.seriNumarasi.toLowerCase().contains(search.toLowerCase())
       ).toList();
     }
     return cihazlar;
@@ -514,7 +477,7 @@ class _CizhazListesiState extends State<CihazListesi> {
                   child: ListTile(
                     leading: const Icon(Icons.devices_other, color: Color(0xFF23408E)),
                     title: Text(cihaz.modelAdi, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Seri No: ${cihaz.seriNumarasi}\nMüşteri: ${cihaz.musteriBilgisi}'),
+                    subtitle: Text('Seri No: ${cihaz.seriNumarasi}'),
                     isThreeLine: true,
                   ),
                 );

@@ -57,6 +57,7 @@ class _HomePageState extends State<HomePage> {
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: result['tarih'] ?? DateTime.now(),
         cihazId: result['cihazId'] ?? 'CIHAZ-001',
+        musteri: result['musteri'] ?? '',
         description: result['aciklama'] ?? '',
         technician: result['teknisyen'] ?? '',
         status: status,
@@ -65,8 +66,6 @@ class _HomePageState extends State<HomePage> {
           parcaAdi: p['parcaAdi'] ?? '',
           parcaKodu: p['parcaKodu'] ?? '',
           stokAdedi: p['adet'] ?? 1,
-          tedarikci: '',
-          sonGuncelleme: DateTime.now(),
         )).toList() ?? [],
       );
       await _repository.add(newHistory);

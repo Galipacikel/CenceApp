@@ -24,6 +24,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
   final TextEditingController _cihazController = TextEditingController();
   final TextEditingController _teknisyenController = TextEditingController();
   final TextEditingController _aciklamaController = TextEditingController();
+  final TextEditingController _musteriController = TextEditingController();
   DateTime? _tarih;
   late TextEditingController _tarihController;
   File? _pickedImage;
@@ -80,6 +81,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     _aciklamaController.dispose();
     _tarihController.dispose();
     _partSearchController.dispose();
+    _musteriController.dispose();
     super.dispose();
   }
 
@@ -106,14 +108,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
       _partSearchController.clear();
       _showPartSuggestions = false;
       
-      // Kategoriye göre parçaları filtrele
-      if (category == 'Tüm Parçalar') {
-        _filteredParts = _allParts;
-      } else {
-        _filteredParts = _allParts.where((part) => 
-          (part.tedarikci ?? 'Diğer') == category
-        ).toList();
-      }
+      _filteredParts = _allParts;
       _filteredParts.sort((a, b) {
         return a.parcaAdi.compareTo(b.parcaAdi);
       });
@@ -122,15 +117,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
 
   void _filterParts(String query) {
     setState(() {
-      List<StockPart> baseParts;
-      
-      if (_selectedCategory == null || _selectedCategory == 'Tüm Parçalar') {
-        baseParts = _allParts;
-      } else {
-        baseParts = _allParts.where((part) => 
-          (part.tedarikci ?? 'Diğer') == _selectedCategory
-        ).toList();
-      }
+      List<StockPart> baseParts = _allParts;
       
       if (query.isEmpty) {
         _filteredParts = baseParts;
@@ -153,8 +140,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
       } else {
         _filteredCihazlar = _allCihazlar.where((cihaz) =>
           cihaz.modelAdi.toLowerCase().contains(query.toLowerCase()) ||
-          cihaz.seriNumarasi.toLowerCase().contains(query.toLowerCase()) ||
-          cihaz.musteriBilgisi.toLowerCase().contains(query.toLowerCase())
+          cihaz.seriNumarasi.toLowerCase().contains(query.toLowerCase())
         ).toList();
       }
       _showCihazSuggestions = true;
@@ -241,6 +227,12 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
       );
       return;
     }
+    if (_musteriController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen müşteri/kurum adını girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+      );
+      return;
+    }
     if (_tarih == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen bir tarih seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
@@ -273,6 +265,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     Navigator.pop(context, {
       'formTipi': _formTipi,
       'cihazId': _selectedCihaz!.id,
+      'musteri': _musteriController.text,
       'teknisyen': _teknisyenController.text,
       'aciklama': _aciklamaController.text,
       'tarih': _tarih,
@@ -415,7 +408,6 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                             final cihaz = _filteredCihazlar[index];
                             return ListTile(
                               title: Text('${cihaz.modelAdi} (${cihaz.seriNumarasi})'),
-                              subtitle: Text('Müşteri: ${cihaz.musteriBilgisi}'),
                               onTap: () => _selectCihaz(cihaz),
                             );
                           },
@@ -424,6 +416,23 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                   ],
                 );
               },
+            ),
+            const SizedBox(height: 22),
+            const Text('Müşteri/Kurum Bilgisi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _musteriController,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                hintText: 'Müşteri veya kurum adını girin',
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
             const SizedBox(height: 18),
             // Fotoğraf ekleme alanı

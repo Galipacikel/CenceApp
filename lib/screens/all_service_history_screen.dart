@@ -123,6 +123,7 @@ class AllServiceHistoryScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Tarih: ${dateFormat.format(item.date)}', style: const TextStyle(fontSize: 13, color: Color(0xFF23408E))),
+                      Text('Müşteri/Kurum: ${item.musteri}', style: const TextStyle(fontSize: 13, color: Color(0xFF23408E), fontWeight: FontWeight.w600)),
                       Text('Teknisyen: ${item.technician}', style: const TextStyle(fontSize: 13, color: Color(0xFF23408E))),
                     ],
                   ),
