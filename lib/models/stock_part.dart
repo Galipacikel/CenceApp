@@ -44,6 +44,14 @@ abstract class StockPartRepository {
 }
 
 class MockStockRepository implements StockPartRepository {
+  static final MockStockRepository _instance = MockStockRepository._internal();
+
+  factory MockStockRepository() {
+    return _instance;
+  }
+
+  MockStockRepository._internal();
+
   final List<StockPart> _mockList = [
     StockPart(
        id: '1',
@@ -98,15 +106,10 @@ class MockStockRepository implements StockPartRepository {
      final index = _mockList.indexWhere((part) => part.parcaKodu == partCode);
     if (index != -1) {
       final part = _mockList[index];
-       final newQuantity = (part.stokAdedi - amount).clamp(0, part.stokAdedi);
-      _mockList[index] = StockPart(
-          id: part.id,
-          parcaAdi: part.parcaAdi,
-          parcaKodu: part.parcaKodu,
-          stokAdedi: newQuantity,
-          tedarikci: part.tedarikci,
-          sonGuncelleme: DateTime.now(),
-      );
+      if (part.stokAdedi >= amount) {
+        part.stokAdedi -= amount;
+      }
     }
+    await Future.delayed(const Duration(milliseconds: 50));
   }
 } 

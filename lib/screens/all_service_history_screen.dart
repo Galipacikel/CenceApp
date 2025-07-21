@@ -38,18 +38,27 @@ class AllServiceHistoryScreen extends StatelessWidget {
   Color getStatusBgColor(String status) {
     switch (status) {
       case 'Başarılı':
-        return const Color(0xFF43A047);
+        return Colors.blue.shade100;
       case 'Beklemede':
-        return Color(0xFFFFD600); // Canlı sarı
+        return Colors.amber.shade200;
       case 'Arızalı':
-        return const Color(0xFFE53935); // Kırmızı
+        return Colors.red.shade100;
       default:
-        return const Color(0xFF23408E);
+        return Colors.grey.shade200;
     }
   }
 
   Color getStatusTextColor(String status) {
-    return Colors.white;
+    switch (status) {
+      case 'Başarılı':
+        return Colors.blue.shade800;
+      case 'Beklemede':
+        return Colors.amber.shade800;
+      case 'Arızalı':
+        return Colors.red.shade800;
+      default:
+        return Colors.grey.shade800;
+    }
   }
 
   IconData getStatusIcon(String status) {
@@ -108,7 +117,7 @@ class AllServiceHistoryScreen extends StatelessWidget {
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-                  leading: Icon(statusIcon, color: const Color(0xFF23408E), size: 32),
+                  leading: Icon(statusIcon, color: getStatusTextColor(item.status), size: 32),
                   title: Text('${item.cihazId} - ${item.description}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1C1C1C))),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

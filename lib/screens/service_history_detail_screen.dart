@@ -6,42 +6,43 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
   final ServiceHistory serviceHistory;
   const ServiceHistoryDetailScreen({Key? key, required this.serviceHistory}) : super(key: key);
 
-  String getStatusLabel(String status) {
+  Map<String, dynamic> getStatusData(String status) {
     switch (status) {
       case 'Başarılı':
-        return 'Başarılı';
+        return {
+          'label': 'Başarılı',
+          'color': Colors.blue.shade800,
+          'bgColor': Colors.blue.shade100,
+          'icon': Icons.check_circle_rounded,
+        };
       case 'Beklemede':
-        return 'Beklemede';
+        return {
+          'label': 'Beklemede',
+          'color': Colors.amber.shade800,
+          'bgColor': Colors.amber.shade200,
+          'icon': Icons.hourglass_bottom_rounded,
+        };
       case 'Arızalı':
-        return 'Arızalı';
+        return {
+          'label': 'Arızalı',
+          'color': Colors.red.shade800,
+          'bgColor': Colors.red.shade100,
+          'icon': Icons.error_rounded,
+        };
       default:
-        return status;
+        return {
+          'label': status,
+          'color': Colors.grey.shade800,
+          'bgColor': Colors.grey.shade200,
+          'icon': Icons.info_outline_rounded,
+        };
     }
-  }
-
-  Color getStatusBgColor(String status) {
-    switch (status) {
-      case 'Başarılı':
-        return const Color(0xFF43A047); // Yeşil
-      case 'Beklemede':
-        return const Color(0xFFFFC107); // Modern sarı
-      case 'Arızalı':
-        return const Color(0xFFE53935); // Kırmızı
-      default:
-        return const Color(0xFF43A047);
-    }
-  }
-
-  Color getStatusTextColor(String status) {
-    return Colors.white;
   }
 
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd MMMM yyyy', 'tr_TR');
-    final statusLabel = getStatusLabel(serviceHistory.status);
-    final statusBgColor = getStatusBgColor(serviceHistory.status);
-    final statusTextColor = getStatusTextColor(serviceHistory.status);
+    final statusData = getStatusData(serviceHistory.status);
     return Scaffold(
       appBar: AppBar(
         title: const Text('İşlem Detayı'),
@@ -81,10 +82,16 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
-                    color: statusBgColor,
+                    color: statusData['bgColor'],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(statusLabel, style: TextStyle(color: statusTextColor, fontWeight: FontWeight.bold, fontSize: 14)),
+                  child: Row(
+                    children: [
+                      Icon(statusData['icon'], color: statusData['color'], size: 20),
+                      const SizedBox(width: 6),
+                      Text(statusData['label'], style: TextStyle(color: statusData['color'], fontWeight: FontWeight.bold, fontSize: 14)),
+                    ],
+                  ),
                 ),
               ],
             ),

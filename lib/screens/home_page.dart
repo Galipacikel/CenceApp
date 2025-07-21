@@ -466,30 +466,30 @@ class _ModernServiceCard extends StatelessWidget {
       case 'Başarılı':
         return {
           'label': 'Başarılı',
-          'color': Colors.white,
-          'bgColor': const Color(0xFF43A047),
-          'icon': Icons.check_circle_outline,
+          'color': Colors.blue.shade800,
+          'bgColor': Colors.blue.shade100,
+          'icon': Icons.check_circle_rounded,
         };
       case 'Beklemede':
         return {
           'label': 'Beklemede',
-          'color': Colors.white,
-          'bgColor': Color(0xFFFFD600), // Canlı sarı
-          'icon': Icons.hourglass_bottom_outlined,
+          'color': Colors.amber.shade800,
+          'bgColor': Colors.amber.shade200,
+          'icon': Icons.hourglass_bottom_rounded,
         };
       case 'Arızalı':
         return {
           'label': 'Arızalı',
-          'color': Colors.white,
-          'bgColor': const Color(0xFFE53935), // Kırmızı
-          'icon': Icons.error_outline,
+          'color': Colors.red.shade800,
+          'bgColor': Colors.red.shade100,
+          'icon': Icons.error_rounded,
         };
       default:
         return {
           'label': item.status,
-          'color': Colors.white,
-          'bgColor': const Color(0xFF23408E),
-          'icon': Icons.info_outline,
+          'color': Colors.grey.shade800,
+          'bgColor': Colors.grey.shade200,
+          'icon': Icons.info_outline_rounded,
         };
     }
   }
@@ -533,7 +533,7 @@ class _ModernServiceCard extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             leading: Icon(
               statusData['icon'],
-              color: statusData['bgColor'],
+              color: statusData['color'],
               size: 32,
             ),
             title: Text(

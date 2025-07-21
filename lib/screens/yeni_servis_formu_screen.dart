@@ -235,9 +235,27 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
   }
 
   void _onKaydet() async {
-    if (_selectedCihaz == null || _teknisyenController.text.isEmpty || _aciklamaController.text.isEmpty || _tarih == null) {
+    if (_selectedCihaz == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen tüm alanları doldurun.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Lütfen bir cihaz seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+    if (_tarih == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen bir tarih seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+    if (_teknisyenController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen teknisyen adını girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+    if (_aciklamaController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen bir açıklama girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }

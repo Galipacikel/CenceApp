@@ -5,10 +5,7 @@ import '../models/cihaz.dart'; // Yeni Cihaz modelini import ediyoruz
 import '../models/service_history.dart';
 
 class StokTakibiScreen extends StatefulWidget {
-  final StockPartRepository? stockRepository;
-  final CihazRepository? cihazRepository;
-  final ServiceHistoryRepository? serviceHistoryRepository;
-  const StokTakibiScreen({Key? key, this.stockRepository, this.cihazRepository, this.serviceHistoryRepository}) : super(key: key);
+  const StokTakibiScreen({Key? key}) : super(key: key);
 
   @override
   State<StokTakibiScreen> createState() => _StokTakibiScreenState();
@@ -18,21 +15,31 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
   late TabController _tabController;
   List<Cihaz> _cihazListesi = [];
   List<StockPart> _parcaListesi = [];
+  
+  final CihazRepository _cihazRepository = MockCihazRepository();
+  final StockPartRepository _stockRepository = MockStockRepository();
+  final ServiceHistoryRepository _serviceHistoryRepository = MockServiceHistoryRepository();
+
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() { 
+      setState(() {});
+    });
     _loadData();
     }
 
   Future<void> _loadData() async {
-    final cihazlar = await (widget.cihazRepository ?? MockCihazRepository()).getAll();
-    final parcalar = await (widget.stockRepository ?? MockStockRepository()).getAll();
-    setState(() {
-      _cihazListesi = cihazlar;
-      _parcaListesi = parcalar;
-    });
+    final cihazlar = await _cihazRepository.getAll();
+    final parcalar = await _stockRepository.getAll();
+    if (mounted) {
+      setState(() {
+        _cihazListesi = cihazlar;
+        _parcaListesi = parcalar;
+      });
+    }
   }
 
   @override
@@ -236,6 +243,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
           YedekParcaListesi(
             key: ValueKey(_parcaListesi.length),
             parcaListesi: _parcaListesi,
+            onTap: (part) => showStockPartDetailModal(context, part, _serviceHistoryRepository),
                   ),
           CihazListesi(
             key: ValueKey(_cihazListesi.length),
@@ -360,7 +368,8 @@ class _StockPartDetailModalState extends State<_StockPartDetailModal> {
 
 class YedekParcaListesi extends StatefulWidget {
   final List<StockPart> parcaListesi;
-  const YedekParcaListesi({Key? key, required this.parcaListesi}) : super(key: key);
+  final Function(StockPart) onTap;
+  const YedekParcaListesi({Key? key, required this.parcaListesi, required this.onTap}) : super(key: key);
 
   @override
   _YedekParcaListesiState createState() => _YedekParcaListesiState();
@@ -422,6 +431,7 @@ class _YedekParcaListesiState extends State<YedekParcaListesi> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 2,
                   child: ListTile(
+                    onTap: () => widget.onTap(part),
                     title: Text(part.parcaAdi, style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('Kod: ${part.parcaKodu}\nTedarikçi: ${part.tedarikci}'),
                     trailing: Text('Stok: ${part.stokAdedi}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
