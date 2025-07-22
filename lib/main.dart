@@ -7,6 +7,8 @@ import 'providers/app_state_provider.dart';
 import 'screens/home_page.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'providers/stock_provider.dart';
+import 'providers/service_history_provider.dart';
+import 'models/service_history.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,25 +27,35 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
         ChangeNotifierProvider(create: (_) => StockProvider()),
+        ChangeNotifierProvider(create: (_) => ServiceHistoryProvider()),
       ],
-      child: Consumer<AppStateProvider>(
-        builder: (context, appState, _) {
-          return MaterialApp(
-            title: 'Cence App',
-            theme: ThemeData.light(),
-            darkTheme: ThemeData.dark(),
-            themeMode: appState.appSettings.themeMode,
-            home: const LoginScreen(),
-            debugShowCheckedModeBanner: false,
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [
-              Locale('tr', 'TR'),
-              Locale('en', 'US'),
-            ],
+      child: Builder(
+        builder: (context) {
+          // Mock veriyi provider'a yükle
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            final mockList = await MockServiceHistoryRepository().getAll();
+            Provider.of<ServiceHistoryProvider>(context, listen: false).loadMockData(mockList);
+          });
+          return Consumer<AppStateProvider>(
+            builder: (context, appState, _) {
+              return MaterialApp(
+                title: 'Cence App',
+                theme: ThemeData.light(),
+                darkTheme: ThemeData.dark(),
+                themeMode: appState.appSettings.themeMode,
+                home: const LoginScreen(),
+                debugShowCheckedModeBanner: false,
+                localizationsDelegates: const [
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [
+                  Locale('tr', 'TR'),
+                  Locale('en', 'US'),
+                ],
+              );
+            },
           );
         },
       ),

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/service_history.dart';
+import 'package:provider/provider.dart';
+import '../providers/service_history_provider.dart';
 
 class ServisGecmisiScreen extends StatefulWidget {
-  final ServiceHistoryRepository repository;
-  ServisGecmisiScreen({Key? key, ServiceHistoryRepository? repository})
-      : repository = repository ?? MockServiceHistoryRepository(),
-        super(key: key);
+  // final ServiceHistoryRepository repository;
+  // ServisGecmisiScreen({Key? key, ServiceHistoryRepository? repository})
+  //     : repository = repository ?? MockServiceHistoryRepository(),
+  //       super(key: key);
+  ServisGecmisiScreen({Key? key}) : super(key: key);
 
   @override
   State<ServisGecmisiScreen> createState() => _ServisGecmisiScreenState();
@@ -18,16 +21,19 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
   String searchText = '';
   final TextEditingController _searchController = TextEditingController();
 
-  late Future<List<ServiceHistory>> _futureHistory;
-  List<ServiceHistory> _allHistory = [];
+  // late Future<List<ServiceHistory>> _futureHistory;
+  // List<ServiceHistory> _allHistory = [];
 
   @override
   void initState() {
     super.initState();
-    _futureHistory = widget.repository.getAll();
+    // _futureHistory = widget.repository.getAll();
   }
 
-  List<String> get deviceList => _allHistory.map((k) => k.deviceId).toSet().toList();
+  List<String> get deviceList {
+    final allHistory = Provider.of<ServiceHistoryProvider>(context, listen: false).all;
+    return allHistory.map((k) => k.deviceId).toSet().toList();
+  }
 
   List<String> get filteredDevices {
     if (searchText.isEmpty) return deviceList;
@@ -35,7 +41,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
   }
 
   List<ServiceHistory> get filteredHistory {
-    List<ServiceHistory> list = List.from(_allHistory);
+    List<ServiceHistory> list = List.from(Provider.of<ServiceHistoryProvider>(context).all);
     if (selectedStatus != null) {
       list = list.where((k) => k.status == selectedStatus).toList();
     }
@@ -91,10 +97,10 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                     selected: selectedDevice == null,
                     onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': null}),
                   ),
-                  ..._allHistory.map((k) => FilterChip(
-                    label: Text(k.deviceId),
-                    selected: selectedDevice == k.deviceId,
-                    onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': k.deviceId}),
+                  ...deviceList.map((c) => FilterChip(
+                    label: Text(c),
+                    selected: selectedDevice == c,
+                    onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': c}),
                   )),
                 ],
               ),
@@ -164,23 +170,23 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
 
   void guncelleKayit(ServiceHistory eski, Map<String, dynamic> yeni) {
     setState(() {
-      final idx = _allHistory.indexOf(eski);
+      final idx = Provider.of<ServiceHistoryProvider>(context, listen: false).all.indexOf(eski);
       if (idx != -1) {
-        _allHistory[idx] = ServiceHistory(
-          id: eski.id,
-          date: _parseDate(yeni['tarih']),
-          deviceId: yeni['cihaz'] ?? 'CIHAZ-001',
-          musteri: yeni['musteri'] ?? '',
-          description: ((yeni['baslik'] ?? '') + (yeni['aciklama'] != null ? ' - ${yeni['aciklama']}' : '')),
-          technician: yeni['kisi'] ?? '',
-          status: yeni['durum'] ?? '',
-        );
+        Provider.of<ServiceHistoryProvider>(context, listen: false).update(idx, {
+          'tarih': _parseDate(yeni['tarih']),
+          'cihaz': yeni['cihaz'] ?? 'CIHAZ-001',
+          'musteri': yeni['musteri'] ?? '',
+          'baslik': yeni['baslik'] ?? '',
+          'aciklama': yeni['aciklama'] != null ? ' - ${yeni['aciklama']}' : '',
+          'kisi': yeni['kisi'] ?? '',
+          'durum': yeni['durum'] ?? '',
+        });
       }
     });
   }
   void silKayit(ServiceHistory kayit) {
     setState(() {
-      _allHistory.remove(kayit);
+      Provider.of<ServiceHistoryProvider>(context, listen: false).delete(kayit.id);
     });
   }
 
@@ -217,18 +223,11 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
         ),
         centerTitle: true,
       ),
-      body: FutureBuilder<List<ServiceHistory>>(
-        future: _futureHistory,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      body: Consumer<ServiceHistoryProvider>(
+        builder: (context, provider, _) {
+          final allHistory = provider.all;
+          if (allHistory.isEmpty) {
             return const Center(child: Text('Kayıt bulunamadı.'));
-          }
-          // Only set _allHistory if it's empty, to avoid overwriting user changes
-          if (_allHistory.isEmpty) {
-            _allHistory = snapshot.data!;
           }
           return SingleChildScrollView(
             padding: EdgeInsets.symmetric(
@@ -371,7 +370,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                           ],
                         ),
                       )
-                    : _ServisKayitListesi(kayitlar: filteredHistory),
+                    : _ServisKayitListesi(kayitlar: filteredHistory, deviceList: deviceList),
               ],
             ),
           );
@@ -383,19 +382,21 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
 
 class _ServisKayitListesi extends StatelessWidget {
   final List<ServiceHistory> kayitlar;
-  const _ServisKayitListesi({required this.kayitlar, Key? key}) : super(key: key);
+  final List<String> deviceList;
+  const _ServisKayitListesi({required this.kayitlar, required this.deviceList, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: kayitlar.map((k) => _ServisKayitCard(kayit: k)).toList(),
+      children: kayitlar.map((k) => _ServisKayitCard(kayit: k, deviceList: deviceList)).toList(),
     );
   }
 }
 
 class _ServisKayitCard extends StatelessWidget {
   final ServiceHistory kayit;
-  const _ServisKayitCard({required this.kayit, Key? key}) : super(key: key);
+  final List<String> deviceList;
+  const _ServisKayitCard({required this.kayit, required this.deviceList, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -435,12 +436,12 @@ class _ServisKayitCard extends StatelessWidget {
                   final guncelKayit = await showDialog<Map<String, dynamic>>(
                     context: context,
                     builder: (ctx) => YeniKayitDialog(
-                      cihazlar: parentState.deviceList,
+                      cihazlar: deviceList,
                       mevcutKayit: kayit.toJson(),
                     ),
                   );
                   if (guncelKayit != null) {
-                    parentState.guncelleKayit(kayit, guncelKayit);
+                    parentState?.guncelleKayit(kayit, guncelKayit);
                   }
                 },
               ),
@@ -466,7 +467,7 @@ class _ServisKayitCard extends StatelessWidget {
                     ),
                   );
                   if (onay == true) {
-                    parentState.silKayit(kayit);
+                    parentState?.silKayit(kayit);
                   }
                 },
               ),

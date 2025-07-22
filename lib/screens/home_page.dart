@@ -12,6 +12,8 @@ import 'all_service_history_screen.dart';
 import 'service_history_detail_screen.dart';
 import '../models/service_history.dart';
 import '../models/stock_part.dart';
+import 'package:provider/provider.dart';
+import '../providers/service_history_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -22,21 +24,21 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  final MockServiceHistoryRepository _repository = MockServiceHistoryRepository();
-  List<ServiceHistory> _serviceHistoryList = [];
+  // final MockServiceHistoryRepository _repository = MockServiceHistoryRepository();
+  // List<ServiceHistory> _serviceHistoryList = [];
 
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    // _loadHistory();
   }
 
-  Future<void> _loadHistory() async {
-    final all = await _repository.getAll();
-    setState(() {
-      _serviceHistoryList = all;
-    });
-  }
+  // Future<void> _loadHistory() async {
+  //   final all = await _repository.getAll();
+  //   setState(() {
+  //     _serviceHistoryList = all;
+  //   });
+  // }
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {
     final result = await Navigator.of(context).push(
@@ -44,33 +46,25 @@ class _HomePageState extends State<HomePage> {
     );
     if (result != null && result is Map<String, dynamic>) {
       final int formTipi = result['formTipi'] ?? 0;
-      String type = 'Kurulum';
       String status = 'Başarılı';
-      if (formTipi == 1) {
-        type = 'Bakım';
-        status = 'Başarılı';
-      } else if (formTipi == 2) {
-        type = 'Arıza';
-        status = 'Arızalı';
-      }
+      if (formTipi == 2) status = 'Arızalı';
       final newHistory = ServiceHistory(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        date: result['tarih'] ?? DateTime.now(),
-        deviceId: result['cihazId'] ?? 'CIHAZ-001',
-        musteri: result['musteri'] ?? '',
-        description: result['aciklama'] ?? '',
-        technician: result['teknisyen'] ?? '',
+        date: result['date'] ?? DateTime.now(),
+        deviceId: result['deviceId'] ?? '',
+        musteri: result['customer'] ?? '',
+        description: result['description'] ?? '',
+        technician: result['technician'] ?? '',
         status: status,
-        kullanilanParcalar: (result['kullanilanParcalar'] as List?)?.map((p) => StockPart(
-          id: p['parcaKodu'] ?? '',
-          parcaAdi: p['parcaAdi'] ?? '',
-          parcaKodu: p['parcaKodu'] ?? '',
-          stokAdedi: p['adet'] ?? 1,
+        kullanilanParcalar: (result['usedParts'] as List?)?.map((p) => StockPart(
+          id: p['partCode'] ?? '',
+          parcaAdi: p['partName'] ?? '',
+          parcaKodu: p['partCode'] ?? '',
+          stokAdedi: p['quantity'] ?? 1,
           criticalLevel: 5,
         )).toList() ?? [],
       );
-      await _repository.add(newHistory);
-      await _loadHistory();
+      Provider.of<ServiceHistoryProvider>(context, listen: false).addServiceHistory(newHistory);
     }
   }
 
@@ -147,6 +141,7 @@ class _HomePageState extends State<HomePage> {
     final gridCrossAxisCount = width > 1100 ? 5 : width > 800 ? 4 : isWide ? 3 : 2;
     final gridSpacing = isWide ? 24.0 : 12.0;
     final iconColor = const Color(0xFF23408E);
+    final serviceHistoryList = Provider.of<ServiceHistoryProvider>(context).all;
     return Container(
       color: const Color(0xFFF5F6FA),
       child: SingleChildScrollView(
@@ -193,7 +188,7 @@ class _HomePageState extends State<HomePage> {
                     iconSize: cardIconSize,
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => ServisGecmisiScreen(repository: _repository)),
+                        MaterialPageRoute(builder: (_) => ServisGecmisiScreen()),
                       );
                     },
                     iconColor: iconColor,
@@ -225,7 +220,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => AllServiceHistoryScreen(repository: _repository)),
+                      MaterialPageRoute(builder: (_) => AllServiceHistoryScreen()),
                     );
                   },
                   child: const Text('Tümünü Gör'),
@@ -233,11 +228,11 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 18),
-            if (_serviceHistoryList.isEmpty)
+            if (serviceHistoryList.isEmpty)
               const _ModernServiceHistoryCard()
             else
               Column(
-                children: _serviceHistoryList
+                children: serviceHistoryList
                     .take(3)
                     .map((item) => _ModernServiceCard(item: item))
                     .toList(),
