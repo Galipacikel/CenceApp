@@ -14,6 +14,7 @@ import '../models/service_history.dart';
 import '../models/stock_part.dart';
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -74,48 +75,98 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isWide ? 100 : 80),
+        preferredSize: Size.fromHeight(isWide ? 90 : 70),
         child: Container(
-          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F6FA),
+            border: const Border(
+              bottom: BorderSide(color: Color(0xFF23408E), width: 1.2),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Color(0x11000000),
+                color: const Color(0xFF23408E).withOpacity(0.07),
                 blurRadius: 8,
-                offset: Offset(0, 2),
+                offset: const Offset(0, 2),
               ),
             ],
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + (isWide ? 10 : 6),
+            left: isWide ? 32 : 18,
+            right: isWide ? 32 : 18,
+            bottom: isWide ? 12 : 8,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(width: 18),
-              // Modern logo (CustomPaint veya SVG)
-              _CenceLogo(height: isWide ? 44 : 36),
-              const SizedBox(width: 12),
-              // Cence yazısı (renkli TextSpan)
+              // Modern medical cross + Cence logo
+              Container(
+                width: isWide ? 44 : 36,
+                height: isWide ? 44 : 36,
+                margin: const EdgeInsets.only(right: 12),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Blue circle background
+                    Container(
+                      width: isWide ? 44 : 36,
+                      height: isWide ? 44 : 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF23408E).withOpacity(0.09),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    // Medical cross
+                    Positioned(
+                      left: (isWide ? 22 : 18) - 7,
+                      top: (isWide ? 22 : 18) - 13,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: const Color(0xFF23408E), width: 2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Center(
+                          child: Icon(Icons.add, size: 12, color: const Color(0xFF23408E)),
+                        ),
+                      ),
+                    ),
+                    // Stylized C
+                    Positioned(
+                      left: 0,
+                      child: Text(
+                        'C',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.bold,
+                          fontSize: isWide ? 32 : 26,
+                          color: const Color(0xFF23408E),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Cence Medikal yazısı
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   RichText(
-                    text: const TextSpan(
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, fontFamily: 'Montserrat'),
-                      children: [
-                        TextSpan(text: 'Ce', style: TextStyle(color: Color(0xFF1C1C1C))),
+                    text: TextSpan(
+                      style: GoogleFonts.montserrat(fontSize: isWide ? 26 : 20, fontWeight: FontWeight.bold),
+                      children: const [
+                        TextSpan(text: 'Ce', style: TextStyle(color: Color(0xFF23408E))),
                         TextSpan(text: 'n', style: TextStyle(color: Color(0xFFE53935))),
-                        TextSpan(text: 'ce', style: TextStyle(color: Color(0xFF1C1C1C))),
+                        TextSpan(text: 'ce', style: TextStyle(color: Color(0xFF23408E))),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  const Text('Medikal', style: TextStyle(fontSize: 14, color: Color(0xFF1C1C1C), fontWeight: FontWeight.w500, letterSpacing: 0.5)),
+                  Text('Medikal', style: GoogleFonts.montserrat(fontSize: isWide ? 15 : 12, color: Color(0xFF23408E), fontWeight: FontWeight.w500)),
                 ],
               ),
               const Spacer(),
-              // (Profil veya ayarlar butonu istenmiyor)
-              const SizedBox(width: 18),
             ],
           ),
         ),
