@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({Key? key}) : super(key: key);
@@ -12,60 +13,65 @@ class ProfileEditScreen extends StatefulWidget {
 }
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
+  File? _profileImage;
   final _formKey = GlobalKey<FormState>();
-  late String _name;
-  late String _surname;
-  late String _title;
-  String? _profileImagePath;
+  late TextEditingController _nameController;
+  late TextEditingController _surnameController;
+  late TextEditingController _titleController;
 
   @override
   void initState() {
     super.initState();
     final user = Provider.of<AppStateProvider>(context, listen: false).userProfile;
-    _name = user.name;
-    _surname = user.surname;
-    _title = user.title;
-    _profileImagePath = user.profileImagePath;
+    _nameController = TextEditingController(text: capitalizeEachWord(user.name));
+    _surnameController = TextEditingController(text: capitalizeEachWord(user.surname));
+    _titleController = TextEditingController(text: capitalizeEachWord(user.title));
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _surnameController.dispose();
+    _titleController.dispose();
+    super.dispose();
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      builder: (context) => SafeArea(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Galeriden Seç'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
+              leading: const Icon(Icons.camera_alt_outlined, color: Color(0xFF23408E)),
+              title: const Text('Kamerayla Çek'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Kamera ile Çek'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
+              leading: const Icon(Icons.photo_library_outlined, color: Color(0xFF23408E)),
+              title: const Text('Galeriden Seç'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
         ),
       ),
     );
     if (source != null) {
-      final pickedFile = await picker.pickImage(source: source, imageQuality: 80);
-      if (pickedFile != null) {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: source, imageQuality: 80);
+      if (picked != null) {
         setState(() {
-          _profileImagePath = pickedFile.path;
+          _profileImage = File(picked.path);
         });
       }
     }
   }
 
-  String _capitalize(String value) {
-    if (value.isEmpty) return value;
-    return value[0].toUpperCase() + value.substring(1).toLowerCase();
-  }
-
-  String _capitalizeEachWord(String value) {
+  String capitalizeEachWord(String value) {
     return value.split(' ').map((word) {
       if (word.isEmpty) return word;
       return word[0].toUpperCase() + word.substring(1).toLowerCase();
@@ -74,123 +80,225 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryBlue = const Color(0xFF23408E);
+    final Color lightBlue = const Color(0xFF64B5F6);
+    final Color background = const Color(0xFFF7F9FC);
+    final Color cardColor = Colors.white;
+    final Color textColor = const Color(0xFF232946);
+    final Color subtitleColor = const Color(0xFF4A4A4A);
+    final double cardRadius = 18;
     final appState = Provider.of<AppStateProvider>(context);
+    final user = appState.userProfile;
     return Scaffold(
-      appBar: AppBar(title: const Text('Profili Düzenle')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 48,
-                      backgroundImage: _profileImagePath != null
-                          ? FileImage(File(_profileImagePath!))
-                          : const AssetImage('assets/avatar_placeholder.png') as ImageProvider,
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: CircleAvatar(
-                        backgroundColor: Colors.blue,
-                        radius: 18,
-                        child: IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.white, size: 18),
-                          onPressed: _pickImage,
-                        ),
-                      ),
-                    ),
-                  ],
+      backgroundColor: background,
+      appBar: AppBar(
+        backgroundColor: cardColor,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Profil Düzenle',
+          style: GoogleFonts.montserrat(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        iconTheme: IconThemeData(color: primaryBlue),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(cardRadius),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                initialValue: _name,
-                decoration: const InputDecoration(
-                  labelText: 'Ad',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Ad boş olamaz';
-                  }
-                  return null;
-                },
-                onChanged: (value) => _name = _capitalize(value.trim()),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                initialValue: _surname,
-                decoration: const InputDecoration(
-                  labelText: 'Soyad',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Soyad boş olamaz';
-                  }
-                  return null;
-                },
-                onChanged: (value) => _surname = _capitalize(value.trim()),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                initialValue: _title,
-                decoration: const InputDecoration(
-                  labelText: 'Unvan',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Unvan boş olamaz';
-                  }
-                  return null;
-                },
-                onChanged: (value) => _title = _capitalizeEachWord(value.trim()),
-              ),
-              const SizedBox(height: 32),
-              Row(
+              ],
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Vazgeç'),
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 38,
+                          backgroundColor: primaryBlue,
+                          backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                          child: _profileImage == null
+                              ? Icon(Icons.person, color: Colors.white, size: 38)
+                              : null,
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(6),
+                          child: Icon(Icons.edit, color: primaryBlue, size: 18),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
+                  const SizedBox(height: 18),
+                  _ProfileEditField(
+                    label: 'Ad',
+                    hint: 'Adınızı girin',
+                    controller: _nameController,
+                    onChanged: (val) {
+                      final fixed = capitalizeEachWord(val);
+                      if (fixed != val) {
+                        final pos = _nameController.selection;
+                        _nameController.value = TextEditingValue(
+                          text: fixed,
+                          selection: pos.copyWith(
+                            baseOffset: fixed.length,
+                            extentOffset: fixed.length,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _ProfileEditField(
+                    label: 'Soyad',
+                    hint: 'Soyadınızı girin',
+                    controller: _surnameController,
+                    onChanged: (val) {
+                      final fixed = capitalizeEachWord(val);
+                      if (fixed != val) {
+                        final pos = _surnameController.selection;
+                        _surnameController.value = TextEditingValue(
+                          text: fixed,
+                          selection: pos.copyWith(
+                            baseOffset: fixed.length,
+                            extentOffset: fixed.length,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _ProfileEditField(
+                    label: 'Unvan',
+                    hint: 'Unvanınızı girin',
+                    controller: _titleController,
+                    onChanged: (val) {
+                      final fixed = capitalizeEachWord(val);
+                      if (fixed != val) {
+                        final pos = _titleController.selection;
+                        _titleController.value = TextEditingValue(
+                          text: fixed,
+                          selection: pos.copyWith(
+                            baseOffset: fixed.length,
+                            extentOffset: fixed.length,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryBlue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
+                          final appState = Provider.of<AppStateProvider>(context, listen: false);
+                          final user = appState.userProfile;
+                          final fixedName = capitalizeEachWord(_nameController.text.trim());
+                          final fixedSurname = capitalizeEachWord(_surnameController.text.trim());
+                          final fixedTitle = capitalizeEachWord(_titleController.text.trim());
                           appState.updateUserProfile(
-                            appState.userProfile.copyWith(
-                              name: _name,
-                              surname: _surname,
-                              title: _title,
-                              profileImagePath: _profileImagePath,
+                            user.copyWith(
+                              name: fixedName,
+                              surname: fixedSurname,
+                              title: fixedTitle,
+                              profileImagePath: _profileImage?.path ?? user.profileImagePath,
                             ),
                           );
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Profil güncellendi!')),
+                            const SnackBar(content: Text('Profil başarıyla güncellendi!')),
                           );
                           Navigator.pop(context);
                         }
                       },
-                      child: const Text('Kaydet'),
+                      child: Text('Kaydet', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileEditField extends StatelessWidget {
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final ValueChanged<String>? onChanged;
+  const _ProfileEditField({required this.label, required this.hint, required this.controller, this.onChanged, Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final Color textColor = const Color(0xFF232946);
+    final Color subtitleColor = const Color(0xFF4A4A4A);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          onChanged: onChanged,
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) return '$label boş olamaz';
+            final fixed = val.split(' ').map((word) {
+              if (word.isEmpty) return word;
+              return word[0].toUpperCase() + word.substring(1).toLowerCase();
+            }).join(' ');
+            if (val != fixed) return 'Her kelimenin ilk harfi büyük olmalı';
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+            filled: true,
+            fillColor: Colors.grey.shade100,
+            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 } 

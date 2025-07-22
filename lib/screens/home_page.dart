@@ -66,6 +66,7 @@ class _HomePageState extends State<HomePage> {
           parcaAdi: p['parcaAdi'] ?? '',
           parcaKodu: p['parcaKodu'] ?? '',
           stokAdedi: p['adet'] ?? 1,
+          criticalLevel: 5,
         )).toList() ?? [],
       );
       await _repository.add(newHistory);

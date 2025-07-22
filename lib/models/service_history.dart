@@ -70,7 +70,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
       status: 'Başarılı',
       kullanilanParcalar: [
         // Örnek kullanılan parça
-        StockPart(id: '3', parcaAdi: 'Kablo', parcaKodu: '67890', stokAdedi: 1)
+        StockPart(id: '3', parcaAdi: 'Kablo', parcaKodu: '67890', stokAdedi: 1, criticalLevel: 5)
       ]
     ),
     ServiceHistory(

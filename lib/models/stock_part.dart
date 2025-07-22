@@ -3,12 +3,14 @@ class StockPart {
   final String parcaAdi;
   final String parcaKodu;
   int stokAdedi;
+  int criticalLevel;
 
   StockPart({
     required this.id,
     required this.parcaAdi,
     required this.parcaKodu,
     required this.stokAdedi,
+    required this.criticalLevel,
   });
 
   factory StockPart.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class StockPart {
       parcaAdi: json['parcaAdi'] ?? '',
       parcaKodu: json['parcaKodu'] ?? '',
       stokAdedi: json['stokAdedi'] ?? 0,
+      criticalLevel: json['criticalLevel'] ?? 5,
     );
   }
 
@@ -26,6 +29,7 @@ class StockPart {
       'parcaAdi': parcaAdi,
       'parcaKodu': parcaKodu,
       'stokAdedi': stokAdedi,
+      'criticalLevel': criticalLevel,
     };
   }
 }
@@ -50,30 +54,35 @@ class MockStockRepository implements StockPartRepository {
        parcaAdi: 'Anakart',
        parcaKodu: '77889',
        stokAdedi: 1,
+       criticalLevel: 2,
      ),
      StockPart(
        id: '2',
        parcaAdi: 'Ekran',
        parcaKodu: '44556',
        stokAdedi: 3,
+       criticalLevel: 3,
      ),
      StockPart(
        id: '3',
        parcaAdi: 'Kablo',
        parcaKodu: '67890',
        stokAdedi: 5,
+       criticalLevel: 4,
      ),
      StockPart(
        id: '4',
        parcaAdi: 'Sensör',
        parcaKodu: '12345',
        stokAdedi: 10,
+       criticalLevel: 5,
     ),
     StockPart(
        id: '5',
        parcaAdi: 'Batarya',
        parcaKodu: '11223',
        stokAdedi: 20,
+       criticalLevel: 6,
      ),
   ];
 

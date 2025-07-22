@@ -1,140 +1,127 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class ChangePasswordScreen extends StatefulWidget {
+class ChangePasswordScreen extends StatelessWidget {
   const ChangePasswordScreen({Key? key}) : super(key: key);
 
   @override
-  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
-}
-
-class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _oldPasswordController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _repeatPasswordController = TextEditingController();
-  bool _isLoading = false;
-  bool _obscureOld = true;
-  bool _obscureNew = true;
-  bool _obscureRepeat = true;
-
-  @override
-  void dispose() {
-    _oldPasswordController.dispose();
-    _newPasswordController.dispose();
-    _repeatPasswordController.dispose();
-    super.dispose();
-  }
-
-  void _changePassword() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simülasyon
-    setState(() => _isLoading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Şifre başarıyla değiştirildi!')),
-    );
-    Navigator.pop(context);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final Color primaryBlue = const Color(0xFF23408E);
+    final Color background = const Color(0xFFF7F9FC);
+    final Color cardColor = Colors.white;
+    final Color textColor = const Color(0xFF232946);
+    final Color subtitleColor = const Color(0xFF4A4A4A);
+    final double cardRadius = 18;
+    final isWide = MediaQuery.of(context).size.width > 600;
     return Scaffold(
-      appBar: AppBar(title: const Text('Şifre Değiştirme')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
+      backgroundColor: background,
+      appBar: AppBar(
+        backgroundColor: cardColor,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Şifre Değiştir',
+          style: GoogleFonts.montserrat(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        iconTheme: IconThemeData(color: primaryBlue),
+      ),
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: isWide ? 500 : double.infinity),
           child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             children: [
-              TextFormField(
-                controller: _oldPasswordController,
-                obscureText: _obscureOld,
-                decoration: InputDecoration(
-                  labelText: 'Eski Şifre',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscureOld ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscureOld = !_obscureOld),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Eski şifreyi giriniz';
-                  }
-                  // Burada eski şifre kontrolü backend ile yapılabilir
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _newPasswordController,
-                obscureText: _obscureNew,
-                decoration: InputDecoration(
-                  labelText: 'Yeni Şifre',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscureNew = !_obscureNew),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Yeni şifreyi giriniz';
-                  }
-                  if (value.length < 6) {
-                    return 'Şifre en az 6 karakter olmalı';
-                  }
-                  if (value == _oldPasswordController.text) {
-                    return 'Yeni şifre eski şifreyle aynı olamaz';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _repeatPasswordController,
-                obscureText: _obscureRepeat,
-                decoration: InputDecoration(
-                  labelText: 'Yeni Şifre (Tekrar)',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscureRepeat ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _obscureRepeat = !_obscureRepeat),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Yeni şifreyi tekrar giriniz';
-                  }
-                  if (value != _newPasswordController.text) {
-                    return 'Şifreler eşleşmiyor';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _isLoading ? null : () => Navigator.pop(context),
-                      child: const Text('Vazgeç'),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(cardRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Form(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Mevcut Şifre', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: 'Mevcut şifrenizi girin',
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Yeni Şifre', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: 'Yeni şifrenizi girin',
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Yeni Şifre (Tekrar)', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: 'Yeni şifrenizi tekrar girin',
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryBlue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: () {
+                            // Şifre değiştirme işlemi
+                          },
+                          child: Text('Şifreyi Değiştir', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _changePassword,
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Kaydet'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),

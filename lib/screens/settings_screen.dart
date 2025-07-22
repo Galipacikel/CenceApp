@@ -12,265 +12,227 @@ import '../providers/app_state_provider.dart';
 import 'login_screen.dart';
 import '../models/app_settings.dart';
 import 'dart:io';
+import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryBlue = const Color(0xFF23408E);
+    final Color lightBlue = const Color(0xFF64B5F6);
+    final Color background = const Color(0xFFF7F9FC);
+    final Color cardColor = Colors.white;
+    final Color textColor = const Color(0xFF232946);
+    final Color subtitleColor = const Color(0xFF4A4A4A);
+    final double cardRadius = 18;
+    final isWide = MediaQuery.of(context).size.width > 600;
     return Scaffold(
+      backgroundColor: background,
       appBar: AppBar(
-        title: const Text('Ayarlar'),
-        centerTitle: true,
+        backgroundColor: cardColor,
         elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Ayarlar',
+          style: GoogleFonts.montserrat(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        iconTheme: IconThemeData(color: primaryBlue),
       ),
-      body: Column(
-        children: [
-          // Profil Kartı
-          _ProfileCard(),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView(
-              children: [
-                // Hesap/Profil Ayarları
-                _SectionHeader(title: 'Hesap/Profil Ayarları'),
-                _SettingsTile(
-                  icon: Icons.lock_outline,
-                  title: 'Şifre Değiştirme',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
-                    );
-                  },
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: isWide ? 500 : double.infinity),
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            children: [
+              // Kullanıcı Kartı
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(cardRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                _SettingsTile(
-                  icon: Icons.notifications_none,
-                  title: 'Bildirimler',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
-                    );
-                  },
-                ),
-                _SettingsTile(
-                  icon: Icons.brightness_6_outlined,
-                  title: 'Tema',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Destek
-                _SectionHeader(title: 'Destek'),
-                _SettingsTile(
-                  icon: Icons.help_outline,
-                  title: 'Yardım Merkezi / SSS',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HelpCenterScreen()),
-                    );
-                  },
-                ),
-                _SettingsTile(
-                  icon: Icons.support_agent_outlined,
-                  title: 'Destek Talebi / İletişim',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SupportRequestScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Hakkında
-                _SectionHeader(title: 'Hakkında'),
-                _SettingsTile(
-                  icon: Icons.info_outline,
-                  title: 'Uygulama Bilgisi',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AppInfoScreen()),
-                    );
-                  },
-                ),
-                _SettingsTile(
-                  icon: Icons.privacy_tip_outlined,
-                  title: 'Gizlilik ve Koşullar',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Çıkış Yap
-                _SettingsTile(
-                  icon: Icons.logout,
-                  title: 'Çıkış Yap',
-                  iconColor: Colors.red,
-                  titleColor: Colors.red,
-                  onTap: () async {
-                    final shouldLogout = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Çıkış Yap'),
-                        content: const Text('Oturumunuzu kapatmak istediğinize emin misiniz?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text('Vazgeç'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: const Text('Çıkış Yap'),
-                          ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: primaryBlue,
+                      child: Icon(Icons.person, color: Colors.white, size: 32),
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Mehmet Yılmaz', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18, color: textColor)),
+                          const SizedBox(height: 4),
+                          Text('Teknik Servis Sorumlusu', style: GoogleFonts.montserrat(fontSize: 14, color: subtitleColor)),
                         ],
                       ),
-                    );
-                    if (shouldLogout == true) {
-                      // Provider'daki state'i sıfırla
-                      Provider.of<AppStateProvider>(context, listen: false).updateUserProfile(
-                        Provider.of<AppStateProvider>(context, listen: false).userProfile.copyWith(
-                          name: 'Ali',
-                          surname: 'Yılmaz',
-                          title: 'Teknik Servis Sorumlusu',
-                          profileImagePath: null,
-                        ),
-                      );
-                      Provider.of<AppStateProvider>(context, listen: false).updateAppSettings(AppSettings());
-                      // LoginScreen'e yönlendir
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (route) => false,
-                      );
-                    }
-                  },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.edit, color: primaryBlue),
+                      onPressed: () {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileEditScreen()));
+                      },
+                      splashRadius: 24,
+                      tooltip: 'Profili Düzenle',
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 32),
-              ],
-            ),
-          ),
-          // Alt Bilgi
-          _BottomInfoBar(),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final user = Provider.of<AppStateProvider>(context).userProfile;
-    return Card(
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundImage: user.profileImagePath != null
-                  ? FileImage(File(user.profileImagePath!))
-                  : const AssetImage('assets/avatar_placeholder.png') as ImageProvider,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(user.name + ' ' + user.surname, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  const SizedBox(height: 4),
-                  Text(user.title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                  const SizedBox(height: 4),
-                  const Text('Aktif', style: TextStyle(fontSize: 12, color: Colors.green)),
-                ],
               ),
-            ),
-            OutlinedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
-                );
-              },
-              child: const Text('Profili Görüntüle'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              // Ayar Kartları
+              _SettingsCard(
+                icon: Icons.lock_outline,
+                title: 'Şifre Değiştir',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChangePasswordScreen())),
+                iconColor: primaryBlue,
+                cardColor: cardColor,
+                cardRadius: cardRadius,
+                textColor: textColor,
+              ),
+              _SettingsCard(
+                icon: Icons.notifications_active_outlined,
+                title: 'Bildirim Ayarları',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationSettingsScreen())),
+                iconColor: primaryBlue,
+                cardColor: cardColor,
+                cardRadius: cardRadius,
+                textColor: textColor,
+              ),
+              _SettingsCard(
+                icon: Icons.palette_outlined,
+                title: 'Tema ve Görünüm',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ThemeSettingsScreen())),
+                iconColor: primaryBlue,
+                cardColor: cardColor,
+                cardRadius: cardRadius,
+                textColor: textColor,
+              ),
+              _SettingsCard(
+                icon: Icons.help_outline,
+                title: 'Yardım Merkezi',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => HelpCenterScreen())),
+                iconColor: primaryBlue,
+                cardColor: cardColor,
+                cardRadius: cardRadius,
+                textColor: textColor,
+              ),
+              _SettingsCard(
+                icon: Icons.support_agent_outlined,
+                title: 'Destek Talebi',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SupportRequestScreen())),
+                iconColor: primaryBlue,
+                cardColor: cardColor,
+                cardRadius: cardRadius,
+                textColor: textColor,
+              ),
+              _SettingsCard(
+                icon: Icons.info_outline,
+                title: 'Uygulama Bilgisi',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AppInfoScreen())),
+                iconColor: primaryBlue,
+                cardColor: cardColor,
+                cardRadius: cardRadius,
+                textColor: textColor,
+              ),
+              _SettingsCard(
+                icon: Icons.privacy_tip_outlined,
+                title: 'Gizlilik ve Koşullar',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PrivacyPolicyScreen())),
+                iconColor: primaryBlue,
+                cardColor: cardColor,
+                cardRadius: cardRadius,
+                textColor: textColor,
+              ),
+              const SizedBox(height: 32),
+              // Çıkış Butonu
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
+                },
+                icon: const Icon(Icons.logout),
+                label: Text('Çıkış Yap', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+              const SizedBox(height: 18),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
-      ),
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
+class _SettingsCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final VoidCallback onTap;
-  final Color? iconColor;
-  final Color? titleColor;
-
-  const _SettingsTile({
+  final Color iconColor;
+  final Color cardColor;
+  final double cardRadius;
+  final Color textColor;
+  const _SettingsCard({
     required this.icon,
     required this.title,
     required this.onTap,
-    this.iconColor,
-    this.titleColor,
-  });
+    required this.iconColor,
+    required this.cardColor,
+    required this.cardRadius,
+    required this.textColor,
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: iconColor ?? Colors.blueGrey),
-      title: Text(title, style: TextStyle(color: titleColor ?? Colors.black)),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    );
-  }
-}
-
-class _BottomInfoBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          Text('Versiyon 1.2.3', style: TextStyle(fontSize: 12, color: Colors.grey)),
-          Row(
-            children: [
-              Icon(Icons.cloud_done, size: 16, color: Colors.green),
-              SizedBox(width: 4),
-              Text('Offline Mod Aktif', style: TextStyle(fontSize: 12, color: Colors.green)),
-            ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(cardRadius),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(cardRadius),
+          onTap: onTap,
+          splashColor: iconColor.withOpacity(0.08),
+          highlightColor: iconColor.withOpacity(0.04),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            child: Row(
+              children: [
+                Icon(icon, color: iconColor, size: 28),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 16, color: textColor),
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Color(0xFFB0B6C3)),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

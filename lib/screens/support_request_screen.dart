@@ -1,92 +1,111 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class SupportRequestScreen extends StatefulWidget {
+class SupportRequestScreen extends StatelessWidget {
   const SupportRequestScreen({Key? key}) : super(key: key);
 
   @override
-  State<SupportRequestScreen> createState() => _SupportRequestScreenState();
-}
-
-class _SupportRequestScreenState extends State<SupportRequestScreen> {
-  final _formKey = GlobalKey<FormState>();
-  String _subject = '';
-  String _description = '';
-  bool _isLoading = false;
-
-  void _submitRequest() async {
-    if (!_formKey.currentState!.validate()) return;
-    _formKey.currentState!.save();
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simülasyon
-    setState(() => _isLoading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Destek talebiniz iletildi!')),
-    );
-    Navigator.pop(context);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final Color primaryBlue = const Color(0xFF23408E);
+    final Color background = const Color(0xFFF7F9FC);
+    final Color cardColor = Colors.white;
+    final Color textColor = const Color(0xFF232946);
+    final Color subtitleColor = const Color(0xFF4A4A4A);
+    final double cardRadius = 18;
+    final isWide = MediaQuery.of(context).size.width > 600;
     return Scaffold(
-      appBar: AppBar(title: const Text('Destek Talebi / İletişim')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
+      backgroundColor: background,
+      appBar: AppBar(
+        backgroundColor: cardColor,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Destek Talebi',
+          style: GoogleFonts.montserrat(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        iconTheme: IconThemeData(color: primaryBlue),
+      ),
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: isWide ? 500 : double.infinity),
           child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             children: [
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Konu',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Konu boş olamaz';
-                  }
-                  return null;
-                },
-                onSaved: (value) => _subject = value!.trim(),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'Açıklama',
-                  border: OutlineInputBorder(),
-                ),
-                minLines: 3,
-                maxLines: 6,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Açıklama boş olamaz';
-                  }
-                  return null;
-                },
-                onSaved: (value) => _description = value!.trim(),
-              ),
-              const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _isLoading ? null : () => Navigator.pop(context),
-                      child: const Text('Vazgeç'),
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(cardRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Form(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Konu', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        decoration: InputDecoration(
+                          hintText: 'Konu başlığını girin',
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Açıklama', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        minLines: 3,
+                        maxLines: 6,
+                        decoration: InputDecoration(
+                          hintText: 'Sorununuzu veya talebinizi detaylıca yazın...',
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryBlue,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          onPressed: () {
+                            // Gönderme işlemi
+                          },
+                          icon: const Icon(Icons.send),
+                          label: Text('Gönder', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _submitRequest,
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Gönder'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),

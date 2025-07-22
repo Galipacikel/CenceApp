@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final Color primaryBlue = const Color(0xFF23408E);
+    final Color background = const Color(0xFFF7F9FC);
+    final Color cardColor = Colors.white;
+    final Color textColor = const Color(0xFF232946);
+    final Color subtitleColor = const Color(0xFF4A4A4A);
+    final double cardRadius = 18;
+    final isWide = MediaQuery.of(context).size.width > 600;
     final faqs = [
       {
         'question': 'Cence uygulamasına nasıl giriş yapabilirim?',
@@ -27,25 +35,68 @@ class HelpCenterScreen extends StatelessWidget {
         'answer': 'Ayarlar > Destek Talebi / İletişim menüsünden yeni bir destek talebi oluşturabilirsiniz.'
       },
     ];
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Yardım Merkezi / SSS')),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: faqs.length,
-        separatorBuilder: (_, __) => const Divider(),
-        itemBuilder: (context, index) {
-          final faq = faqs[index];
-          return ExpansionTile(
-            title: Text(faq['question']!),
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: Text(faq['answer']!),
-              ),
-            ],
-          );
-        },
+      backgroundColor: background,
+      appBar: AppBar(
+        backgroundColor: cardColor,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Yardım Merkezi',
+          style: GoogleFonts.montserrat(
+            color: textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
+        ),
+        iconTheme: IconThemeData(color: primaryBlue),
+      ),
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: isWide ? 600 : double.infinity),
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            itemCount: faqs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 18),
+            itemBuilder: (context, index) {
+              final faq = faqs[index];
+              return Material(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(cardRadius),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(cardRadius),
+                  onTap: () {},
+                  splashColor: primaryBlue.withOpacity(0.08),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.help_outline, color: primaryBlue, size: 26),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                faq['question']!,
+                                style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 16, color: textColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          faq['answer']!,
+                          style: GoogleFonts.montserrat(fontSize: 15, color: subtitleColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
