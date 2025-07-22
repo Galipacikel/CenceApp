@@ -27,11 +27,11 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
     _futureHistory = widget.repository.getAll();
   }
 
-  List<String> get cihazListesi => _allHistory.map((k) => k.cihazId).toSet().toList();
+  List<String> get deviceList => _allHistory.map((k) => k.deviceId).toSet().toList();
 
-  List<String> get filteredCihazlar {
-    if (searchText.isEmpty) return cihazListesi;
-    return cihazListesi.where((c) => c.toLowerCase().contains(searchText.toLowerCase())).toList();
+  List<String> get filteredDevices {
+    if (searchText.isEmpty) return deviceList;
+    return deviceList.where((c) => c.toLowerCase().contains(searchText.toLowerCase())).toList();
   }
 
   List<ServiceHistory> get filteredHistory {
@@ -40,7 +40,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
       list = list.where((k) => k.status == selectedStatus).toList();
     }
     if (selectedDevice != null) {
-      list = list.where((k) => k.cihazId == selectedDevice).toList();
+      list = list.where((k) => k.deviceId == selectedDevice).toList();
     }
     if (selectedSort == 'Tarih (Yeni > Eski)') {
       list.sort((a, b) => b.date.compareTo(a.date));
@@ -92,9 +92,9 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                     onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': null}),
                   ),
                   ..._allHistory.map((k) => FilterChip(
-                    label: Text(k.cihazId),
-                    selected: selectedDevice == k.cihazId,
-                    onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': k.cihazId}),
+                    label: Text(k.deviceId),
+                    selected: selectedDevice == k.deviceId,
+                    onSelected: (_) => Navigator.pop(ctx, {'status': selectedStatus, 'device': k.deviceId}),
                   )),
                 ],
               ),
@@ -169,7 +169,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
         _allHistory[idx] = ServiceHistory(
           id: eski.id,
           date: _parseDate(yeni['tarih']),
-          cihazId: yeni['cihaz'] ?? 'CIHAZ-001',
+          deviceId: yeni['cihaz'] ?? 'CIHAZ-001',
           musteri: yeni['musteri'] ?? '',
           description: ((yeni['baslik'] ?? '') + (yeni['aciklama'] != null ? ' - ${yeni['aciklama']}' : '')),
           technician: yeni['kisi'] ?? '',
@@ -301,18 +301,18 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                                 child: ListView(
                                   shrinkWrap: true,
                                   padding: EdgeInsets.zero,
-                                  children: filteredCihazlar.isEmpty
+                                  children: filteredDevices.isEmpty
                                       ? [
                                           const ListTile(
                                             title: Text('Sonuç bulunamadı'),
                                           ),
                                         ]
-                                      : filteredCihazlar.map((cihaz) => ListTile(
-                                            title: Text(cihaz),
+                                      : filteredDevices.map((device) => ListTile(
+                                            title: Text(device),
                                             onTap: () {
                                               setState(() {
-                                                selectedDevice = cihaz;
-                                                _searchController.text = cihaz;
+                                                selectedDevice = device;
+                                                _searchController.text = device;
                                                 searchText = '';
                                               });
                                             },
@@ -435,7 +435,7 @@ class _ServisKayitCard extends StatelessWidget {
                   final guncelKayit = await showDialog<Map<String, dynamic>>(
                     context: context,
                     builder: (ctx) => YeniKayitDialog(
-                      cihazlar: parentState.cihazListesi,
+                      cihazlar: parentState.deviceList,
                       mevcutKayit: kayit.toJson(),
                     ),
                   );
@@ -493,7 +493,7 @@ class _ServisKayitCard extends StatelessWidget {
               Icon(Icons.label_important_rounded, size: isWide ? 22 : 16, color: getStatusBgColor(kayit.status)),
               const SizedBox(width: 4),
               Text(
-                kayit.cihazId,
+                kayit.deviceId,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: isWide ? 17 : 15, color: Colors.black),
               ),
             ],
@@ -592,7 +592,7 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    kayit.cihazId,
+                    kayit.deviceId,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
                   ),
                   const SizedBox(height: 8),
@@ -606,7 +606,7 @@ class ServisKaydiDetayScreen extends StatelessWidget {
                       const Icon(Icons.devices, size: 20, color: Color(0xFF23408E)),
                       const SizedBox(width: 8),
                       Text(
-                        kayit.cihazId,
+                        kayit.deviceId,
                         style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500),
                       ),
                     ],

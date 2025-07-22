@@ -1,10 +1,10 @@
-import 'package:cence_app/models/cihaz.dart';
+import 'package:cence_app/models/device.dart';
 import 'package:cence_app/models/stock_part.dart';
 
 class ServiceHistory {
   final String id;
   final DateTime date;
-  final String cihazId; // Artık Cihaz nesnesine referans
+  final String deviceId; // Artık Device nesnesine referans
   final String musteri;
   final String description;
   final String technician;
@@ -14,7 +14,7 @@ class ServiceHistory {
   ServiceHistory({
     required this.id,
     required this.date,
-    required this.cihazId,
+    required this.deviceId,
     required this.musteri,
     required this.description,
     required this.technician,
@@ -27,7 +27,7 @@ class ServiceHistory {
     return ServiceHistory(
       id: json['id'] ?? '',
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
-      cihazId: json['cihazId'] ?? '',
+      deviceId: json['deviceId'] ?? '',
       musteri: json['musteri'] ?? '',
       description: json['description'] ?? '',
       technician: json['technician'] ?? '',
@@ -42,7 +42,7 @@ class ServiceHistory {
     return {
       'id': id,
       'date': date.toIso8601String(),
-      'cihazId': cihazId,
+      'deviceId': deviceId,
       'musteri': musteri,
       'description': description,
       'technician': technician,
@@ -63,7 +63,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '1',
       date: DateTime(2024, 3, 15),
-      cihazId: 'CIHAZ-001', // Örnek cihaz ID'si
+      deviceId: 'DEVICE-001', // Örnek cihaz ID'si
       musteri: 'A Hastanesi',
       description: 'Yıllık kalibrasyon ve parça kontrolü yapıldı.',
       technician: 'Ahmet Yılmaz',
@@ -76,7 +76,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '2',
       date: DateTime(2024, 2, 28),
-      cihazId: 'CIHAZ-002',
+      deviceId: 'DEVICE-002',
       musteri: 'B Kliniği',
       description: 'Güç kaynağı değiştirildi.',
       technician: 'Mehmet Demir',
@@ -85,7 +85,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '3',
       date: DateTime(2024, 1, 10),
-      cihazId: 'CIHAZ-001',
+      deviceId: 'DEVICE-001',
       musteri: 'A Hastanesi',
       description: 'Cihaz yazılımı v2.1.0 sürümüne güncellendi.',
       technician: 'Elif Kaya',
@@ -94,7 +94,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '4',
       date: DateTime(2023, 12, 5),
-      cihazId: 'CIHAZ-003',
+      deviceId: 'DEVICE-003',
       musteri: 'C Sağlık Merkezi',
       description: 'Filtreler değiştirildi, genel temizlik yapıldı.',
       technician: 'Ahmet Yılmaz',

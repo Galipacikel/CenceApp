@@ -3,10 +3,10 @@ import '../widgets/home/quick_access_card.dart';
 import '../widgets/home/service_history_card.dart';
 import '../widgets/common/custom_app_bar.dart';
 import '../widgets/common/bottom_nav_bar.dart';
-import 'cihaz_sorgula_screen.dart';
-import 'yeni_servis_formu_screen.dart';
-import 'servis_gecmisi_screen.dart';
-import 'package:cence_app/screens/stok_takibi_screen.dart';
+import 'device_query_screen.dart';
+import 'new_service_form_screen.dart';
+import 'service_history_screen.dart';
+import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
 import 'service_history_detail_screen.dart';
@@ -40,7 +40,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {
     final result = await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const YeniServisFormuScreen()),
+      MaterialPageRoute(builder: (_) => const NewServiceFormScreen()),
     );
     if (result != null && result is Map<String, dynamic>) {
       final int formTipi = result['formTipi'] ?? 0;
@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
       final newHistory = ServiceHistory(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: result['tarih'] ?? DateTime.now(),
-        cihazId: result['cihazId'] ?? 'CIHAZ-001',
+        deviceId: result['cihazId'] ?? 'CIHAZ-001',
         musteri: result['musteri'] ?? '',
         description: result['aciklama'] ?? '',
         technician: result['teknisyen'] ?? '',
@@ -269,8 +269,8 @@ class _WelcomeSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     // Örnek kullanıcı adı ve özet (gerçek projede provider veya API'dan alınabilir)
     final String user = 'Ahmet';
-    final int cihaz = 12;
-    final int servis = 34;
+    final int device = 12;
+    final int service = 34;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -286,7 +286,7 @@ class _WelcomeSummary extends StatelessWidget {
             children: [
               Text('Hoş geldin, $user!', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1C1C1C))),
               const SizedBox(height: 2),
-              Text('Sistemde $cihaz cihaz, $servis servis kaydı var.', style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+              Text('Sistemde $device cihaz, $service servis kaydı var.', style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
             ],
           ),
         ),
@@ -536,7 +536,7 @@ class _ModernServiceCard extends StatelessWidget {
               size: 32,
             ),
             title: Text(
-              '${item.cihazId} - ${item.description}',
+              '${item.deviceId} - ${item.description}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(

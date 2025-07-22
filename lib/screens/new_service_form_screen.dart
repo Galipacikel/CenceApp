@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../models/stock_part.dart';
-import '../models/cihaz.dart';
+import '../models/device.dart';
 
-class YeniServisFormuScreen extends StatefulWidget {
+class NewServiceFormScreen extends StatefulWidget {
   final StockPartRepository? stockRepository;
-  final CihazRepository? cihazRepository;
-  const YeniServisFormuScreen({Key? key, this.stockRepository, this.cihazRepository}) : super(key: key);
+  final DeviceRepository? deviceRepository;
+  const NewServiceFormScreen({Key? key, this.stockRepository, this.deviceRepository}) : super(key: key);
 
   @override
-  State<YeniServisFormuScreen> createState() => _YeniServisFormuScreenState();
+  State<NewServiceFormScreen> createState() => _NewServiceFormScreenState();
 }
 
 class SelectedPart {
@@ -19,14 +19,14 @@ class SelectedPart {
   SelectedPart({required this.part, this.adet = 1});
 }
 
-class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
+class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   int _formTipi = 0; // 0: Kurulum, 1: Bakım, 2: Arıza
-  final TextEditingController _cihazController = TextEditingController();
-  final TextEditingController _teknisyenController = TextEditingController();
-  final TextEditingController _aciklamaController = TextEditingController();
-  final TextEditingController _musteriController = TextEditingController();
-  DateTime? _tarih;
-  late TextEditingController _tarihController;
+  final TextEditingController _deviceController = TextEditingController();
+  final TextEditingController _technicianController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _customerController = TextEditingController();
+  DateTime? _date;
+  late TextEditingController _dateController;
   File? _pickedImage;
   
   // Parça seçimi için yeni alanlar
@@ -39,12 +39,12 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
   final StockPartRepository _stockRepository = MockStockRepository();
   
   // Cihaz seçimi için
-  Cihaz? _selectedCihaz;
-  final TextEditingController _cihazSearchController = TextEditingController();
-  List<Cihaz> _allCihazlar = [];
-  List<Cihaz> _filteredCihazlar = [];
-  bool _showCihazSuggestions = false;
-  final CihazRepository _cihazRepository = MockCihazRepository();
+  Device? _selectedDevice;
+  final TextEditingController _deviceSearchController = TextEditingController();
+  List<Device> _allDevices = [];
+  List<Device> _filteredDevices = [];
+  bool _showDeviceSuggestions = false;
+  final DeviceRepository _deviceRepository = MockDeviceRepository();
   
   // Kategori seçimi için
   String? _selectedCategory;
@@ -69,19 +69,19 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
   @override
   void initState() {
     super.initState();
-    _tarihController = TextEditingController();
+    _dateController = TextEditingController();
     _loadParts();
-    _loadCihazlar();
+    _loadDevices();
   }
 
   @override
   void dispose() {
-    _cihazController.dispose();
-    _teknisyenController.dispose();
-    _aciklamaController.dispose();
-    _tarihController.dispose();
+    _deviceController.dispose();
+    _technicianController.dispose();
+    _descriptionController.dispose();
+    _dateController.dispose();
     _partSearchController.dispose();
-    _musteriController.dispose();
+    _customerController.dispose();
     super.dispose();
   }
 
@@ -93,11 +93,11 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     });
   }
 
-  Future<void> _loadCihazlar() async {
-    final cihazlar = await _cihazRepository.getAll();
+  Future<void> _loadDevices() async {
+    final devices = await _deviceRepository.getAll();
     setState(() {
-      _allCihazlar = cihazlar;
-      _filteredCihazlar = cihazlar;
+      _allDevices = devices;
+      _filteredDevices = devices;
     });
   }
 
@@ -133,17 +133,17 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     });
   }
 
-  void _filterCihazlar(String query) {
+  void _filterDevices(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredCihazlar = _allCihazlar;
+        _filteredDevices = _allDevices;
       } else {
-        _filteredCihazlar = _allCihazlar.where((cihaz) =>
-          cihaz.modelAdi.toLowerCase().contains(query.toLowerCase()) ||
-          cihaz.seriNumarasi.toLowerCase().contains(query.toLowerCase())
+        _filteredDevices = _allDevices.where((device) =>
+          device.modelName.toLowerCase().contains(query.toLowerCase()) ||
+          device.serialNumber.toLowerCase().contains(query.toLowerCase())
         ).toList();
       }
-      _showCihazSuggestions = true;
+      _showDeviceSuggestions = true;
     });
   }
 
@@ -156,16 +156,16 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     });
   }
 
-  void _selectCihaz(Cihaz cihaz) {
+  void _selectDevice(Device device) {
     setState(() {
-      _selectedCihaz = cihaz;
-      _cihazSearchController.text = '${cihaz.modelAdi} (${cihaz.seriNumarasi})';
-      _showCihazSuggestions = false;
+      _selectedDevice = device;
+      _deviceSearchController.text = '${device.modelName} (${device.serialNumber})';
+      _showDeviceSuggestions = false;
     });
   }
 
-  void _updateTarihController() {
-    _tarihController.text = _tarih == null ? '' : '${_tarih!.day.toString().padLeft(2, '0')}.${_tarih!.month.toString().padLeft(2, '0')}.${_tarih!.year}';
+  void _updateDateController() {
+    _dateController.text = _date == null ? '' : '${_date!.day.toString().padLeft(2, '0')}.${_date!.month.toString().padLeft(2, '0')}.${_date!.year}';
   }
 
   Future<void> _pickImage() async {
@@ -221,40 +221,40 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
   }
 
   void _onKaydet() async {
-    if (_selectedCihaz == null) {
+    if (_selectedDevice == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen bir cihaz seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Please select a device.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }
-    if (_musteriController.text.isEmpty) {
+    if (_customerController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen müşteri/kurum adını girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Please enter customer/company name.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }
-    if (_tarih == null) {
+    if (_date == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen bir tarih seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Please select a date.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }
-    if (_teknisyenController.text.isEmpty) {
+    if (_technicianController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen teknisyen adını girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Please enter technician name.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }
-    if (_aciklamaController.text.isEmpty) {
+    if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen bir açıklama girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Please enter a description.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }
     // Parça seçimi kontrolü
     if (_selectedParts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen en az bir parça ve adet seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(content: Text('Please select at least one part and quantity.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
       return;
     }
@@ -264,15 +264,15 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
     }
     Navigator.pop(context, {
       'formTipi': _formTipi,
-      'cihazId': _selectedCihaz!.id,
-      'musteri': _musteriController.text,
-      'teknisyen': _teknisyenController.text,
-      'aciklama': _aciklamaController.text,
-      'tarih': _tarih,
-      'kullanilanParcalar': _selectedParts.map((sp) => {'parcaKodu': sp.part.parcaKodu, 'parcaAdi': sp.part.parcaAdi, 'adet': sp.adet}).toList(),
+      'deviceId': _selectedDevice!.id,
+      'customer': _customerController.text,
+      'technician': _technicianController.text,
+      'description': _descriptionController.text,
+      'date': _date,
+      'usedParts': _selectedParts.map((sp) => {'partCode': sp.part.parcaKodu, 'partName': sp.part.parcaAdi, 'quantity': sp.adet}).toList(),
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kayıt başarıyla eklendi!'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
+      const SnackBar(content: Text('Record successfully added!'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
     );
   }
 
@@ -294,7 +294,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _updateTarihController();
+    _updateDateController();
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
@@ -305,7 +305,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Yeni Servis Formu',
+          'New Service Form',
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -315,26 +315,26 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Form Tipi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const Text('Form Type', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
             const SizedBox(height: 10),
             Row(
               children: [
                 _FormTypeChip(
-                  label: 'Kurulum',
+                  label: 'Installation',
                   selected: _formTipi == 0,
                   color: const Color(0xFF23408E),
                   onTap: () => setState(() => _formTipi = 0),
                 ),
                 const SizedBox(width: 8),
                 _FormTypeChip(
-                  label: 'Bakım',
+                  label: 'Maintenance',
                   selected: _formTipi == 1,
                   color: const Color(0xFFFFC107),
                   onTap: () => setState(() => _formTipi = 1),
                 ),
                 const SizedBox(width: 8),
                 _FormTypeChip(
-                  label: 'Arıza',
+                  label: 'Fault',
                   selected: _formTipi == 2,
                   color: const Color(0xFFE53935),
                   onTap: () => setState(() => _formTipi = 2),
@@ -342,22 +342,22 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               ],
             ),
             const SizedBox(height: 22),
-            // Cihaz Bilgileri
-            const Text('Cihaz Bilgileri', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            // Device Information
+            const Text('Device Information', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
             const SizedBox(height: 8),
-            const Text('Cihaz', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text('Device', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
-            // Responsive cihaz seçimi
+            // Responsive device selection
             LayoutBuilder(
               builder: (context, constraints) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
             TextField(
-                      controller: _cihazSearchController,
+                      controller: _deviceSearchController,
                       readOnly: false,
               decoration: InputDecoration(
-                        hintText: 'Model, seri no veya müşteri ile ara...',
+                        hintText: 'Model, serial number or customer...',
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
@@ -365,27 +365,27 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
-                        suffixIcon: _selectedCihaz != null
+                        suffixIcon: _selectedDevice != null
                             ? IconButton(
                                 icon: const Icon(Icons.clear),
                                 onPressed: () {
                                   setState(() {
-                                    _selectedCihaz = null;
-                                    _cihazSearchController.clear();
-                                    _showCihazSuggestions = false;
+                                    _selectedDevice = null;
+                                    _deviceSearchController.clear();
+                                    _showDeviceSuggestions = false;
                                   });
                                 },
                               )
                             : null,
                       ),
-                      onChanged: _filterCihazlar,
+                      onChanged: _filterDevices,
                       onTap: () {
                         setState(() {
-                          _showCihazSuggestions = true;
+                          _showDeviceSuggestions = true;
                         });
                       },
                     ),
-                    if (_showCihazSuggestions && _filteredCihazlar.isNotEmpty)
+                    if (_showDeviceSuggestions && _filteredDevices.isNotEmpty)
                       Container(
                         constraints: BoxConstraints(
                           maxHeight: constraints.maxHeight > 300 ? 300 : constraints.maxHeight * 0.5,
@@ -403,12 +403,12 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                         ),
                         child: ListView.builder(
                           shrinkWrap: true,
-                          itemCount: _filteredCihazlar.length,
+                          itemCount: _filteredDevices.length,
                           itemBuilder: (context, index) {
-                            final cihaz = _filteredCihazlar[index];
+                            final device = _filteredDevices[index];
                             return ListTile(
-                              title: Text('${cihaz.modelAdi} (${cihaz.seriNumarasi})'),
-                              onTap: () => _selectCihaz(cihaz),
+                              title: Text('${device.modelName} (${device.serialNumber})'),
+                              onTap: () => _selectDevice(device),
                             );
                           },
                         ),
@@ -418,13 +418,13 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               },
             ),
             const SizedBox(height: 22),
-            const Text('Müşteri/Kurum Bilgisi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const Text('Customer/Company Information', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
             const SizedBox(height: 8),
             TextField(
-              controller: _musteriController,
+              controller: _customerController,
               keyboardType: TextInputType.text,
               decoration: InputDecoration(
-                hintText: 'Müşteri veya kurum adını girin',
+                hintText: 'Enter customer or company name',
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
@@ -435,7 +435,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            // Fotoğraf ekleme alanı
+            // Photo upload area
             Row(
               children: [
                 ElevatedButton.icon(
@@ -448,7 +448,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                   ),
                   onPressed: _pickImage,
                   icon: const Icon(Icons.camera_alt_outlined, color: Colors.white),
-                  label: const Text('Fotoğraf Çek', style: TextStyle(color: Colors.white)),
+                  label: const Text('Take Photo', style: TextStyle(color: Colors.white)),
                 ),
                 const SizedBox(width: 16),
                 if (_pickedImage != null)
@@ -464,17 +464,17 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               ],
             ),
             const SizedBox(height: 18),
-            // Form Detayları
-            const Text('Form Detayları', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            // Form Details
+            const Text('Form Details', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
             const SizedBox(height: 8),
-            // Kurulum Tarihi başlığı
-            const Text('Kurulum Tarihi', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            // Installation Date header
+            const Text('Installation Date', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
             TextField(
               readOnly: true,
-              controller: _tarihController,
+              controller: _dateController,
               decoration: InputDecoration(
-                hintText: 'gg.aa.yyyy',
+                hintText: 'dd.mm.yyyy',
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.calendar_today_outlined),
                   onPressed: () async {
@@ -486,7 +486,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                       lastDate: DateTime(now.year + 5),
                       locale: const Locale('tr', 'TR'),
                     );
-                    if (picked != null) setState(() => _tarih = picked);
+                    if (picked != null) setState(() => _date = picked);
                   },
                 ),
                 filled: true,
@@ -499,14 +499,14 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            // Teknisyen başlığı
-            const Text('Teknisyen', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            // Technician header
+            const Text('Technician', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
             TextField(
-              controller: _teknisyenController,
+              controller: _technicianController,
               keyboardType: TextInputType.text,
               decoration: InputDecoration(
-                hintText: 'Teknisyen adını girin',
+                hintText: 'Enter technician name',
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
@@ -517,14 +517,14 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            // Kullanılan Parça başlığı
-            const Text('Kullanılan Parçalar', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            // Used Parts header
+            const Text('Used Parts', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
-            // Parça arama kutusu
+            // Part search box
             TextField(
               controller: _partSearchController,
               decoration: InputDecoration(
-                hintText: 'Parça adı veya kodu ile ara...',
+                hintText: 'Search by part name or code...',
                 prefixIcon: Icon(Icons.search, color: Color(0xFF23408E)),
                 filled: true,
                 fillColor: Colors.white,
@@ -548,7 +548,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               onChanged: (val) => _filterParts(val),
             ),
             const SizedBox(height: 8),
-            // Modern kart tabanlı çoklu parça seçimi
+            // Modern multi-part selection based on cards
             LayoutBuilder(
               builder: (context, constraints) {
                 return Column(
@@ -564,7 +564,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                       child: _filteredParts.isEmpty
                           ? const Padding(
                               padding: EdgeInsets.all(20),
-                              child: Center(child: Text('Aradığınız parça bulunamadı', style: TextStyle(color: Colors.grey))),
+                              child: Center(child: Text('No part found matching your search', style: TextStyle(color: Colors.grey))),
                             )
                           : ListView.separated(
                               shrinkWrap: true,
@@ -651,7 +651,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                                                         color: Colors.red.shade100,
                                                         borderRadius: BorderRadius.circular(8),
                                                       ),
-                                                      child: const Text('Stokta Yok', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                                                      child: const Text('Out of Stock', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
                                                     ),
                                                   ),
                                               ],
@@ -665,7 +665,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                                                     color: Colors.grey.shade100,
                                                     borderRadius: BorderRadius.circular(6),
                                                   ),
-                                                  child: Text('Kod: ${part.parcaKodu}', style: const TextStyle(fontSize: 12, color: Color(0xFF23408E))),
+                                                  child: Text('Code: ${part.parcaKodu}', style: const TextStyle(fontSize: 12, color: Color(0xFF23408E))),
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Container(
@@ -674,7 +674,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                                                     color: Colors.grey.shade100,
                                                     borderRadius: BorderRadius.circular(6),
                                                   ),
-                                                  child: Text('Stok: ${part.stokAdedi}', style: const TextStyle(fontSize: 12, color: Color(0xFF23408E))),
+                                                  child: Text('Stock: ${part.stokAdedi}', style: const TextStyle(fontSize: 12, color: Color(0xFF23408E))),
                                                 ),
                                               ],
                                             ),
@@ -726,16 +726,16 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               },
             ),
             const SizedBox(height: 12),
-            // Açıklama başlığı
-            const Text('Açıklama', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            // Description header
+            const Text('Description', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
             TextField(
-              controller: _aciklamaController,
+              controller: _descriptionController,
               keyboardType: TextInputType.text,
               minLines: 3,
               maxLines: 5,
               decoration: InputDecoration(
-                hintText: 'Yapılan işlemleri ve notlarınızı buraya yazın...',
+                hintText: 'Write down the work done and your notes here...',
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
@@ -746,7 +746,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
               ),
             ),
             const SizedBox(height: 28),
-            // Kaydet Butonu
+            // Save Button
             SizedBox(
               height: 48,
               child: ElevatedButton(
@@ -759,7 +759,7 @@ class _YeniServisFormuScreenState extends State<YeniServisFormuScreen> {
                 ),
                 onPressed: _onKaydet,
                 child: const Text(
-                  'Kaydet',
+                  'Save',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

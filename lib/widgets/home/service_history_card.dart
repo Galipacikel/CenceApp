@@ -76,7 +76,7 @@ class ServiceHistoryCard extends StatelessWidget {
                   final items = snapshot.data!;
                   return Column(
                     children: items.map((item) => _ServiceItem(
-                      title: '${item.cihazId} - ${item.description}',
+                      title: '${item.deviceId} - ${item.description}',
                       serial: '',
                       status: item.status,
                       statusColor: _getStatusColor(item.status),
