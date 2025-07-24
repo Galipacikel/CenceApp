@@ -7,6 +7,7 @@ import '../models/service_history.dart';
 import 'package:provider/provider.dart';
 import '../providers/stock_provider.dart';
 import '../providers/service_history_provider.dart';
+import '../providers/device_provider.dart';
 
 class NewServiceFormScreen extends StatefulWidget {
   final StockPartRepository? stockRepository;
@@ -32,6 +33,12 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   DateTime? _date;
   late TextEditingController _dateController;
   File? _pickedImage;
+  
+  // Garanti özellikleri
+  final TextEditingController _warrantyDurationController = TextEditingController();
+  DateTime? _warrantyStartDate;
+  late TextEditingController _warrantyStartDateController;
+  int _warrantyDuration = 24; // Ay cinsinden, varsayılan 24 ay
   
   // Parça seçimi için yeni alanlar
   StockPart? _selectedPart;
@@ -74,6 +81,8 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   void initState() {
     super.initState();
     _dateController = TextEditingController();
+    _warrantyStartDateController = TextEditingController();
+    _warrantyDurationController.text = '24';
     _loadParts();
     _loadDevices();
   }
@@ -86,6 +95,8 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     _dateController.dispose();
     _partSearchController.dispose();
     _customerController.dispose();
+    _warrantyDurationController.dispose();
+    _warrantyStartDateController.dispose();
     super.dispose();
   }
 
@@ -165,11 +176,28 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       _selectedDevice = device;
       _deviceSearchController.text = '${device.modelName} (${device.serialNumber})';
       _showDeviceSuggestions = false;
+      
+      // Cihaz seçildiğinde müşteri bilgisini otomatik doldur
+      _customerController.text = device.customer;
+      
+      // Kurulum tarihi seçili değilse bugünün tarihini ata
+      if (_date == null) {
+        _date = DateTime.now();
+        _updateDateController();
+      }
+      
+      // Garanti başlangıç tarihi kurulum tarihi ile aynı olsun
+      _warrantyStartDate = _date;
+      _updateWarrantyStartDateController();
     });
   }
 
   void _updateDateController() {
     _dateController.text = _date == null ? '' : '${_date!.day.toString().padLeft(2, '0')}.${_date!.month.toString().padLeft(2, '0')}.${_date!.year}';
+  }
+
+  void _updateWarrantyStartDateController() {
+    _warrantyStartDateController.text = _warrantyStartDate == null ? '' : '${_warrantyStartDate!.day.toString().padLeft(2, '0')}.${_warrantyStartDate!.month.toString().padLeft(2, '0')}.${_warrantyStartDate!.year}';
   }
 
   Future<void> _pickImage() async {
@@ -261,11 +289,45 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       );
       return;
     }
+
+    // Garanti süresini parse et
+    int warrantyDuration = 24;
+    try {
+      warrantyDuration = int.parse(_warrantyDurationController.text);
+    } catch (e) {
+      // Hata durumunda varsayılan değer kullan
+    }
+
+    // Garanti bitiş tarihini hesapla
+    DateTime? warrantyEndDate;
+    if (_warrantyStartDate != null) {
+      warrantyEndDate = DateTime(
+        _warrantyStartDate!.year,
+        _warrantyStartDate!.month + warrantyDuration,
+        _warrantyStartDate!.day,
+      );
+    }
+
+    // Cihaz bilgilerini güncelle (DeviceProvider ile)
+    final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
+    final updatedDevice = Device(
+      id: _selectedDevice!.id,
+      modelName: _selectedDevice!.modelName,
+      serialNumber: _selectedDevice!.serialNumber,
+      customer: _customerController.text,
+      installDate: _dateController.text,
+      warrantyStatus: warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate) ? 'Devam Ediyor' : 'Bitti',
+      lastMaintenance: _dateController.text,
+      warrantyEndDate: warrantyEndDate,
+    );
+    deviceProvider.updateDevice(updatedDevice);
+
     // Stoktan düşme işlemi (Provider ile)
     final stockProvider = Provider.of<StockProvider>(context, listen: false);
     for (final sp in _selectedParts) {
       stockProvider.decreaseStock(sp.part.id, sp.adet);
     }
+    
     // Servis geçmişine ekleme (Provider ile)
     final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
     serviceHistoryProvider.addServiceHistory(
@@ -286,6 +348,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
         )).toList(),
       ),
     );
+    
     Navigator.pop(context, {
       'formTipi': _formTipi,
       'date': _date!,
@@ -293,6 +356,9 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       'customer': _customerController.text,
       'technician': _technicianController.text,
       'description': _descriptionController.text,
+      'warrantyDuration': warrantyDuration,
+      'warrantyStartDate': _warrantyStartDate,
+      'warrantyEndDate': warrantyEndDate,
       'usedParts': _selectedParts.map((sp) => {
         'partCode': sp.part.parcaKodu,
         'partName': sp.part.parcaAdi,
@@ -323,6 +389,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   @override
   Widget build(BuildContext context) {
     _updateDateController();
+    _updateWarrantyStartDateController();
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
@@ -436,6 +503,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                             final device = _filteredDevices[index];
                             return ListTile(
                               title: Text('${device.modelName} (${device.serialNumber})'),
+                              subtitle: Text(device.customer),
                               onTap: () => _selectDevice(device),
                             );
                           },
@@ -463,6 +531,70 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
               ),
             ),
             const SizedBox(height: 18),
+            
+            // Garanti Bilgileri (Sadece Kurulum formunda göster)
+            if (_formTipi == 0) ...[
+              const Text('Garanti Bilgileri', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+              const SizedBox(height: 8),
+              
+              // Garanti Başlangıç Tarihi
+              const Text('Garanti Başlangıç Tarihi', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+              const SizedBox(height: 4),
+              TextField(
+                readOnly: true,
+                controller: _warrantyStartDateController,
+                decoration: InputDecoration(
+                  hintText: 'gg.aa.yyyy',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    onPressed: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _warrantyStartDate ?? now,
+                        firstDate: DateTime(now.year - 5),
+                        lastDate: DateTime(now.year + 5),
+                        locale: const Locale('tr', 'TR'),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _warrantyStartDate = picked;
+                          _updateWarrantyStartDateController();
+                        });
+                      }
+                    },
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Garanti Süresi
+              const Text('Garanti Süresi (Ay)', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _warrantyDurationController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: '24',
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
+            
             // Photo upload area
             Row(
               children: [
