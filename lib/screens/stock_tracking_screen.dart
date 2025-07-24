@@ -6,6 +6,7 @@ import '../models/service_history.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/stock_provider.dart';
+import '../providers/device_provider.dart';
 
 class StokTakibiScreen extends StatefulWidget {
   const StokTakibiScreen({Key? key}) : super(key: key);
@@ -18,10 +19,9 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
   late TabController _tabController;
   bool showOnlyCritical = false; // <-- Bu state ile filtreleme yapılacak
   bool showBanner = true; // Banner'ın görünürlüğü için state
-  List<Device> _deviceList = [];
   List<StockPart> _parcaListesi = [];
+  String deviceSearch = '';
   
-  final DeviceRepository _deviceRepository = MockDeviceRepository();
   final StockPartRepository _stockRepository = MockStockRepository();
   final ServiceHistoryRepository _serviceHistoryRepository = MockServiceHistoryRepository();
 
@@ -43,11 +43,9 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
     }
 
   Future<void> _loadData() async {
-    final devices = await _deviceRepository.getAll();
     final parts = await _stockRepository.getAll();
     if (mounted) {
       setState(() {
-        _deviceList = devices;
         _parcaListesi = parts;
         showBanner = true; // Her veri yüklemede banner tekrar görünür
       });
@@ -163,13 +161,15 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         final newDevice = Device(
-                          id: 'DEVICE-${DateTime.now().millisecondsSinceEpoch}',
+                          id: 'CİHAZ-${DateTime.now().millisecondsSinceEpoch}',
                           modelName: modelNameCtrl.text,
                           serialNumber: serialNumberCtrl.text,
+                          customer: 'Demo Müşteri',
+                          installDate: DateFormat('dd.MM.yyyy').format(DateTime.now()),
+                          warrantyStatus: 'Devam Ediyor',
+                          lastMaintenance: DateFormat('dd.MM.yyyy').format(DateTime.now()),
                         );
-                        setState(() {
-                          _deviceList.insert(0, newDevice);
-                        });
+                        Provider.of<DeviceProvider>(context, listen: false).addDevice(newDevice);
                         Navigator.pop(context);
                       }
                     },
@@ -339,7 +339,64 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
           Center(
             child: Container(
               constraints: BoxConstraints(maxWidth: isWide ? 600 : double.infinity),
-              child: DeviceList(deviceList: _deviceList),
+              child: Consumer<DeviceProvider>(
+                builder: (context, deviceProvider, _) {
+                  final allDevices = deviceProvider.devices;
+                  final filtered = deviceSearch.isEmpty
+                    ? allDevices
+                    : allDevices.where((d) =>
+                        d.modelName.toLowerCase().contains(deviceSearch.toLowerCase()) ||
+                        d.serialNumber.toLowerCase().contains(deviceSearch.toLowerCase())
+                      ).toList();
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Model, seri numarası veya müşteri ile ara...',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              deviceSearch = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        if (filtered.isEmpty)
+                          const Text('Eşleşen cihaz bulunamadı.', style: TextStyle(color: Colors.black54))
+                        else
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: filtered.length,
+                              itemBuilder: (context, index) {
+                                final device = filtered[index];
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 2,
+                                  child: ListTile(
+                                    leading: const Icon(Icons.devices_other, color: Color(0xFF23408E)),
+                                    title: Text('Cihaz Adı: ${device.modelName}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    subtitle: Text('Seri No: ${device.serialNumber}'),
+                                    isThreeLine: true,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ],

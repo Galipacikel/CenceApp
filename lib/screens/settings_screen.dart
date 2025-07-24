@@ -63,33 +63,44 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: primaryBlue,
-                      child: Icon(Icons.person, color: Colors.white, size: 32),
-                    ),
-                    const SizedBox(width: 18),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Mehmet Yılmaz', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18, color: textColor)),
-                          const SizedBox(height: 4),
-                          Text('Teknik Servis Sorumlusu', style: GoogleFonts.montserrat(fontSize: 14, color: subtitleColor)),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.edit, color: primaryBlue),
-                      onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileEditScreen()));
-                      },
-                      splashRadius: 24,
-                      tooltip: 'Profili Düzenle',
-                    ),
-                  ],
+                child: Consumer<AppStateProvider>(
+                  builder: (context, appState, _) {
+                    final user = appState.userProfile;
+                    return Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          backgroundColor: primaryBlue,
+                          child: Icon(Icons.person, color: Colors.white, size: 32),
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${user.name} ${user.surname}',
+                                style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18, color: textColor),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                user.title,
+                                style: GoogleFonts.montserrat(fontSize: 14, color: subtitleColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.edit, color: primaryBlue),
+                          onPressed: () {
+                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileEditScreen()));
+                          },
+                          splashRadius: 24,
+                          tooltip: 'Profili Düzenle',
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 24),

@@ -9,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'providers/stock_provider.dart';
 import 'providers/service_history_provider.dart';
 import 'models/service_history.dart';
+import 'providers/device_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppStateProvider()),
         ChangeNotifierProvider(create: (_) => StockProvider()),
         ChangeNotifierProvider(create: (_) => ServiceHistoryProvider()),
+        ChangeNotifierProvider(create: (_) => DeviceProvider()), // <-- EKLENDİ
       ],
       child: Builder(
         builder: (context) {
