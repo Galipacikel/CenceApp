@@ -340,9 +340,9 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
           backgroundColor: primaryBlue,
           elevation: 0,
           centerTitle: true,
-          leading: Padding(
-            padding: const EdgeInsets.only(left: 12.0),
-            child: Icon(Icons.inventory_2_outlined, color: Colors.white, size: 32),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 24),
+            onPressed: () => Navigator.of(context).pop(),
           ),
           title: Text(
             'Stok Takibi',
@@ -820,8 +820,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
       ),
     );
     if (result == true) {
-      Provider.of<DeviceProvider>(context, listen: false).devices.removeWhere((d) => d.id == device.id);
-      Provider.of<DeviceProvider>(context, listen: false).notifyListeners();
+      Provider.of<DeviceProvider>(context, listen: false).removeDevice(device.id);
     }
   }
 }

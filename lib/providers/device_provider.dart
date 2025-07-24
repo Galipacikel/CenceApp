@@ -94,6 +94,11 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
+  void removeDevice(String deviceId) {
+    _devices.removeWhere((d) => d.id == deviceId);
+    notifyListeners();
+  }
+
   Device? findBySerial(String serialNumber) {
     try {
       return _devices.firstWhere((device) => device.serialNumber == serialNumber);

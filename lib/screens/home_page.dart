@@ -279,17 +279,7 @@ class _HomePageState extends State<HomePage> {
                     .map((item) => _ModernServiceCard(item: item))
                     .toList(),
               ),
-            // Watermark
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Opacity(
-                opacity: 0.07,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 40, right: 8),
-                  child: _CenceLogo(height: 60),
-                ),
-              ),
-            ),
+
             const SizedBox(height: 24),
             // Footer
             Center(
@@ -333,62 +323,7 @@ class _WelcomeSummary extends StatelessWidget {
   }
 }
 
-class _CenceLogo extends StatelessWidget {
-  final double height;
-  const _CenceLogo({required this.height, Key? key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: height * 1.1,
-      child: CustomPaint(
-        painter: _CenceLogoPainter(),
-      ),
-    );
-  }
-}
-
-class _CenceLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // C harfi siyah
-    final cPaint = Paint()
-      ..color = const Color(0xFF1C1C1C)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.13
-      ..strokeCap = StrokeCap.round;
-    // n harfi kırmızı
-    final nPaint = Paint()
-      ..color = const Color(0xFFE53935)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.13
-      ..strokeCap = StrokeCap.round;
-    // C harfi
-    canvas.drawArc(
-      Rect.fromLTWH(size.width * 0.08, size.height * 0.13, size.width * 0.8, size.height * 0.74),
-      0.8,
-      4.6,
-      false,
-      cPaint,
-    );
-    // n harfi
-    final nPath = Path();
-    nPath.moveTo(size.width * 0.55, size.height * 0.55);
-    nPath.lineTo(size.width * 0.55, size.height * 0.80);
-    nPath.quadraticBezierTo(
-      size.width * 0.55,
-      size.height * 0.45,
-      size.width * 0.85,
-      size.height * 0.45,
-    );
-    nPath.lineTo(size.width * 0.85, size.height * 0.80);
-    canvas.drawPath(nPath, nPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 class _ModernQuickAccessCard extends StatelessWidget {
   final IconData icon;
