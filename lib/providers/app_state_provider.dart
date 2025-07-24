@@ -4,9 +4,13 @@ import '../models/app_settings.dart';
 
 class AppStateProvider extends ChangeNotifier {
   UserProfile _userProfile = UserProfile(
+    id: 'USER-001',
     name: 'Mehmet',
     surname: 'Yılmaz',
     title: 'Teknik Servis Sorumlusu',
+    email: 'mehmet.yilmaz@cence.com',
+    phone: '+90 532 123 45 67',
+    department: 'Teknik Servis',
     profileImagePath: null,
   );
   AppSettings _appSettings = AppSettings();

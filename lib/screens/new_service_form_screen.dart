@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../providers/stock_provider.dart';
 import '../providers/service_history_provider.dart';
 import '../providers/device_provider.dart';
+import '../providers/app_state_provider.dart';
 
 class NewServiceFormScreen extends StatefulWidget {
   final StockPartRepository? stockRepository;
@@ -85,6 +86,11 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     _warrantyDurationController.text = '24';
     _loadParts();
     _loadDevices();
+    
+    // Teknisyen adını otomatik doldur
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _technicianController.text = _getTechnicianName();
+    });
   }
 
   @override
@@ -192,6 +198,13 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     });
   }
 
+  // Kullanıcı profilinden teknisyen adını al
+  String _getTechnicianName() {
+    final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+    final userProfile = appStateProvider.userProfile;
+    return userProfile.fullName;
+  }
+
   void _updateDateController() {
     _dateController.text = _date == null ? '' : '${_date!.day.toString().padLeft(2, '0')}.${_date!.month.toString().padLeft(2, '0')}.${_date!.year}';
   }
@@ -271,11 +284,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       );
       return;
     }
+    // Teknisyen adı otomatik doldurulduğu için kontrol etmeye gerek yok
     if (_technicianController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen teknisyen adı girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
-      );
-      return;
+      // Teknisyen adını tekrar doldur
+      _technicianController.text = _getTechnicianName();
     }
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -664,16 +676,18 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
             const SizedBox(height: 4),
             TextField(
               controller: _technicianController,
+              readOnly: true,
               keyboardType: TextInputType.text,
               decoration: InputDecoration(
-                hintText: 'Teknisyen adı girin',
+                hintText: 'Teknisyen adı otomatik doldurulur',
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Colors.grey.shade50,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
+                suffixIcon: const Icon(Icons.person, color: Color(0xFF23408E)),
               ),
             ),
             const SizedBox(height: 12),

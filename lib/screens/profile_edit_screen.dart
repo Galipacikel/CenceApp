@@ -18,6 +18,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late TextEditingController _nameController;
   late TextEditingController _surnameController;
   late TextEditingController _titleController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+  late TextEditingController _departmentController;
 
   @override
   void initState() {
@@ -26,6 +29,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _nameController = TextEditingController(text: capitalizeEachWord(user.name));
     _surnameController = TextEditingController(text: capitalizeEachWord(user.surname));
     _titleController = TextEditingController(text: capitalizeEachWord(user.title));
+    _emailController = TextEditingController(text: user.email ?? '');
+    _phoneController = TextEditingController(text: user.phone ?? '');
+    _departmentController = TextEditingController(text: user.department ?? '');
   }
 
   @override
@@ -33,6 +39,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _nameController.dispose();
     _surnameController.dispose();
     _titleController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _departmentController.dispose();
     super.dispose();
   }
 
@@ -213,6 +222,24 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       }
                     },
                   ),
+                  const SizedBox(height: 16),
+                  _ProfileEditField(
+                    label: 'E-posta',
+                    hint: 'E-posta adresinizi girin',
+                    controller: _emailController,
+                  ),
+                  const SizedBox(height: 16),
+                  _ProfileEditField(
+                    label: 'Telefon',
+                    hint: 'Telefon numaranızı girin',
+                    controller: _phoneController,
+                  ),
+                  const SizedBox(height: 16),
+                  _ProfileEditField(
+                    label: 'Departman',
+                    hint: 'Departmanınızı girin',
+                    controller: _departmentController,
+                  ),
                   const SizedBox(height: 28),
                   SizedBox(
                     width: double.infinity,
@@ -236,6 +263,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               name: fixedName,
                               surname: fixedSurname,
                               title: fixedTitle,
+                              email: _emailController.text.trim(),
+                              phone: _phoneController.text.trim(),
+                              department: _departmentController.text.trim(),
                               profileImagePath: _profileImage?.path ?? user.profileImagePath,
                             ),
                           );
@@ -279,11 +309,32 @@ class _ProfileEditField extends StatelessWidget {
           onChanged: onChanged,
           validator: (val) {
             if (val == null || val.trim().isEmpty) return '$label boş olamaz';
-            final fixed = val.split(' ').map((word) {
-              if (word.isEmpty) return word;
-              return word[0].toUpperCase() + word.substring(1).toLowerCase();
-            }).join(' ');
-            if (val != fixed) return 'Her kelimenin ilk harfi büyük olmalı';
+            
+            // E-posta validasyonu
+            if (label == 'E-posta') {
+              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+              if (!emailRegex.hasMatch(val.trim())) {
+                return 'Geçerli bir e-posta adresi girin';
+              }
+            }
+            
+            // Telefon validasyonu
+            if (label == 'Telefon') {
+              final phoneRegex = RegExp(r'^[\+]?[0-9\s\-\(\)]{10,}$');
+              if (!phoneRegex.hasMatch(val.trim())) {
+                return 'Geçerli bir telefon numarası girin';
+              }
+            }
+            
+            // Ad, Soyad, Unvan, Departman için büyük harf kontrolü
+            if (['Ad', 'Soyad', 'Unvan', 'Departman'].contains(label)) {
+              final fixed = val.split(' ').map((word) {
+                if (word.isEmpty) return word;
+                return word[0].toUpperCase() + word.substring(1).toLowerCase();
+              }).join(' ');
+              if (val != fixed) return 'Her kelimenin ilk harfi büyük olmalı';
+            }
+            
             return null;
           },
           decoration: InputDecoration(

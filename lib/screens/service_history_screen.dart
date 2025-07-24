@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/service_history.dart';
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
+import '../providers/app_state_provider.dart';
 
 class ServisGecmisiScreen extends StatefulWidget {
   // final ServiceHistoryRepository repository;
@@ -679,6 +680,13 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
       durum = widget.mevcutKayit!['durum'];
       musteri = widget.mevcutKayit!['musteri'];
       tarih = _parseDate(widget.mevcutKayit!['tarih']);
+    } else {
+      // Yeni kayıt için teknisyen adını otomatik doldur
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          kisi = _getTechnicianName();
+        });
+      });
     }
   }
   DateTime _parseDate(String? date) {
@@ -702,6 +710,13 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
       'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
     ];
     return aylar[ay];
+  }
+
+  // Kullanıcı profilinden teknisyen adını al
+  String _getTechnicianName() {
+    final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+    final userProfile = appStateProvider.userProfile;
+    return userProfile.fullName;
   }
 
   @override
@@ -735,8 +750,12 @@ class _YeniKayitDialogState extends State<YeniKayitDialog> {
                 validator: (v) => v == null || v.isEmpty ? 'Açıklama girin' : null,
               ),
               TextFormField(
-                decoration: const InputDecoration(labelText: 'Teknisyen'),
+                decoration: const InputDecoration(
+                  labelText: 'Teknisyen',
+                  suffixIcon: const Icon(Icons.person, color: Color(0xFF23408E)),
+                ),
                 initialValue: kisi,
+                readOnly: true,
                 onChanged: (v) => kisi = v,
                 validator: (v) => v == null || v.isEmpty ? 'Teknisyen girin' : null,
               ),
