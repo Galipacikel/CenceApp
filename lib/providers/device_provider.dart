@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../models/device.dart';
 
 class DeviceProvider extends ChangeNotifier {
@@ -30,37 +31,121 @@ class DeviceProvider extends ChangeNotifier {
       warrantyStatus: 'Devam Ediyor',
       lastMaintenance: '20.06.2023',
     ),
+    // Aynı model farklı müşteriler
+    Device(
+      id: 'CİHAZ-004',
+      modelName: 'EKG Monitörü Card-10',
+      serialNumber: 'SN-C24680',
+      customer: 'Memorial Hastanesi',
+      installDate: '05.09.2022',
+      warrantyStatus: 'Devam Ediyor',
+      lastMaintenance: '05.09.2023',
+    ),
+    Device(
+      id: 'CİHAZ-005',
+      modelName: 'EKG Monitörü Card-10',
+      serialNumber: 'SN-C35791',
+      customer: 'Liv Hastanesi',
+      installDate: '12.11.2021',
+      warrantyStatus: 'Bitti',
+      lastMaintenance: '12.11.2022',
+    ),
+    Device(
+      id: 'CİHAZ-006',
+      modelName: 'Solunum Cihazı X-2000',
+      serialNumber: 'SN-A24680',
+      customer: 'Anadolu Sağlık Merkezi',
+      installDate: '08.04.2023',
+      warrantyStatus: 'Devam Ediyor',
+      lastMaintenance: '08.04.2024',
+    ),
+    Device(
+      id: 'CİHAZ-007',
+      modelName: 'Kalp Şok Cihazı Pro-500',
+      serialNumber: 'SN-B13579',
+      customer: 'Koç Üniversitesi Hastanesi',
+      installDate: '25.07.2022',
+      warrantyStatus: 'Devam Ediyor',
+      lastMaintenance: '25.07.2023',
+    ),
+    Device(
+      id: 'CİHAZ-008',
+      modelName: 'Kalp Şok Cihazı Pro-500',
+      serialNumber: 'SN-B24680',
+      customer: 'Hacettepe Üniversitesi Hastanesi',
+      installDate: '03.12.2021',
+      warrantyStatus: 'Bitti',
+      lastMaintenance: '03.12.2022',
+    ),
   ];
 
   List<Device> get devices => List.unmodifiable(_devices);
 
   void addDevice(Device device) {
-    _devices.add(device);
+    _devices.insert(0, device);
     notifyListeners();
   }
 
-  void updateDevice(Device updated) {
-    final idx = _devices.indexWhere((d) => d.id == updated.id);
-    if (idx != -1) {
-      _devices[idx] = updated;
+  void updateDevice(Device device) {
+    final index = _devices.indexWhere((d) => d.id == device.id);
+    if (index != -1) {
+      _devices[index] = device;
       notifyListeners();
     }
   }
 
-  Device? findBySerial(String serial) {
+  Device? findBySerial(String serialNumber) {
     try {
-      return _devices.firstWhere(
-        (d) => d.serialNumber.toLowerCase() == serial.toLowerCase(),
-      );
+      return _devices.firstWhere((device) => device.serialNumber == serialNumber);
     } catch (e) {
       return null;
     }
   }
 
   List<Device> search(String query) {
-    return _devices.where((d) =>
-      d.modelName.toLowerCase().contains(query.toLowerCase()) ||
-      d.serialNumber.toLowerCase().contains(query.toLowerCase())
+    if (query.isEmpty) return [];
+    
+    final lowercaseQuery = query.toLowerCase();
+    return _devices.where((device) =>
+      device.modelName.toLowerCase().contains(lowercaseQuery) ||
+      device.serialNumber.toLowerCase().contains(lowercaseQuery) ||
+      device.customer.toLowerCase().contains(lowercaseQuery)
     ).toList();
+  }
+
+  // Model bazında gruplandırma
+  Map<String, List<Device>> getDevicesByModel() {
+    final grouped = <String, List<Device>>{};
+    for (final device in _devices) {
+      if (grouped.containsKey(device.modelName)) {
+        grouped[device.modelName]!.add(device);
+      } else {
+        grouped[device.modelName] = [device];
+      }
+    }
+    return grouped;
+  }
+
+  // Müşteri bazında gruplandırma
+  Map<String, List<Device>> getDevicesByCustomer() {
+    final grouped = <String, List<Device>>{};
+    for (final device in _devices) {
+      if (grouped.containsKey(device.customer)) {
+        grouped[device.customer]!.add(device);
+      } else {
+        grouped[device.customer] = [device];
+      }
+    }
+    return grouped;
+  }
+
+  // Belirli bir modelin tüm cihazlarını getir
+  List<Device> getDevicesByModelName(String modelName) {
+    return _devices.where((device) => device.modelName == modelName).toList();
+  }
+
+  // Belirli bir müşterinin tüm cihazlarını getir
+  List<Device> getDevicesByCustomerName(String customerName) {
+    return _devices.where((device) => device.customer == customerName).toList();
   }
 } 
