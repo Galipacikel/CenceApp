@@ -25,21 +25,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  // final MockServiceHistoryRepository _repository = MockServiceHistoryRepository();
-  // List<ServiceHistory> _serviceHistoryList = [];
 
   @override
   void initState() {
     super.initState();
-    // _loadHistory();
   }
-
-  // Future<void> _loadHistory() async {
-  //   final all = await _repository.getAll();
-  //   setState(() {
-  //     _serviceHistoryList = all;
-  //   });
-  // }
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {
     final result = await Navigator.of(context).push(

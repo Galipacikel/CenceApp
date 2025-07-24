@@ -25,17 +25,11 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
   final StockPartRepository _stockRepository = MockStockRepository();
   final ServiceHistoryRepository _serviceHistoryRepository = MockServiceHistoryRepository();
 
-  int criticalLevel = 5;
-  bool showCriticalOnly = false;
-
   // Mock veri örneği (gerçek projede provider veya API'dan alınacak)
-  final List<Map<String, dynamic>> parts = [
-    {'name': 'Oksijen Sensörü', 'code': 'OKS-001', 'stock': 2},
-    {'name': 'Filtre', 'code': 'FLT-002', 'stock': 12},
-    {'name': 'Pompa', 'code': 'PMP-003', 'stock': 4},
-    {'name': 'Valf', 'code': 'VAL-004', 'stock': 8},
-    {'name': 'Batarya', 'code': 'BAT-005', 'stock': 1},
-  ];
+  // 1. Kullanılmayan mock parts listesi (final List<Map<String, dynamic>> parts) kaldırıldı.
+  // 2. criticalLevel ve showCriticalOnly gibi kullanılmayan değişkenler kaldırıldı.
+  // 3. Kullanılmayan importlar kaldırıldı.
+  // 4. Kodun kalan kısmı işlevselliği etkilemeden sadeleştirildi.
 
 
   @override
