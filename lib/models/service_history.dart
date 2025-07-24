@@ -63,7 +63,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '1',
       date: DateTime(2024, 3, 15),
-      deviceId: 'DEVICE-001', // Örnek cihaz ID'si
+      deviceId: 'CİHAZ-001', // Örnek cihaz ID'si
       musteri: 'A Hastanesi',
       description: 'Yıllık kalibrasyon ve parça kontrolü yapıldı.',
       technician: 'Ahmet Yılmaz',
@@ -76,7 +76,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '2',
       date: DateTime(2024, 2, 28),
-      deviceId: 'DEVICE-002',
+      deviceId: 'CİHAZ-002',
       musteri: 'B Kliniği',
       description: 'Güç kaynağı değiştirildi.',
       technician: 'Mehmet Demir',
@@ -85,7 +85,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '3',
       date: DateTime(2024, 1, 10),
-      deviceId: 'DEVICE-001',
+      deviceId: 'CİHAZ-001',
       musteri: 'A Hastanesi',
       description: 'Cihaz yazılımı v2.1.0 sürümüne güncellendi.',
       technician: 'Elif Kaya',
@@ -94,7 +94,7 @@ class MockServiceHistoryRepository implements ServiceHistoryRepository {
     ServiceHistory(
       id: '4',
       date: DateTime(2023, 12, 5),
-      deviceId: 'DEVICE-003',
+      deviceId: 'CİHAZ-003',
       musteri: 'C Sağlık Merkezi',
       description: 'Filtreler değiştirildi, genel temizlik yapıldı.',
       technician: 'Ahmet Yılmaz',

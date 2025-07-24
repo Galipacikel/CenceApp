@@ -341,12 +341,20 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
               constraints: BoxConstraints(maxWidth: isWide ? 600 : double.infinity),
               child: Consumer<DeviceProvider>(
                 builder: (context, deviceProvider, _) {
+                  // Tüm cihazların model adlarını tekrarsız şekilde listele
                   final allDevices = deviceProvider.devices;
+                  final uniqueModels = <String>{};
+                  final uniqueDevices = <Device>[];
+                  for (final device in allDevices) {
+                    if (!uniqueModels.contains(device.modelName)) {
+                      uniqueModels.add(device.modelName);
+                      uniqueDevices.add(device);
+                    }
+                  }
                   final filtered = deviceSearch.isEmpty
-                    ? allDevices
-                    : allDevices.where((d) =>
-                        d.modelName.toLowerCase().contains(deviceSearch.toLowerCase()) ||
-                        d.serialNumber.toLowerCase().contains(deviceSearch.toLowerCase())
+                    ? uniqueDevices
+                    : uniqueDevices.where((d) =>
+                        d.modelName.toLowerCase().contains(deviceSearch.toLowerCase())
                       ).toList();
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -354,7 +362,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                       children: [
                         TextField(
                           decoration: InputDecoration(
-                            hintText: 'Model, seri numarası veya müşteri ile ara...',
+                            hintText: 'Model ile ara...',
                             prefixIcon: const Icon(Icons.search),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -371,7 +379,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                         ),
                         const SizedBox(height: 16),
                         if (filtered.isEmpty)
-                          const Text('Eşleşen cihaz bulunamadı.', style: TextStyle(color: Colors.black54))
+                          const Text('Envanterde cihaz bulunamadı.', style: TextStyle(color: Colors.black54))
                         else
                           Expanded(
                             child: ListView.builder(
@@ -384,9 +392,8 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                                   elevation: 2,
                                   child: ListTile(
                                     leading: const Icon(Icons.devices_other, color: Color(0xFF23408E)),
-                                    title: Text('Cihaz Adı: ${device.modelName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    subtitle: Text('Seri No: ${device.serialNumber}'),
-                                    isThreeLine: true,
+                                    title: Text(device.modelName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    // Sadece model adı gösterilecek, seri no, müşteri vs. yok
                                   ),
                                 );
                               },
