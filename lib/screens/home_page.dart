@@ -15,6 +15,7 @@ import '../models/stock_part.dart';
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../providers/device_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -304,10 +305,10 @@ class _HomePageState extends State<HomePage> {
 class _WelcomeSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Örnek kullanıcı adı ve özet (gerçek projede provider veya API'dan alınabilir)
+    // Kullanıcı adı ve özet artık provider'dan alınacak
     final String user = 'Ahmet';
-    final int device = 12;
-    final int service = 34;
+    final int device = Provider.of<DeviceProvider>(context).devices.length;
+    final int service = Provider.of<ServiceHistoryProvider>(context).all.length;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
