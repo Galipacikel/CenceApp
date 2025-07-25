@@ -45,7 +45,45 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
     final statusData = getStatusData(serviceHistory.status);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('İşlem Detayı'),
+        backgroundColor: const Color(0xFF23408E),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'İşlem Detayı',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded, color: Colors.white, size: 24),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Paylaşım özelliği yakında eklenecek'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('İşlem detayları konusunda yardım için destek ekibimizle iletişime geçin.'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

@@ -10,6 +10,8 @@ import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
 import 'service_history_detail_screen.dart';
+import 'notification_settings_screen.dart';
+import 'support_request_screen.dart';
 import '../models/service_history.dart';
 import '../models/stock_part.dart';
 import 'package:provider/provider.dart';
@@ -69,15 +71,12 @@ class _HomePageState extends State<HomePage> {
         preferredSize: Size.fromHeight(isWide ? 90 : 70),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F6FA),
-            border: const Border(
-              bottom: BorderSide(color: Color(0xFF23408E), width: 1.2),
-            ),
+            color: const Color(0xFF23408E),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF23408E).withOpacity(0.07),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: const Color(0xFF23408E).withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -98,12 +97,12 @@ class _HomePageState extends State<HomePage> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Blue circle background
+                    // White circle background
                     Container(
                       width: isWide ? 44 : 36,
                       height: isWide ? 44 : 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF23408E).withOpacity(0.09),
+                        color: Colors.white.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -116,7 +115,7 @@ class _HomePageState extends State<HomePage> {
                         height: 14,
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          border: Border.all(color: const Color(0xFF23408E), width: 2),
+                          border: Border.all(color: Colors.white, width: 2),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Center(
@@ -126,13 +125,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                     // Stylized C
                     Positioned(
-                      left: 0,
+                      left: isWide ? 8 : 6,
+                      top: isWide ? 2 : 1,
                       child: Text(
                         'C',
                         style: GoogleFonts.montserrat(
                           fontWeight: FontWeight.bold,
                           fontSize: isWide ? 32 : 26,
-                          color: const Color(0xFF23408E),
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -148,16 +148,37 @@ class _HomePageState extends State<HomePage> {
                     text: TextSpan(
                       style: GoogleFonts.montserrat(fontSize: isWide ? 26 : 20, fontWeight: FontWeight.bold),
                       children: const [
-                        TextSpan(text: 'Ce', style: TextStyle(color: Color(0xFF23408E))),
-                        TextSpan(text: 'n', style: TextStyle(color: Color(0xFFE53935))),
-                        TextSpan(text: 'ce', style: TextStyle(color: Color(0xFF23408E))),
+                        TextSpan(text: 'Ce', style: TextStyle(color: Colors.white)),
+                        TextSpan(text: 'n', style: TextStyle(color: Colors.red)),
+                        TextSpan(text: 'ce', style: TextStyle(color: Colors.white)),
                       ],
                     ),
                   ),
-                  Text('Medikal', style: GoogleFonts.montserrat(fontSize: isWide ? 15 : 12, color: Color(0xFF23408E), fontWeight: FontWeight.w500)),
+                  Text('Medikal', style: GoogleFonts.montserrat(fontSize: isWide ? 15 : 12, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w500)),
                 ],
               ),
               const Spacer(),
+              // Sağ tarafta aksiyon butonları
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SupportRequestScreen()),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ],
           ),
         ),

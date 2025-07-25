@@ -161,21 +161,59 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF23408E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Cihaz Sorgula',
           style: GoogleFonts.montserrat(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 24),
+            onPressed: () async {
+              final status = await Permission.camera.request();
+              if (status.isGranted) {
+                if (mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BarcodeScannerScreen(),
+                    ),
+                  );
+                }
+              } else {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Kamera izni gerekli'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Cihaz arama konusunda yardım için destek ekibimizle iletişime geçin.'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
@@ -188,7 +226,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: const Color(0xFF23408E).withOpacity(0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
@@ -206,10 +244,18 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                         color: Colors.grey.shade500,
                         fontSize: 16,
                       ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: Color(0xFF23408E),
-                        size: 24,
+                      prefixIcon: Container(
+                        margin: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF23408E).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF23408E),
+                          size: 20,
+                        ),
                       ),
                       filled: true,
                       fillColor: Colors.white,
@@ -221,6 +267,10 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: const BorderSide(color: Color(0xFF23408E), width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
                       ),
                     ),
                   );
@@ -901,23 +951,67 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                color: const Color(0xFF23408E),
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Cihaz Detayları',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.black87,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF23408E).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF23408E).withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF23408E),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.devices_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Cihaz Detayları',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: const Color(0xFF23408E),
+                        ),
+                      ),
+                      Text(
+                        device.modelName,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF23408E),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    device.serialNumber,
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           _DetailRow(
@@ -1054,22 +1148,35 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     IconData? icon;
     switch (label) {
-      case 'Seri Numarası': icon = Icons.qr_code_2; break;
-      case 'Model Adı': icon = Icons.devices; break;
-      case 'Müşteri/Kurum': icon = Icons.business; break;
-      case 'Kurulum Tarihi': icon = Icons.event; break;
-      case 'Son Bakım Tarihi': icon = Icons.build; break;
-      case 'Garanti Bitiş Tarihi': icon = Icons.verified_user; break;
-      case 'Garantiye Kalan Süre': icon = Icons.timer; break;
-      case 'Garanti Durumu': icon = Icons.verified; break;
-      default: icon = Icons.info_outline;
+      case 'Seri Numarası': icon = Icons.qr_code_2_rounded; break;
+      case 'Model Adı': icon = Icons.devices_rounded; break;
+      case 'Müşteri/Kurum': icon = Icons.business_rounded; break;
+      case 'Kurulum Tarihi': icon = Icons.event_rounded; break;
+      case 'Son Bakım Tarihi': icon = Icons.build_rounded; break;
+      case 'Garanti Bitiş Tarihi': icon = Icons.verified_user_rounded; break;
+      case 'Garantiye Kalan Süre': icon = Icons.timer_rounded; break;
+      case 'Garanti Durumu': icon = Icons.verified_rounded; break;
+      default: icon = Icons.info_outline_rounded;
     }
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF23408E), size: 20),
-          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF23408E).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: const Color(0xFF23408E), size: 18),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1078,16 +1185,16 @@ class _DetailRow extends StatelessWidget {
                   label,
                   style: GoogleFonts.montserrat(
                     color: Colors.grey.shade600,
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   value,
                   style: GoogleFonts.montserrat(
                     fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                    fontSize: 14,
                     color: Colors.black87,
                   ),
                 ),
@@ -1095,14 +1202,22 @@ class _DetailRow extends StatelessWidget {
             ),
           ),
           if (onCopy != null)
-            IconButton(
-              onPressed: onCopy,
-              icon: const Icon(
-                Icons.copy_rounded,
-                color: Color(0xFF23408E),
-                size: 20,
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF23408E).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
               ),
-              tooltip: 'Kopyala',
+              child: IconButton(
+                onPressed: onCopy,
+                icon: const Icon(
+                  Icons.copy_rounded,
+                  color: Color(0xFF23408E),
+                  size: 18,
+                ),
+                tooltip: 'Kopyala',
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
             ),
         ],
       ),
@@ -1113,20 +1228,49 @@ class _DetailRow extends StatelessWidget {
 Widget buildWarrantyChip(String status, int? daysLeft) {
   Color color;
   String label = status;
+  IconData icon = Icons.verified_rounded;
+  
   if (status == 'Devam Ediyor') {
     if (daysLeft != null && daysLeft <= 30 && daysLeft > 0) {
-      color = Colors.orange;
+      color = Colors.orange.shade600;
       label = 'Az Kaldı ($daysLeft gün)';
+      icon = Icons.warning_rounded;
     } else {
-      color = Colors.green;
+      color = Colors.green.shade600;
+      icon = Icons.check_circle_rounded;
     }
   } else {
-    color = Colors.red;
+    color = Colors.red.shade600;
+    icon = Icons.cancel_rounded;
   }
-  return Chip(
-    label: Text(label, style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
-    backgroundColor: color,
-    avatar: Icon(Icons.verified, color: Colors.white, size: 18),
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+  
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: color.withOpacity(0.3),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white, size: 16),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    ),
   );
 } 

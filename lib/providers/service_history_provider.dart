@@ -12,6 +12,7 @@ class ServiceHistoryProvider extends ChangeNotifier {
   }
 
   void addServiceHistory(ServiceHistory history) {
+    print('DEBUG: addServiceHistory çağrıldı - ID: ${history.id}');
     _serviceHistoryList.insert(0, history);
     notifyListeners();
   }

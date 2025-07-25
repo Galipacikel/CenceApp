@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ChangePasswordScreen extends StatelessWidget {
+class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+}
+
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  bool _showNewPassword = false;
+  bool _showConfirmPassword = false;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +80,7 @@ class ChangePasswordScreen extends StatelessWidget {
                       Text('Yeni Şifre', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
                       const SizedBox(height: 6),
                       TextFormField(
-                        obscureText: true,
+                        obscureText: !_showNewPassword,
                         decoration: InputDecoration(
                           hintText: 'Yeni şifrenizi girin',
                           hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
@@ -83,13 +91,24 @@ class ChangePasswordScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showNewPassword ? Icons.visibility_off : Icons.visibility,
+                              color: subtitleColor,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showNewPassword = !_showNewPassword;
+                              });
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text('Yeni Şifre (Tekrar)', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
                       const SizedBox(height: 6),
                       TextFormField(
-                        obscureText: true,
+                        obscureText: !_showConfirmPassword,
                         decoration: InputDecoration(
                           hintText: 'Yeni şifrenizi tekrar girin',
                           hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
@@ -99,6 +118,17 @@ class ChangePasswordScreen extends StatelessWidget {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                              color: subtitleColor,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showConfirmPassword = !_showConfirmPassword;
+                              });
+                            },
                           ),
                         ),
                       ),

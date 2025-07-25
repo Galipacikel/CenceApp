@@ -79,7 +79,56 @@ class AllServiceHistoryScreen extends StatelessWidget {
     final dateFormat = DateFormat('dd MMMM yyyy', 'tr_TR');
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tüm Servis İşlemleri'),
+        backgroundColor: const Color(0xFF23408E),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Tüm Servis İşlemleri',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list_rounded, color: Colors.white, size: 24),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Filtreleme özelliği yakında eklenecek'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.sort_rounded, color: Colors.white, size: 24),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Sıralama özelliği yakında eklenecek'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Servis geçmişi görüntüleme konusunda yardım için destek ekibimizle iletişime geçin.'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: FutureBuilder<List<ServiceHistory>>(
         future: repository.getAll(),
