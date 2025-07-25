@@ -212,17 +212,29 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF23408E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Servis Geçmişi',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list_rounded, color: Colors.white),
+            onPressed: _showFilterDialog,
+            tooltip: 'Filtrele',
+          ),
+          IconButton(
+            icon: const Icon(Icons.sort_rounded, color: Colors.white),
+            onPressed: _showSortDialog,
+            tooltip: 'Sırala',
+          ),
+        ],
       ),
       body: Consumer<ServiceHistoryProvider>(
         builder: (context, provider, _) {
@@ -399,6 +411,16 @@ class _ServisKayitCard extends StatelessWidget {
   final List<String> deviceList;
   const _ServisKayitCard({required this.kayit, required this.deviceList, Key? key}) : super(key: key);
 
+  String _formatDate(DateTime date) {
+    final months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final parentState = context.findAncestorStateOfType<_ServisGecmisiScreenState>();
@@ -407,32 +429,50 @@ class _ServisKayitCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: isWide ? 24 : 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(isWide ? 22 : 14),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(isWide ? 22 : 16),
+        border: Border.all(color: const Color(0xFF23408E).withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.07),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF23408E).withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: EdgeInsets.symmetric(horizontal: isWide ? 28 : 16, vertical: isWide ? 22 : 14),
+      padding: EdgeInsets.symmetric(horizontal: isWide ? 28 : 18, vertical: isWide ? 22 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.calendar_month, size: isWide ? 26 : 20, color: const Color(0xFF23408E)),
-              const SizedBox(width: 6),
-              Text(
-                kayit.date.toString().split(' ')[0], // Tarihi formatla
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: isWide ? 16 : 14, color: Colors.black87),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF23408E).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.calendar_month, size: isWide ? 24 : 18, color: const Color(0xFF23408E)),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _formatDate(kayit.date),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: isWide ? 16 : 14, color: Colors.black87),
+                  ),
+                  Text(
+                    _formatTime(kayit.date),
+                    style: TextStyle(fontSize: isWide ? 13 : 11, color: Colors.grey.shade600),
+                  ),
+                ],
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.edit, size: 20, color: Color(0xFF23408E)),
+                icon: const Icon(Icons.edit, size: 18, color: Color(0xFF23408E)),
                 tooltip: 'Düzenle',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 onPressed: parentState == null ? null : () async {
                   final guncelKayit = await showDialog<Map<String, dynamic>>(
                     context: context,
@@ -447,8 +487,10 @@ class _ServisKayitCard extends StatelessWidget {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.delete, size: 20, color: Color(0xFFE53935)),
+                icon: const Icon(Icons.delete, size: 18, color: Color(0xFFE53935)),
                 tooltip: 'Sil',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 onPressed: parentState == null ? null : () async {
                   final onay = await showDialog<bool>(
                     context: context,
@@ -473,62 +515,125 @@ class _ServisKayitCard extends StatelessWidget {
                 },
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: getStatusBgColor(kayit.status),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  getStatusLabel(kayit.status),
-                  style: TextStyle(
-                    color: getStatusTextColor(kayit.status),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: getStatusTextColor(kayit.status).withOpacity(0.2),
+                    width: 1,
                   ),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      kayit.status == 'Başarılı' ? Icons.check_circle : Icons.warning,
+                      size: 10,
+                      color: getStatusTextColor(kayit.status),
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      getStatusLabel(kayit.status),
+                      style: TextStyle(
+                        color: getStatusTextColor(kayit.status),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF23408E).withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF23408E).withOpacity(0.1)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF23408E).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.devices_other, size: isWide ? 20 : 16, color: const Color(0xFF23408E)),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            kayit.deviceId,
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: isWide ? 16 : 14, color: Colors.black87),
+                          ),
+                          if (kayit.musteri.isNotEmpty)
+                            Text(
+                              kayit.musteri,
+                              style: TextStyle(fontSize: isWide ? 13 : 11, color: Colors.grey.shade600),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (kayit.description.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    kayit.description,
+                    style: TextStyle(fontSize: isWide ? 14 : 12, color: Colors.black87, height: 1.4),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.label_important_rounded, size: isWide ? 22 : 16, color: getStatusBgColor(kayit.status)),
-              const SizedBox(width: 4),
-              Text(
-                kayit.deviceId,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: isWide ? 17 : 15, color: Colors.black),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF23408E).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.person, size: isWide ? 18 : 16, color: const Color(0xFF23408E)),
               ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            kayit.description,
-            style: TextStyle(fontSize: isWide ? 15 : 13, color: Colors.black87),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.person, size: isWide ? 22 : 18, color: const Color(0xFF23408E)),
-              const SizedBox(width: 6),
+              const SizedBox(width: 10),
               Text(
                 kayit.technician,
-                style: TextStyle(fontSize: isWide ? 15 : 13, color: Colors.black87, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: isWide ? 14 : 12, color: Colors.black87, fontWeight: FontWeight.w500),
               ),
               const Spacer(),
-              TextButton(
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF23408E).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ServisKaydiDetayScreen(kayit: kayit),
-                    ),
-                  );
-                },
-                child: const Text('Detaylar', style: TextStyle(fontSize: 13, color: Color(0xFF23408E), fontWeight: FontWeight.w600)),
+                child: TextButton.icon(
+                  icon: const Icon(Icons.visibility, size: 16, color: Color(0xFF23408E)),
+                  label: const Text('Detaylar', style: TextStyle(fontSize: 12, color: Color(0xFF23408E), fontWeight: FontWeight.w600)),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ServisKaydiDetayScreen(kayit: kayit),
+                      ),
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
               ),
             ],
           ),
@@ -542,15 +647,39 @@ class ServisKaydiDetayScreen extends StatelessWidget {
   final ServiceHistory kayit;
   const ServisKaydiDetayScreen({required this.kayit, Key? key}) : super(key: key);
 
+  String _formatDetailDate(DateTime date) {
+    final months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF23408E),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text('Servis Detayı', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Servis Detayı',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded, color: Colors.white),
+            onPressed: () {
+              // Paylaşım fonksiyonu buraya eklenebilir
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Paylaşım özelliği yakında eklenecek')),
+              );
+            },
+            tooltip: 'Paylaş',
+          ),
+        ],
       ),
       backgroundColor: const Color(0xFFF5F6FA),
       body: SingleChildScrollView(
@@ -561,84 +690,245 @@ class ServisKaydiDetayScreen extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF23408E).withOpacity(0.1)),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF23408E).withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: getStatusBgColor(kayit.status),
                           borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          getStatusLabel(kayit.status),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                          border: Border.all(
+                            color: getStatusTextColor(kayit.status).withOpacity(0.2),
+                            width: 1,
                           ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              kayit.status == 'Başarılı' ? Icons.check_circle : Icons.warning,
+                              size: 12,
+                              color: getStatusTextColor(kayit.status),
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              getStatusLabel(kayit.status),
+                              style: TextStyle(
+                                color: getStatusTextColor(kayit.status),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        kayit.date.toString().split(' ')[0], // Tarihi formatla
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF23408E).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_month, size: 18, color: const Color(0xFF23408E)),
+                            const SizedBox(width: 6),
+                            Text(
+                              _formatDetailDate(kayit.date),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF23408E)),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Text(
                     kayit.deviceId,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black87),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    kayit.description,
-                    style: const TextStyle(fontSize: 15, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      const Icon(Icons.devices, size: 20, color: Color(0xFF23408E)),
-                      const SizedBox(width: 8),
-                      Text(
-                        kayit.deviceId,
-                        style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Icon(Icons.person, size: 20, color: Color(0xFF23408E)),
-                      const SizedBox(width: 8),
-                      Text(
-                        kayit.technician,
-                        style: const TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  // Medya alanı (örnek görsel)
+                  if (kayit.musteri.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      kayit.musteri,
+                      style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                    ),
+                  ],
+                  if (kayit.description.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      kayit.description,
+                      style: const TextStyle(fontSize: 15, color: Colors.black87, height: 1.4),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
                   Container(
-                    height: 160,
-                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE3E7F1),
-                      borderRadius: BorderRadius.circular(10),
+                      color: const Color(0xFF23408E).withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF23408E).withOpacity(0.1)),
                     ),
-                    child: const Center(
-                      child: Icon(Icons.image, size: 60, color: Color(0xFFB0B6C3)),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF23408E).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.devices_other, size: 20, color: Color(0xFF23408E)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cihaz',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                                  ),
+                                  Text(
+                                    kayit.deviceId,
+                                    style: const TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF23408E).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.person, size: 20, color: Color(0xFF23408E)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Teknisyen',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                                  ),
+                                  Text(
+                                    kayit.technician,
+                                    style: const TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text('Medya (örnek)', style: TextStyle(fontSize: 13, color: Color(0xFFB0B6C3))),
+                  const SizedBox(height: 20),
+                  // Kullanılan Parçalar
+                  if (kayit.kullanilanParcalar.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF23408E).withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF23408E).withOpacity(0.1)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF23408E).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.build, size: 20, color: Color(0xFF23408E)),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Kullanılan Parçalar',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ...kayit.kullanilanParcalar.map((part) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF23408E).withOpacity(0.1)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF23408E).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Icon(Icons.memory, size: 16, color: Color(0xFF23408E)),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        part.parcaAdi,
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87),
+                                      ),
+                                      Text(
+                                        'Kod: ${part.parcaKodu}',
+                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF23408E).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '${part.stokAdedi} adet',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF23408E)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )).toList(),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

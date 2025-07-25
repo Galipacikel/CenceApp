@@ -74,6 +74,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   };
 
   List<SelectedPart> _selectedParts = [];
+  bool _isSaving = false; // Çift kaydetmeyi önlemek için flag
 
   @override
   void initState() {
@@ -265,22 +266,29 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   }
 
   void _onKaydet() async {
+    // Çift kaydetmeyi önle
+    if (_isSaving) return;
+    _isSaving = true;
+    
     if (_selectedDevice == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen bir cihaz seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
+      _isSaving = false;
       return;
     }
     if (_customerController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen müşteri/kurum adı girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
+      _isSaving = false;
       return;
     }
     if (_date == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen bir tarih seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
+      _isSaving = false;
       return;
     }
     // Teknisyen adı otomatik doldurulduğu için kontrol etmeye gerek yok
@@ -293,6 +301,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen en az bir parça ve miktar seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
       );
+      _isSaving = false;
       return;
     }
 
@@ -340,7 +349,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       ServiceHistory(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: _date!,
-        deviceId: _selectedDevice!.id,
+        deviceId: _selectedDevice!.modelName, // ID yerine cihaz adını kaydet
         musteri: _customerController.text,
         description: _descriptionController.text,
         technician: _technicianController.text,
@@ -374,6 +383,9 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Kayıt başarıyla eklendi!'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
     );
+    
+    // Flag'i sıfırla
+    _isSaving = false;
   }
 
   Color _getStockStatusColor(StockPart part) {

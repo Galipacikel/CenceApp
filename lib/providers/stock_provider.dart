@@ -3,7 +3,7 @@ import '../models/stock_part.dart';
 
 class StockProvider extends ChangeNotifier {
   final List<StockPart> _parts = [
-    StockPart(id: '1', parcaAdi: 'Anakart', parcaKodu: '77889', stokAdedi: 1, criticalLevel: 2),
+    StockPart(id: '1', parcaAdi: 'Anakart', parcaKodu: '77889', stokAdedi: 0, criticalLevel: 2),
     StockPart(id: '2', parcaAdi: 'Ekran', parcaKodu: '44556', stokAdedi: 3, criticalLevel: 3),
     StockPart(id: '3', parcaAdi: 'Kablo', parcaKodu: '67890', stokAdedi: 5, criticalLevel: 4),
     StockPart(id: '4', parcaAdi: 'Sensör', parcaKodu: '12345', stokAdedi: 10, criticalLevel: 5),

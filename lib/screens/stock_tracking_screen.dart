@@ -984,22 +984,18 @@ class _YedekParcaListesiState extends State<YedekParcaListesi> {
               itemCount: filteredParts.length,
               itemBuilder: (context, index) {
                 final part = filteredParts[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                  child: ListTile(
-                    onTap: () => widget.onTap(part),
-                    title: Text(part.parcaAdi, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Kod: ${part.parcaKodu}'),
-                    trailing: Text('Stok: ${part.stokAdedi}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    isThreeLine: true,
-                  ),
+                return _PartCard(
+                  part: part,
+                  primaryBlue: const Color(0xFF23408E),
+                  textColor: const Color(0xFF232946),
+                  subtitleColor: const Color(0xFF4A4A4A),
+                  cardRadius: 12,
+                  onCriticalLevelEdit: () {},
                 );
-                        },
-                  ),
-                ),
-              ],
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1146,26 +1142,26 @@ class _PartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stockProvider = Provider.of<StockProvider>(context, listen: false);
-    final bool isCritical = part.stokAdedi <= part.criticalLevel;
     final bool isOutOfStock = part.stokAdedi == 0;
+    final bool isCritical = !isOutOfStock && part.stokAdedi <= part.criticalLevel;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        color: isOutOfStock ? Colors.red.shade50 : Colors.white,
+        color: isOutOfStock ? Colors.red.shade200 : Colors.white,
         borderRadius: BorderRadius.circular(cardRadius),
         border: Border.all(
           color: isOutOfStock
-              ? Colors.red.withOpacity(0.5)
+              ? Colors.red.withOpacity(0.7)
               : isCritical ? Colors.red.withOpacity(0.35) : primaryBlue.withOpacity(0.10),
           width: isOutOfStock ? 2 : isCritical ? 2 : 1,
         ),
         boxShadow: [
           if (isOutOfStock)
             BoxShadow(
-              color: Colors.red.withOpacity(0.13),
-              blurRadius: 12,
+              color: Colors.red.withOpacity(0.18),
+              blurRadius: 14,
               offset: const Offset(0, 2),
             )
           else if (isCritical)
@@ -1191,7 +1187,7 @@ class _PartCard extends StatelessWidget {
           height: 38,
           decoration: BoxDecoration(
             color: isOutOfStock
-                ? Colors.red.shade100
+                ? Colors.red.shade300
                 : isCritical ? Colors.red.withOpacity(0.18) : primaryBlue.withOpacity(0.10),
             shape: BoxShape.circle,
           ),
@@ -1210,7 +1206,7 @@ class _PartCard extends StatelessWidget {
                 part.parcaAdi,
                 style: GoogleFonts.montserrat(
                   fontWeight: FontWeight.bold,
-                  color: isOutOfStock ? Colors.red : textColor,
+                  color: isOutOfStock ? Colors.red.shade900 : textColor,
                   fontSize: 16,
                 ),
               ),
@@ -1218,27 +1214,29 @@ class _PartCard extends StatelessWidget {
             if (isOutOfStock)
               Container(
                 margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade200,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.red.shade400,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.red.shade700, width: 1.5),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.block, color: Colors.red, size: 16),
-                    const SizedBox(width: 4),
+                    Icon(Icons.block, color: Colors.white, size: 18),
+                    const SizedBox(width: 6),
                     Text(
-                      'Stokta Yok',
+                      'Stok Bitti',
                       style: GoogleFonts.montserrat(
-                        color: Colors.red,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: 13,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
                 ),
               ),
-            if (!isOutOfStock && part.stokAdedi <= part.criticalLevel)
+            if (!isOutOfStock && isCritical)
               Container(
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1260,7 +1258,7 @@ class _PartCard extends StatelessWidget {
         subtitle: Text(
           'Kod: ${part.parcaKodu}  |  Stok: ${part.stokAdedi}',
           style: GoogleFonts.montserrat(
-            color: isOutOfStock ? Colors.red : subtitleColor,
+            color: isOutOfStock ? Colors.red.shade900 : subtitleColor,
             fontWeight: isOutOfStock ? FontWeight.bold : FontWeight.normal,
             fontSize: 13,
           ),
