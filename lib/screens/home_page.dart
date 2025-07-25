@@ -297,7 +297,7 @@ class _WelcomeSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     // Kullanıcı adı ve özet artık provider'dan alınacak
     final String user = 'Ahmet';
-    final int device = Provider.of<DeviceProvider>(context).devices.length;
+    final int device = Provider.of<DeviceProvider>(context).uniqueDeviceCount;
     final int service = Provider.of<ServiceHistoryProvider>(context).all.length;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,

@@ -423,11 +423,12 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                     child: Consumer<DeviceProvider>(
                       builder: (context, deviceProvider, _) {
                         final allDevices = deviceProvider.devices;
-                        final uniqueModels = <String>{};
+                        final uniqueKeys = <String>{};
                         final uniqueDevices = <Device>[];
                         for (final device in allDevices) {
-                          if (!uniqueModels.contains(device.modelName)) {
-                            uniqueModels.add(device.modelName);
+                          final key = '${device.modelName}_${device.serialNumber}';
+                          if (!uniqueKeys.contains(key)) {
+                            uniqueKeys.add(key);
                             uniqueDevices.add(device);
                           }
                         }
@@ -536,10 +537,10 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                     child: Consumer<StockProvider>(
                       builder: (context, stockProvider, _) {
                         final criticalParts = stockProvider.getCriticalParts();
-                        final sortedParts = stockProvider.getSortedParts();
-                        // Alfabetik sıralama
-                        sortedParts.sort((a, b) => a.parcaAdi.compareTo(b.parcaAdi));
-                        criticalParts.sort((a, b) => a.parcaAdi.compareTo(b.parcaAdi));
+                        final sortedParts = [
+                          ...stockProvider.parts.where((p) => p.stokAdedi == 0),
+                          ...stockProvider.parts.where((p) => p.stokAdedi > 0)
+                        ];
                         
                         // Arama filtresi
                         final filteredParts = partSearch.isEmpty
@@ -1146,19 +1147,28 @@ class _PartCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final stockProvider = Provider.of<StockProvider>(context, listen: false);
     final bool isCritical = part.stokAdedi <= part.criticalLevel;
+    final bool isOutOfStock = part.stokAdedi == 0;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isOutOfStock ? Colors.red.shade50 : Colors.white,
         borderRadius: BorderRadius.circular(cardRadius),
         border: Border.all(
-          color: isCritical ? Colors.red.withOpacity(0.35) : primaryBlue.withOpacity(0.10),
-          width: isCritical ? 2 : 1,
+          color: isOutOfStock
+              ? Colors.red.withOpacity(0.5)
+              : isCritical ? Colors.red.withOpacity(0.35) : primaryBlue.withOpacity(0.10),
+          width: isOutOfStock ? 2 : isCritical ? 2 : 1,
         ),
         boxShadow: [
-          if (isCritical)
+          if (isOutOfStock)
+            BoxShadow(
+              color: Colors.red.withOpacity(0.13),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
+            )
+          else if (isCritical)
             BoxShadow(
               color: Colors.red.withOpacity(0.10),
               blurRadius: 10,
@@ -1180,18 +1190,82 @@ class _PartCard extends StatelessWidget {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: isCritical ? Colors.red.withOpacity(0.18) : primaryBlue.withOpacity(0.10),
+            color: isOutOfStock
+                ? Colors.red.shade100
+                : isCritical ? Colors.red.withOpacity(0.18) : primaryBlue.withOpacity(0.10),
             shape: BoxShape.circle,
           ),
           child: Icon(
-            isCritical ? Icons.warning_amber_rounded : Icons.memory,
-            color: isCritical ? Colors.red : primaryBlue,
+            isOutOfStock
+                ? Icons.block
+                : isCritical ? Icons.warning_amber_rounded : Icons.memory,
+            color: isOutOfStock ? Colors.red : isCritical ? Colors.red : primaryBlue,
             size: 22,
           ),
         ),
-        title: Text(part.parcaAdi, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: textColor)),
-        subtitle: Text('Kod: ${part.parcaKodu}  |  Stok: ${part.stokAdedi}', style: GoogleFonts.montserrat(color: subtitleColor, fontSize: 13)),
-        trailing: Container(
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                part.parcaAdi,
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.bold,
+                  color: isOutOfStock ? Colors.red : textColor,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            if (isOutOfStock)
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade200,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.block, color: Colors.red, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Stokta Yok',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (!isOutOfStock && part.stokAdedi <= part.criticalLevel)
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD32F2F).withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Stok kritik',
+                  style: GoogleFonts.montserrat(
+                    color: const Color(0xFFD32F2F),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        subtitle: Text(
+          'Kod: ${part.parcaKodu}  |  Stok: ${part.stokAdedi}',
+          style: GoogleFonts.montserrat(
+            color: isOutOfStock ? Colors.red : subtitleColor,
+            fontWeight: isOutOfStock ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+        trailing: isOutOfStock ? null : Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: isCritical ? Colors.red.withOpacity(0.18) : primaryBlue.withOpacity(0.10),

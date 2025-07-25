@@ -161,4 +161,13 @@ class DeviceProvider extends ChangeNotifier {
   List<Device> getDevicesByCustomerName(String customerName) {
     return _devices.where((device) => device.customer == customerName).toList();
   }
+
+  // Benzersiz cihaz sayısı (modelName+serialNumber ile)
+  int get uniqueDeviceCount {
+    final unique = <String>{};
+    for (final d in _devices) {
+      unique.add('${d.modelName}_${d.serialNumber}');
+    }
+    return unique.length;
+  }
 } 

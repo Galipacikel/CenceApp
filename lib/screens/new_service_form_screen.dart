@@ -526,7 +526,6 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                             final device = _filteredDevices[index];
                             return ListTile(
                               title: Text('${device.modelName} (${device.serialNumber})'),
-                              subtitle: Text(device.customer),
                               onTap: () => _selectDevice(device),
                             );
                           },
