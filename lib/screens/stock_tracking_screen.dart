@@ -514,7 +514,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                                               ),
                                             ),
                                             title: Text(device.modelName, style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
-                                            subtitle: Text('Seri No: ${device.serialNumber}', style: GoogleFonts.montserrat(fontSize: 13, color: subtitleColor)),
+                                            subtitle: Text('ID: ${device.id} | Seri No: ${device.serialNumber}', style: GoogleFonts.montserrat(fontSize: 13, color: subtitleColor)),
                                             trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFB0B3C0), size: 18),
                                           ),
                                         ),

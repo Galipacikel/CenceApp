@@ -201,7 +201,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                     focusNode: focusNode,
                     style: GoogleFonts.montserrat(fontSize: 16),
                     decoration: InputDecoration(
-                      hintText: 'Model, seri numarası veya müşteri...',
+                      hintText: 'Model veya seri numarası ile ara...',
                       hintStyle: GoogleFonts.montserrat(
                         color: Colors.grey.shade500,
                         fontSize: 16,
@@ -230,7 +230,21 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                     return const Iterable<Device>.empty();
                   }
                   final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-                  return deviceProvider.search(textEditingValue.text);
+                  final allDevices = deviceProvider.devices;
+                  final uniqueModels = <String>{};
+                  final uniqueDevices = <Device>[];
+                  
+                  for (final device in allDevices) {
+                    if (!uniqueModels.contains(device.modelName)) {
+                      uniqueModels.add(device.modelName);
+                      uniqueDevices.add(device);
+                    }
+                  }
+                  
+                  return uniqueDevices.where((device) =>
+                    device.modelName.toLowerCase().contains(textEditingValue.text.toLowerCase()) ||
+                    device.serialNumber.toLowerCase().contains(textEditingValue.text.toLowerCase())
+                  );
                 },
                 displayStringForOption: (Device device) => '${device.modelName} - ${device.serialNumber}',
                 onSelected: _showDeviceDetails,
@@ -336,7 +350,11 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                       if (result != null && result.isNotEmpty) {
                         _searchController.text = result;
                         final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-                        final foundDevices = deviceProvider.search(result);
+                        final allDevices = deviceProvider.devices;
+                        final foundDevices = allDevices.where((device) =>
+                          device.modelName.toLowerCase().contains(result.toLowerCase()) ||
+                          device.serialNumber.toLowerCase().contains(result.toLowerCase())
+                        ).toList();
                         if (foundDevices.isNotEmpty) {
                           _showDeviceDetails(foundDevices.first);
                         }
@@ -469,17 +487,23 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                                                              Container(
                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                  decoration: BoxDecoration(
-                                   color: device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                       ? const Color(0xFF43A047).withOpacity(0.1)
-                                       : Colors.red.withOpacity(0.1),
+                                   color: device.warrantyEndDate != null
+                                       ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                                           ? const Color(0xFF43A047).withOpacity(0.1)
+                                           : Colors.red.withOpacity(0.1))
+                                       : Colors.grey.withOpacity(0.1),
                                    borderRadius: BorderRadius.circular(12),
                                  ),
                                  child: Text(
-                                   device.calculatedWarrantyStatus,
+                                   device.warrantyEndDate != null
+                                       ? device.calculatedWarrantyStatus
+                                       : 'Henüz belirlenmemiş',
                                    style: GoogleFonts.montserrat(
-                                     color: device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                         ? const Color(0xFF43A047)
-                                         : Colors.red,
+                                     color: device.warrantyEndDate != null
+                                         ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                                             ? const Color(0xFF43A047)
+                                             : Colors.red)
+                                         : Colors.grey,
                                      fontSize: 10,
                                      fontWeight: FontWeight.w600,
                                    ),
@@ -545,7 +569,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
   Widget _buildModelDetailsCard(String modelName, List<Device> devices) {
     final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
     final totalDevices = devices.length;
-    final activeWarranty = devices.where((d) => d.calculatedWarrantyStatus == 'Devam Ediyor').length;
+                    final activeWarranty = devices.where((d) => d.warrantyEndDate != null && d.calculatedWarrantyStatus == 'Devam Ediyor').length;
     final expiredWarranty = totalDevices - activeWarranty;
 
     return Container(
@@ -693,18 +717,24 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
               leading: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: device.warrantyStatus == 'Devam Ediyor'
-                      ? const Color(0xFF43A047).withOpacity(0.1)
-                      : Colors.red.withOpacity(0.1),
+                  color: device.warrantyEndDate != null
+                      ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                          ? const Color(0xFF43A047).withOpacity(0.1)
+                          : Colors.red.withOpacity(0.1))
+                      : Colors.grey.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
-                  device.warrantyStatus == 'Devam Ediyor'
-                      ? Icons.verified_rounded
-                      : Icons.warning_rounded,
-                  color: device.warrantyStatus == 'Devam Ediyor'
-                      ? const Color(0xFF43A047)
-                      : Colors.red,
+                  device.warrantyEndDate != null
+                      ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                          ? Icons.verified_rounded
+                          : Icons.warning_rounded)
+                      : Icons.help_outline_rounded,
+                  color: device.warrantyEndDate != null
+                      ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                          ? const Color(0xFF43A047)
+                          : Colors.red)
+                      : Colors.grey,
                   size: 20,
                 ),
               ),
@@ -734,25 +764,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                   ),
                 ],
               ),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: device.warrantyStatus == 'Devam Ediyor'
-                      ? const Color(0xFF43A047).withOpacity(0.1)
-                      : Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  device.warrantyStatus,
-                  style: GoogleFonts.montserrat(
-                    color: device.warrantyStatus == 'Devam Ediyor'
-                        ? const Color(0xFF43A047)
-                        : Colors.red,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              trailing: buildWarrantyChip(device.calculatedWarrantyStatus, device.daysUntilWarrantyExpiry),
               onTap: () => _showDeviceDetails(device),
             ),
           )).toList(),
@@ -825,36 +837,44 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                                         color: device.calculatedWarrantyStatus == 'Devam Ediyor'
-                         ? const Color(0xFF43A047).withOpacity(0.1)
-                         : Colors.red.withOpacity(0.1),
-                     borderRadius: BorderRadius.circular(12),
-                   ),
-                   child: Row(
-                     mainAxisSize: MainAxisSize.min,
-                     children: [
-                       Icon(
-                         device.calculatedWarrantyStatus == 'Devam Ediyor'
-                             ? Icons.verified_rounded
-                             : Icons.warning_rounded,
-                         color: device.calculatedWarrantyStatus == 'Devam Ediyor'
-                             ? const Color(0xFF43A047)
-                             : Colors.red,
-                         size: 16,
-                       ),
-                       const SizedBox(width: 6),
-                       Text(
-                         device.calculatedWarrantyStatus,
-                         style: GoogleFonts.montserrat(
-                           color: device.calculatedWarrantyStatus == 'Devam Ediyor'
-                               ? const Color(0xFF43A047)
-                               : Colors.red,
-                           fontWeight: FontWeight.w600,
-                           fontSize: 12,
-                         ),
-                       ),
-                     ],
-                   ),
+                    color: device.warrantyEndDate != null
+                        ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                            ? const Color(0xFF43A047).withOpacity(0.1)
+                            : Colors.red.withOpacity(0.1))
+                        : Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        device.warrantyEndDate != null
+                            ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                                ? Icons.verified_rounded
+                                : Icons.warning_rounded)
+                            : Icons.help_outline_rounded,
+                        color: device.warrantyEndDate != null
+                            ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                                ? const Color(0xFF43A047)
+                                : Colors.red)
+                            : Colors.grey,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        device.calculatedWarrantyStatus,
+                        style: GoogleFonts.montserrat(
+                          color: device.warrantyEndDate != null
+                              ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                                  ? const Color(0xFF43A047)
+                                  : Colors.red)
+                              : Colors.grey,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -913,7 +933,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
           _DetailRow(
             label: 'Müşteri/Kurum',
             value: device.customer,
-            onCopy: () => _copyToClipboard(device.customer, 'Müşteri bilgisi'),
+            onCopy: device.customer.isNotEmpty ? () => _copyToClipboard(device.customer, 'Müşteri bilgisi') : null,
           ),
           _DetailRow(
             label: 'Kurulum Tarihi',
@@ -927,20 +947,27 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
             label: 'Garanti Bitiş Tarihi',
             value: device.warrantyEndDateString,
           ),
-          if (device.daysUntilWarrantyExpiry > 0) ...[
-            _DetailRow(
-              label: 'Garantiye Kalan Süre',
-              value: '${device.daysUntilWarrantyExpiry} gün',
-            ),
-          ] else if (device.daysUntilWarrantyExpiry == 0) ...[
+          if (device.warrantyEndDate != null) ...[
+            if (device.daysUntilWarrantyExpiry > 0) ...[
+              _DetailRow(
+                label: 'Garantiye Kalan Süre',
+                value: '${device.daysUntilWarrantyExpiry} gün',
+              ),
+            ] else if (device.daysUntilWarrantyExpiry == 0) ...[
+              _DetailRow(
+                label: 'Garanti Durumu',
+                value: 'Bugün sona eriyor!',
+              ),
+            ] else if (device.daysUntilWarrantyExpiry < 0) ...[
+              _DetailRow(
+                label: 'Garanti Durumu',
+                value: '${device.daysUntilWarrantyExpiry.abs()} gün önce bitti',
+              ),
+            ],
+          ] else ...[
             _DetailRow(
               label: 'Garanti Durumu',
-              value: 'Bugün sona eriyor!',
-            ),
-          ] else if (device.daysUntilWarrantyExpiry < 0) ...[
-            _DetailRow(
-              label: 'Garanti Durumu',
-              value: '${device.daysUntilWarrantyExpiry.abs()} gün önce bitti',
+              value: 'Henüz belirlenmemiş',
             ),
           ],
           const SizedBox(height: 20),
@@ -1025,10 +1052,24 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    IconData? icon;
+    switch (label) {
+      case 'Seri Numarası': icon = Icons.qr_code_2; break;
+      case 'Model Adı': icon = Icons.devices; break;
+      case 'Müşteri/Kurum': icon = Icons.business; break;
+      case 'Kurulum Tarihi': icon = Icons.event; break;
+      case 'Son Bakım Tarihi': icon = Icons.build; break;
+      case 'Garanti Bitiş Tarihi': icon = Icons.verified_user; break;
+      case 'Garantiye Kalan Süre': icon = Icons.timer; break;
+      case 'Garanti Durumu': icon = Icons.verified; break;
+      default: icon = Icons.info_outline;
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
+          Icon(icon, color: const Color(0xFF23408E), size: 20),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1067,4 +1108,25 @@ class _DetailRow extends StatelessWidget {
       ),
     );
   }
+} 
+
+Widget buildWarrantyChip(String status, int? daysLeft) {
+  Color color;
+  String label = status;
+  if (status == 'Devam Ediyor') {
+    if (daysLeft != null && daysLeft <= 30 && daysLeft > 0) {
+      color = Colors.orange;
+      label = 'Az Kaldı ($daysLeft gün)';
+    } else {
+      color = Colors.green;
+    }
+  } else {
+    color = Colors.red;
+  }
+  return Chip(
+    label: Text(label, style: GoogleFonts.montserrat(color: Colors.white, fontWeight: FontWeight.bold)),
+    backgroundColor: color,
+    avatar: Icon(Icons.verified, color: Colors.white, size: 18),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+  );
 } 

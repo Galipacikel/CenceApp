@@ -12,6 +12,7 @@ class DeviceProvider extends ChangeNotifier {
       installDate: '15.01.2023',
       warrantyStatus: 'Devam Ediyor',
       lastMaintenance: '15.01.2024',
+      warrantyEndDate: DateTime(2025, 1, 15),
     ),
     Device(
       id: 'CİHAZ-002',
@@ -21,6 +22,7 @@ class DeviceProvider extends ChangeNotifier {
       installDate: '10.03.2022',
       warrantyStatus: 'Bitti',
       lastMaintenance: '10.03.2023',
+      warrantyEndDate: DateTime(2024, 3, 10),
     ),
     Device(
       id: 'CİHAZ-003',
@@ -30,6 +32,7 @@ class DeviceProvider extends ChangeNotifier {
       installDate: '20.06.2021',
       warrantyStatus: 'Devam Ediyor',
       lastMaintenance: '20.06.2023',
+      warrantyEndDate: DateTime(2025, 6, 20),
     ),
     // Aynı model farklı müşteriler
     Device(
@@ -40,6 +43,7 @@ class DeviceProvider extends ChangeNotifier {
       installDate: '05.09.2022',
       warrantyStatus: 'Devam Ediyor',
       lastMaintenance: '05.09.2023',
+      warrantyEndDate: DateTime(2024, 9, 5),
     ),
     Device(
       id: 'CİHAZ-005',
@@ -49,6 +53,7 @@ class DeviceProvider extends ChangeNotifier {
       installDate: '12.11.2021',
       warrantyStatus: 'Bitti',
       lastMaintenance: '12.11.2022',
+      warrantyEndDate: DateTime(2023, 11, 12),
     ),
     Device(
       id: 'CİHAZ-006',
@@ -58,6 +63,7 @@ class DeviceProvider extends ChangeNotifier {
       installDate: '08.04.2023',
       warrantyStatus: 'Devam Ediyor',
       lastMaintenance: '08.04.2024',
+      warrantyEndDate: DateTime(2025, 4, 8),
     ),
     Device(
       id: 'CİHAZ-007',
@@ -67,6 +73,7 @@ class DeviceProvider extends ChangeNotifier {
       installDate: '25.07.2022',
       warrantyStatus: 'Devam Ediyor',
       lastMaintenance: '25.07.2023',
+      warrantyEndDate: DateTime(2024, 7, 25),
     ),
     Device(
       id: 'CİHAZ-008',
@@ -76,6 +83,7 @@ class DeviceProvider extends ChangeNotifier {
       installDate: '03.12.2021',
       warrantyStatus: 'Bitti',
       lastMaintenance: '03.12.2022',
+      warrantyEndDate: DateTime(2023, 12, 3),
     ),
   ];
 

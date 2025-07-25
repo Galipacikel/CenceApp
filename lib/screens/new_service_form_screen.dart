@@ -37,8 +37,6 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   
   // Garanti özellikleri
   final TextEditingController _warrantyDurationController = TextEditingController();
-  DateTime? _warrantyStartDate;
-  late TextEditingController _warrantyStartDateController;
   int _warrantyDuration = 24; // Ay cinsinden, varsayılan 24 ay
   
   // Parça seçimi için yeni alanlar
@@ -48,7 +46,6 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   List<StockPart> _allParts = [];
   List<StockPart> _filteredParts = [];
   bool _showPartSuggestions = false;
-  final StockPartRepository _stockRepository = MockStockRepository();
   
   // Cihaz seçimi için
   Device? _selectedDevice;
@@ -82,7 +79,6 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   void initState() {
     super.initState();
     _dateController = TextEditingController();
-    _warrantyStartDateController = TextEditingController();
     _warrantyDurationController.text = '24';
     _loadParts();
     _loadDevices();
@@ -102,15 +98,15 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     _partSearchController.dispose();
     _customerController.dispose();
     _warrantyDurationController.dispose();
-    _warrantyStartDateController.dispose();
     super.dispose();
   }
 
   Future<void> _loadParts() async {
-    final parts = await _stockRepository.getAll();
+    // StockProvider'dan parçaları al
+    final stockProvider = Provider.of<StockProvider>(context, listen: false);
     setState(() {
-      _allParts = parts;
-      _filteredParts = parts;
+      _allParts = stockProvider.parts;
+      _filteredParts = stockProvider.parts;
     });
   }
 
@@ -180,21 +176,14 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   void _selectDevice(Device device) {
     setState(() {
       _selectedDevice = device;
-      _deviceSearchController.text = '${device.modelName} (${device.serialNumber})';
+      _deviceSearchController.text = device.modelName;
       _showDeviceSuggestions = false;
-      
-      // Cihaz seçildiğinde müşteri bilgisini otomatik doldur
-      _customerController.text = device.customer;
       
       // Kurulum tarihi seçili değilse bugünün tarihini ata
       if (_date == null) {
         _date = DateTime.now();
         _updateDateController();
       }
-      
-      // Garanti başlangıç tarihi kurulum tarihi ile aynı olsun
-      _warrantyStartDate = _date;
-      _updateWarrantyStartDateController();
     });
   }
 
@@ -209,9 +198,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     _dateController.text = _date == null ? '' : '${_date!.day.toString().padLeft(2, '0')}.${_date!.month.toString().padLeft(2, '0')}.${_date!.year}';
   }
 
-  void _updateWarrantyStartDateController() {
-    _warrantyStartDateController.text = _warrantyStartDate == null ? '' : '${_warrantyStartDate!.day.toString().padLeft(2, '0')}.${_warrantyStartDate!.month.toString().padLeft(2, '0')}.${_warrantyStartDate!.year}';
-  }
+  // Garanti başlangıç tarihi artık kullanılmıyor, otomatik hesaplanıyor
 
   Future<void> _pickImage() async {
     final source = await showModalBottomSheet<ImageSource>(
@@ -249,6 +236,18 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   }
 
   void _addOrUpdateSelectedPart(StockPart part, int adet) {
+    // Stok kontrolü yap
+    if (adet > part.stokAdedi) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    
     setState(() {
       final idx = _selectedParts.indexWhere((sp) => sp.part.parcaKodu == part.parcaKodu);
       if (idx >= 0) {
@@ -289,12 +288,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       // Teknisyen adını tekrar doldur
       _technicianController.text = _getTechnicianName();
     }
-    if (_descriptionController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen açıklama girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
-      );
-      return;
-    }
+    // Açıklama alanı opsiyonel olduğu için kontrol kaldırıldı
     if (_selectedParts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen en az bir parça ve miktar seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
@@ -310,13 +304,13 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       // Hata durumunda varsayılan değer kullan
     }
 
-    // Garanti bitiş tarihini hesapla
+    // Garanti bitiş tarihini hesapla (Kurulum tarihi + Garanti süresi)
     DateTime? warrantyEndDate;
-    if (_warrantyStartDate != null) {
+    if (_date != null) {
       warrantyEndDate = DateTime(
-        _warrantyStartDate!.year,
-        _warrantyStartDate!.month + warrantyDuration,
-        _warrantyStartDate!.day,
+        _date!.year,
+        _date!.month + warrantyDuration,
+        _date!.day,
       );
     }
 
@@ -369,7 +363,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       'technician': _technicianController.text,
       'description': _descriptionController.text,
       'warrantyDuration': warrantyDuration,
-      'warrantyStartDate': _warrantyStartDate,
+      'warrantyStartDate': _date,
       'warrantyEndDate': warrantyEndDate,
       'usedParts': _selectedParts.map((sp) => {
         'partCode': sp.part.parcaKodu,
@@ -398,10 +392,27 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     }
   }
 
+  String _calculateWarrantyEndDate() {
+    if (_date == null || _warrantyDurationController.text.isEmpty) {
+      return 'Hesaplanamıyor';
+    }
+    
+    try {
+      final warrantyDuration = int.parse(_warrantyDurationController.text);
+      final warrantyEndDate = DateTime(
+        _date!.year,
+        _date!.month + warrantyDuration,
+        _date!.day,
+      );
+      return '${warrantyEndDate.day.toString().padLeft(2, '0')}.${warrantyEndDate.month.toString().padLeft(2, '0')}.${warrantyEndDate.year}';
+    } catch (e) {
+      return 'Hesaplanamıyor';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     _updateDateController();
-    _updateWarrantyStartDateController();
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
@@ -544,69 +555,6 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
             ),
             const SizedBox(height: 18),
             
-            // Garanti Bilgileri (Sadece Kurulum formunda göster)
-            if (_formTipi == 0) ...[
-              const Text('Garanti Bilgileri', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-              const SizedBox(height: 8),
-              
-              // Garanti Başlangıç Tarihi
-              const Text('Garanti Başlangıç Tarihi', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-              const SizedBox(height: 4),
-              TextField(
-                readOnly: true,
-                controller: _warrantyStartDateController,
-                decoration: InputDecoration(
-                  hintText: 'gg.aa.yyyy',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calendar_today_outlined),
-                    onPressed: () async {
-                      final now = DateTime.now();
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: _warrantyStartDate ?? now,
-                        firstDate: DateTime(now.year - 5),
-                        lastDate: DateTime(now.year + 5),
-                        locale: const Locale('tr', 'TR'),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          _warrantyStartDate = picked;
-                          _updateWarrantyStartDateController();
-                        });
-                      }
-                    },
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              
-              // Garanti Süresi
-              const Text('Garanti Süresi (Ay)', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-              const SizedBox(height: 4),
-              TextField(
-                controller: _warrantyDurationController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  hintText: '24',
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-            ],
-            
             // Photo upload area
             Row(
               children: [
@@ -671,6 +619,63 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            
+            // Garanti Bilgileri (Sadece Kurulum formunda göster)
+            if (_formTipi == 0) ...[
+              const Text('Garanti Süresi (Ay)', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _warrantyDurationController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: '24',
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: (value) {
+                  // Garanti süresi değiştiğinde otomatik hesaplama yap
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 8),
+              
+              // Garanti Bitiş Tarihi (Otomatik Hesaplanan)
+              if (_date != null && _warrantyDurationController.text.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE3F6ED),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF43A047).withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: Color(0xFF43A047), size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Garanti Bitiş Tarihi: ${_calculateWarrantyEndDate()}',
+                          style: const TextStyle(
+                            color: Color(0xFF43A047),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              
+              const SizedBox(height: 12),
+            ],
+            
             // Technician header
             const Text('Teknisyen', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
@@ -752,6 +757,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                 );
                                 final isSelected = selected.adet > 0;
                                 final isOutOfStock = part.stokAdedi == 0;
+                                final isCriticalLevel = part.stokAdedi <= part.criticalLevel && part.stokAdedi > 0;
                                 return AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -784,7 +790,15 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                     children: [
                                       GestureDetector(
                                         onTap: isOutOfStock
-                                            ? null
+                                            ? () {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('${part.parcaAdi} stokta bulunmuyor.'),
+                                                    backgroundColor: Colors.red,
+                                                    duration: const Duration(seconds: 2),
+                                                  ),
+                                                );
+                                              }
                                             : () {
                                                 if (isSelected) {
                                                   _removeSelectedPart(part);
@@ -827,6 +841,18 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                                       ),
                                                       child: const Text('Stokta Yok', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
                                                     ),
+                                                  )
+                                                else if (part.stokAdedi <= part.criticalLevel)
+                                                  Padding(
+                                                    padding: const EdgeInsets.only(left: 8.0),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.orange.shade100,
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: const Text('Kritik Seviye', style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold)),
+                                                    ),
                                                   ),
                                               ],
                                             ),
@@ -845,10 +871,27 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                                 Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                                   decoration: BoxDecoration(
-                                                    color: Colors.grey.shade100,
+                                                    color: part.stokAdedi == 0 
+                                                        ? Colors.red.shade100 
+                                                        : part.stokAdedi <= part.criticalLevel 
+                                                            ? Colors.orange.shade100 
+                                                            : Colors.grey.shade100,
                                                     borderRadius: BorderRadius.circular(6),
                                                   ),
-                                                  child: Text('Stok: ${part.stokAdedi}', style: const TextStyle(fontSize: 12, color: Color(0xFF23408E))),
+                                                  child: Text(
+                                                    'Stok: ${part.stokAdedi}', 
+                                                    style: TextStyle(
+                                                      fontSize: 12, 
+                                                      color: part.stokAdedi == 0 
+                                                          ? Colors.red 
+                                                          : part.stokAdedi <= part.criticalLevel 
+                                                              ? Colors.orange 
+                                                              : const Color(0xFF23408E),
+                                                      fontWeight: part.stokAdedi == 0 || part.stokAdedi <= part.criticalLevel 
+                                                          ? FontWeight.bold 
+                                                          : FontWeight.normal,
+                                                    ),
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -871,7 +914,15 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                               splashRadius: 20,
                                               onPressed: part.stokAdedi > selected.adet
                                                   ? () => _addOrUpdateSelectedPart(part, selected.adet + 1)
-                                                  : null,
+                                                  : () {
+                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text('Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.'),
+                                                          backgroundColor: Colors.red,
+                                                          duration: const Duration(seconds: 2),
+                                                        ),
+                                                      );
+                                                    },
                                             ),
                                           ],
                                         ),
