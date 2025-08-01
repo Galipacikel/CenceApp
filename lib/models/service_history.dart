@@ -1,4 +1,4 @@
-import 'package:cence_app/models/device.dart';
+
 import 'package:cence_app/models/stock_part.dart';
 
 class ServiceHistory {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // DateFormat için intl paketini ekliyoruz
+import 'package:intl/intl.dart';
 import '../models/stock_part.dart';
-import '../models/device.dart'; // Yeni Cihaz modelini import ediyoruz
+import '../models/device.dart';
 import '../models/service_history.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -18,20 +18,16 @@ class StokTakibiScreen extends StatefulWidget {
 
 class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool showOnlyCritical = false; // <-- Bu state ile filtreleme yapılacak
-  bool showBanner = true; // Banner'ın görünürlüğü için state
+  bool showOnlyCritical = false;
+  bool showBanner = true;
   List<StockPart> _parcaListesi = [];
   String deviceSearch = '';
-  String partSearch = ''; // Yedek parça arama için yeni değişken
+  String partSearch = '';
   
   final StockPartRepository _stockRepository = MockStockRepository();
   final ServiceHistoryRepository _serviceHistoryRepository = MockServiceHistoryRepository();
 
-  // Mock veri örneği (gerçek projede provider veya API'dan alınacak)
-  // 1. Kullanılmayan mock parts listesi (final List<Map<String, dynamic>> parts) kaldırıldı.
-  // 2. criticalLevel ve showCriticalOnly gibi kullanılmayan değişkenler kaldırıldı.
-  // 3. Kullanılmayan importlar kaldırıldı.
-  // 4. Kodun kalan kısmı işlevselliği etkilemeden sadeleştirildi.
+
 
 
   @override
@@ -49,7 +45,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
     if (mounted) {
       setState(() {
         _parcaListesi = parts;
-        showBanner = true; // Her veri yüklemede banner tekrar görünür
+        showBanner = true;
       });
     }
   }

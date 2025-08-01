@@ -5,10 +5,7 @@ import '../providers/service_history_provider.dart';
 import '../providers/app_state_provider.dart';
 
 class ServisGecmisiScreen extends StatefulWidget {
-  // final ServiceHistoryRepository repository;
-  // ServisGecmisiScreen({Key? key, ServiceHistoryRepository? repository})
-  //     : repository = repository ?? MockServiceHistoryRepository(),
-  //       super(key: key);
+  
   ServisGecmisiScreen({Key? key}) : super(key: key);
 
   @override
@@ -22,13 +19,9 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
   String searchText = '';
   final TextEditingController _searchController = TextEditingController();
 
-  // late Future<List<ServiceHistory>> _futureHistory;
-  // List<ServiceHistory> _allHistory = [];
-
   @override
   void initState() {
     super.initState();
-    // _futureHistory = widget.repository.getAll();
   }
 
   List<String> get deviceList {

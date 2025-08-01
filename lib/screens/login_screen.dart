@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'home_page.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,16 +10,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
-  String? _errorMessage;
 
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
+  
     });
     await Future.delayed(const Duration(milliseconds: 500)); // loading efekti için
     if (mounted) {
@@ -279,15 +277,4 @@ class _LoginTextField extends StatelessWidget {
   }
 }
 
-// Dummy ana ekran (giriş başarılıysa yönlendirme için)
-class _DummyHomeScreen extends StatelessWidget {
-  const _DummyHomeScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Ana Ekran')),
-      body: const Center(child: Text('Giriş başarılı!')),
-    );
-  }
-} 
+ 

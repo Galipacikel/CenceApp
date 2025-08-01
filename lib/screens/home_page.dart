@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/home/quick_access_card.dart';
-import '../widgets/home/service_history_card.dart';
-import '../widgets/common/custom_app_bar.dart';
+
 import '../widgets/common/bottom_nav_bar.dart';
 import 'device_query_screen.dart';
 import 'new_service_form_screen.dart';
@@ -199,7 +197,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildMainContent(BuildContext context, bool isWide) {
     final width = MediaQuery.of(context).size.width;
-    final cardHeight = isWide ? 140.0 : 100.0;
+
     final cardIconSize = isWide ? 36.0 : 26.0;
     final gridCrossAxisCount = width > 1100 ? 5 : width > 800 ? 4 : isWide ? 3 : 2;
     final gridSpacing = isWide ? 24.0 : 12.0;

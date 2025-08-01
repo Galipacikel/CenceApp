@@ -617,7 +617,6 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
   }
 
   Widget _buildModelDetailsCard(String modelName, List<Device> devices) {
-    final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
     final totalDevices = devices.length;
                     final activeWarranty = devices.where((d) => d.warrantyEndDate != null && d.calculatedWarrantyStatus == 'Devam Ediyor').length;
     final expiredWarranty = totalDevices - activeWarranty;

@@ -145,7 +145,7 @@ class AllServiceHistoryScreen extends StatelessWidget {
             separatorBuilder: (context, index) => const SizedBox(height: 18),
             itemBuilder: (context, index) {
               final item = items[index];
-              final statusColor = getStatusColor(item.status);
+
               final statusBgColor = getStatusBgColor(item.status);
               final statusTextColor = getStatusTextColor(item.status);
               final statusIcon = getStatusIcon(item.status);

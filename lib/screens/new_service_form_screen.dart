@@ -37,15 +37,16 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   
   // Garanti özellikleri
   final TextEditingController _warrantyDurationController = TextEditingController();
-  int _warrantyDuration = 24; // Ay cinsinden, varsayılan 24 ay
   
   // Parça seçimi için yeni alanlar
-  StockPart? _selectedPart;
-  bool _noPartInstalled = false;
   final TextEditingController _partSearchController = TextEditingController();
   List<StockPart> _allParts = [];
   List<StockPart> _filteredParts = [];
-  bool _showPartSuggestions = false;
+  
+  // Diğer parça seçeneği için
+  bool _showOtherPartInput = false;
+  final TextEditingController _otherPartNameController = TextEditingController();
+  final TextEditingController _otherPartQuantityController = TextEditingController();
   
   // Cihaz seçimi için
   Device? _selectedDevice;
@@ -54,24 +55,6 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   List<Device> _filteredDevices = [];
   bool _showDeviceSuggestions = false;
   final DeviceRepository _deviceRepository = MockDeviceRepository();
-  
-  // Kategori seçimi için
-  String? _selectedCategory;
-  final List<String> _categories = ['Tüm Parçalar', 'Elektronik', 'Mekanik', 'Sarf Malzeme', 'Diğer'];
-  final Map<String, IconData> _categoryIcons = {
-    'Tüm Parçalar': Icons.all_inclusive,
-    'Elektronik': Icons.memory,
-    'Mekanik': Icons.settings,
-    'Sarf Malzeme': Icons.cable,
-    'Diğer': Icons.category,
-  };
-  final Map<String, Color> _categoryColors = {
-    'Tüm Parçalar': const Color(0xFF23408E),
-    'Elektronik': const Color(0xFF23408E),
-    'Mekanik': const Color(0xFF00BFAE),
-    'Sarf Malzeme': const Color(0xFFFF7043),
-    'Diğer': const Color(0xFFB0B6C3),
-  };
 
   List<SelectedPart> _selectedParts = [];
   bool _isSaving = false; // Çift kaydetmeyi önlemek için flag
@@ -99,6 +82,8 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     _partSearchController.dispose();
     _customerController.dispose();
     _warrantyDurationController.dispose();
+    _otherPartNameController.dispose();
+    _otherPartQuantityController.dispose();
     super.dispose();
   }
 
@@ -119,19 +104,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     });
   }
 
-  void _selectCategory(String category) {
-    setState(() {
-      _selectedCategory = category;
-      _selectedPart = null;
-      _partSearchController.clear();
-      _showPartSuggestions = false;
-      
-      _filteredParts = _allParts;
-      _filteredParts.sort((a, b) {
-        return a.parcaAdi.compareTo(b.parcaAdi);
-      });
-    });
-  }
+
 
   void _filterParts(String query) {
     setState(() {
@@ -165,14 +138,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     });
   }
 
-  void _selectPart(StockPart part) {
-    setState(() {
-      _selectedPart = part;
-      _partSearchController.text = '${part.parcaAdi} (${part.parcaKodu})';
-      _showPartSuggestions = false;
-      _noPartInstalled = false;
-    });
-  }
+
 
   void _selectDevice(Device device) {
     setState(() {
@@ -265,6 +231,54 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     });
   }
 
+  void _addOtherPart() {
+    if (_otherPartNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen parça adını girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+    
+    int quantity = 1;
+    try {
+      if (_otherPartQuantityController.text.isNotEmpty) {
+        quantity = int.parse(_otherPartQuantityController.text);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Geçerli bir miktar girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+    
+    if (quantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Miktar 0\'dan büyük olmalıdır.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+    
+    // Özel parça için geçici bir StockPart oluştur
+    final customPart = StockPart(
+      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      parcaAdi: _otherPartNameController.text.trim(),
+      parcaKodu: 'ÖZEL',
+      stokAdedi: quantity,
+      criticalLevel: 0,
+    );
+    
+    setState(() {
+      _selectedParts.add(SelectedPart(part: customPart, adet: quantity));
+      _otherPartNameController.clear();
+      _otherPartQuantityController.clear();
+      _showOtherPartInput = false;
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${customPart.parcaAdi} eklendi.'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
+    );
+  }
+
   void _onKaydet() async {
     // Çift kaydetmeyi önle
     if (_isSaving) return;
@@ -297,13 +311,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       _technicianController.text = _getTechnicianName();
     }
     // Açıklama alanı opsiyonel olduğu için kontrol kaldırıldı
-    if (_selectedParts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen en az bir parça ve miktar seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
-      );
-      _isSaving = false;
-      return;
-    }
+    // Kullanılan parçalar artık opsiyonel olduğu için kontrol kaldırıldı
 
     // Garanti süresini parse et
     int warrantyDuration = 24;
@@ -337,10 +345,13 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     );
     deviceProvider.updateDevice(updatedDevice);
 
-    // Stoktan düşme işlemi (Provider ile)
+    // Stoktan düşme işlemi (Provider ile) - sadece stok parçaları için
     final stockProvider = Provider.of<StockProvider>(context, listen: false);
     for (final sp in _selectedParts) {
-      stockProvider.decreaseStock(sp.part.id, sp.adet);
+      // Sadece stok parçaları için stok düşürme işlemi yap
+      if (sp.part.parcaKodu != 'ÖZEL') {
+        stockProvider.decreaseStock(sp.part.id, sp.adet);
+      }
     }
     
     // Servis geçmişine ekleme (Provider ile)
@@ -388,21 +399,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     _isSaving = false;
   }
 
-  Color _getStockStatusColor(StockPart part) {
-    if (part.stokAdedi <= 5) {
-      return const Color(0xFFFFC107); // Sarı - Düşük
-    } else {
-      return const Color(0xFF43A047); // Yeşil - Normal
-    }
-  }
 
-  String _getStockStatusText(StockPart part) {
-    if (part.stokAdedi <= 5) {
-      return 'Düşük';
-    } else {
-      return 'Normal';
-    }
-  }
 
   String _calculateWarrantyEndDate() {
     if (_date == null || _warrantyDurationController.text.isEmpty) {
@@ -725,7 +722,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
             ),
             const SizedBox(height: 12),
             // Used Parts header
-            const Text('Kullanılan Parçalar', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text('Kullanılan Parçalar (Opsiyonel)', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
             const SizedBox(height: 4),
             // Part search box
             TextField(
@@ -754,6 +751,92 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
               ),
               onChanged: (val) => _filterParts(val),
             ),
+            const SizedBox(height: 8),
+            // Diğer parça seçeneği
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _showOtherPartInput = !_showOtherPartInput;
+                        if (!_showOtherPartInput) {
+                          _otherPartNameController.clear();
+                          _otherPartQuantityController.clear();
+                        }
+                      });
+                    },
+                    icon: Icon(_showOtherPartInput ? Icons.remove : Icons.add, color: Color(0xFF23408E)),
+                    label: Text(_showOtherPartInput ? 'İptal' : 'Diğer Parça Ekle', style: TextStyle(color: Color(0xFF23408E))),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Color(0xFF23408E)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (_showOtherPartInput) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Özel Parça Ekle', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF23408E))),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _otherPartNameController,
+                      decoration: InputDecoration(
+                        hintText: 'Parça adını girin...',
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _otherPartQuantityController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'Miktar (varsayılan: 1)',
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _addOtherPart,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF23408E),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Ekle', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             // Modern multi-part selection based on cards
             LayoutBuilder(
@@ -1028,56 +1111,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  
-  const _CategoryChip({
-    required this.label,
-    required this.selected,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-    Key? key,
-  }) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? color : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: selected ? color : Colors.grey.shade300),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: selected ? Colors.white : color,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _FormTypeChip extends StatelessWidget {
   final String label;
