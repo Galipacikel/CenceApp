@@ -8,8 +8,6 @@ import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
 import 'service_history_detail_screen.dart';
-import 'notification_settings_screen.dart';
-import 'support_request_screen.dart';
 import '../models/service_history.dart';
 
 import 'package:provider/provider.dart';
@@ -134,27 +132,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               const Spacer(),
-              // Sağ tarafta aksiyon butonları
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const SupportRequestScreen()),
-                      );
-                    },
-                  ),
-                ],
-              ),
             ],
           ),
         ),
