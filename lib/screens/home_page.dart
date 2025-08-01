@@ -12,7 +12,7 @@ import '../models/service_history.dart';
 
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../providers/device_provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -63,75 +63,52 @@ class _HomePageState extends State<HomePage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Modern medical cross + Cence logo
+              // Logo container
               Container(
-                width: isWide ? 44 : 36,
-                height: isWide ? 44 : 36,
-                margin: const EdgeInsets.only(right: 12),
-                child: Stack(
-                  alignment: Alignment.center,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.medical_services_rounded,
+                  color: Colors.white,
+                  size: isWide ? 28 : 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              
+              // Cence yazısı
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // White circle background
-                    Container(
-                      width: isWide ? 44 : 36,
-                      height: isWide ? 44 : 36,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    // Medical cross
-                    Positioned(
-                      left: (isWide ? 22 : 18) - 7,
-                      top: (isWide ? 22 : 18) - 13,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.white, width: 2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Center(
-                          child: Icon(Icons.add, size: 12, color: const Color(0xFF23408E)),
-                        ),
-                      ),
-                    ),
-                    // Stylized C
-                    Positioned(
-                      left: isWide ? 8 : 6,
-                      top: isWide ? 2 : 1,
-                      child: Text(
-                        'C',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          fontSize: isWide ? 32 : 26,
-                          color: Colors.white,
-                        ),
+                                                   RichText(
+                                 text: const TextSpan(
+                                   style: TextStyle(
+                                     fontSize: 24,
+                                     fontWeight: FontWeight.bold,
+                                     letterSpacing: 1.2,
+                                   ),
+                                   children: [
+                                     TextSpan(text: 'Ce', style: TextStyle(color: Colors.white)),
+                                     TextSpan(text: 'n', style: TextStyle(color: Colors.white)),
+                                     TextSpan(text: 'ce', style: TextStyle(color: Colors.white)),
+                                   ],
+                                 ),
+                               ),
+                    Text(
+                      'Medikal Cihazlar',
+                      style: TextStyle(
+                        fontSize: isWide ? 14 : 12,
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
-              // Cence Medikal yazısı
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      style: GoogleFonts.montserrat(fontSize: isWide ? 26 : 20, fontWeight: FontWeight.bold),
-                      children: const [
-                        TextSpan(text: 'Ce', style: TextStyle(color: Colors.white)),
-                        TextSpan(text: 'n', style: TextStyle(color: Colors.red)),
-                        TextSpan(text: 'ce', style: TextStyle(color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                  Text('Medikal', style: GoogleFonts.montserrat(fontSize: isWide ? 15 : 12, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w500)),
-                ],
-              ),
-              const Spacer(),
             ],
           ),
         ),

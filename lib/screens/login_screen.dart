@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'home_page.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -9,22 +8,56 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
-  
     });
-    await Future.delayed(const Duration(milliseconds: 500)); // loading efekti için
+    
+    await Future.delayed(const Duration(milliseconds: 800));
+    
     if (mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const HomePage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
       );
     }
+    
     setState(() {
       _isLoading = false;
     });
@@ -32,195 +65,157 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width > 600;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: Stack(
         children: [
-          // Soft dairesel arka plan şekilleri
-          Positioned(
-            top: -60,
-            left: -60,
-            child: _buildCircle(180, Colors.grey.withOpacity(0.08)),
-          ),
-          Positioned(
-            top: 120,
-            right: -40,
-            child: _buildCircle(100, Colors.grey.withOpacity(0.10)),
-          ),
-          Positioned(
-            bottom: -40,
-            left: -30,
-            child: _buildCircle(120, Colors.grey.withOpacity(0.12)),
-          ),
-          Positioned(
-            bottom: 60,
-            right: -50,
-            child: _buildCircle(90, Colors.grey.withOpacity(0.09)),
-          ),
-          // Üstte slogan
-          Positioned(
-            top: 70,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Text(
-                'Teknik Serviste Dijital Dönüşüm',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
-                ),
+          // Gradient arka plan
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF23408E).withOpacity(0.1),
+                  const Color(0xFF23408E).withOpacity(0.05),
+                  Colors.white,
+                ],
               ),
             ),
           ),
-          // Ortadaki kart ve içerik (ekranın ortasında)
-          Center(
+          
+          // Dekoratif şekiller
+          Positioned(
+            top: -100,
+            right: -100,
             child: Container(
-              width: 340,
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+              width: 200,
+              height: 200,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+                color: const Color(0xFF23408E).withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Teknik servis/onarım ikonu
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F6FA),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Icon(
-                      Icons.build_rounded, // Teknik servis/onarım ikonu
-                      color: const Color(0xFF333F50),
-                      size: 38,
-                    ),
-                  ),
-                  // Cence Logo
-                  RichText(
-                    text: const TextSpan(
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                        fontFamily: 'Montserrat',
-                      ),
+            ),
+          ),
+          Positioned(
+            bottom: -80,
+            left: -80,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                color: const Color(0xFF23408E).withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          
+          // Ana içerik
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        TextSpan(text: 'Ce', style: TextStyle(color: Color(0xFF1C1C1C))),
-                        TextSpan(text: 'n', style: TextStyle(color: Color(0xFFE53935))),
-                        TextSpan(text: 'ce', style: TextStyle(color: Color(0xFF1C1C1C))),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Hoş geldiniz metni
-                  Text(
-                    'Hoş geldiniz, lütfen giriş yapınız.',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  // Kullanıcı Adı (email)
-                  _LoginTextField(
-                    controller: _emailController,
-                    hintText: 'Kullanıcı Adı',
-                    icon: Icons.person_outline,
-                    obscureText: false,
-                    validator: null,
-                  ),
-                  const SizedBox(height: 18),
-                  // Şifre
-                  _LoginTextField(
-                    controller: _passwordController,
-                    hintText: 'Şifre',
-                    icon: Icons.lock_outline,
-                    obscureText: true,
-                    validator: null,
-                  ),
-                  const SizedBox(height: 18),
-                  // Giriş Yap Butonu
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF333F50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
-                      onPressed: _isLoading ? null : _login,
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
+                        // Logo ve başlık
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
                               ),
-                            )
-                          : const Text(
-                              'Giriş Yap',
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              // Logo container
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF23408E).withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.medical_services_rounded,
+                                  size: isWide ? 48 : 40,
+                                  color: const Color(0xFF23408E),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              
+                              // Cence yazısı
+                              RichText(
+                                text: const TextSpan(
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
+                                  children: [
+                                    TextSpan(text: 'Ce', style: TextStyle(color: Color(0xFF1C1C1C))),
+                                    TextSpan(text: 'n', style: TextStyle(color: Color(0xFF23408E))),
+                                    TextSpan(text: 'ce', style: TextStyle(color: Color(0xFF1C1C1C))),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              
+                              Text(
+                                'Teknik Servis Yönetimi',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                              
+                              // Giriş formu
+                              _buildLoginForm(),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 40),
+                        
+                        // Alt bilgi
+                        Column(
+                          children: [
+                            Text(
+                              'Cence Medikal Cihazlar',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'v1.0.0',
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-          // Alt açıklama ve versiyon
-          Positioned(
-            bottom: 32,
-            left: 0,
-            right: 0,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Cence Medikal Cihazlar Teknik Servis',
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'v1.0.0',
-                  style: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
             ),
           ),
         ],
@@ -228,49 +223,103 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildCircle(double diameter, Color color) {
-    return Container(
-      width: diameter,
-      height: diameter,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+  Widget _buildLoginForm() {
+    return Column(
+      children: [
+        // Kullanıcı adı
+        _buildTextField(
+          controller: _emailController,
+          hintText: 'Kullanıcı Adı',
+          icon: Icons.person_outline_rounded,
+          keyboardType: TextInputType.text,
+        ),
+        const SizedBox(height: 16),
+        
+        // Şifre
+        _buildTextField(
+          controller: _passwordController,
+          hintText: 'Şifre',
+          icon: Icons.lock_outline_rounded,
+          isPassword: true,
+          obscureText: _obscurePassword,
+          onTogglePassword: () {
+            setState(() {
+              _obscurePassword = !_obscurePassword;
+            });
+          },
+        ),
+        const SizedBox(height: 24),
+        
+        // Giriş butonu
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _login,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF23408E),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : const Text(
+                    'Giriş Yap',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+          ),
+        ),
+      ],
     );
   }
-}
 
-class _LoginTextField extends StatelessWidget {
-  final String hintText;
-  final IconData icon;
-  final bool obscureText;
-  final TextEditingController? controller;
-  final String? Function(String?)? validator;
-
-  const _LoginTextField({
-    required this.hintText,
-    required this.icon,
-    required this.obscureText,
-    this.controller,
-    this.validator,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      validator: validator,
-      decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.grey.shade600),
-        hintText: hintText,
-        filled: true,
-        fillColor: const Color(0xFFF5F6FA),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    bool isPassword = false,
+    bool obscureText = false,
+    TextInputType? keyboardType,
+    VoidCallback? onTogglePassword,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(color: Colors.grey.shade500),
+          prefixIcon: Icon(icon, color: const Color(0xFF23408E)),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                    color: Colors.grey.shade600,
+                  ),
+                  onPressed: onTogglePassword,
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
