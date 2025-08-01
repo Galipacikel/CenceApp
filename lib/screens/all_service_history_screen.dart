@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/service_history.dart';
 import '../providers/service_history_provider.dart';
@@ -55,27 +54,18 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
   Color getStatusBgColor(String status) {
     switch (status) {
       case 'Başarılı':
-        return Colors.blue.shade100;
+        return const Color(0xFF43A047);
       case 'Beklemede':
-        return Colors.amber.shade200;
+        return const Color(0xFFFFC107);
       case 'Arızalı':
-        return Colors.red.shade100;
+        return const Color(0xFFE53935);
       default:
-        return Colors.grey.shade200;
+        return const Color(0xFF43A047);
     }
   }
 
   Color getStatusTextColor(String status) {
-    switch (status) {
-      case 'Başarılı':
-        return Colors.blue.shade800;
-      case 'Beklemede':
-        return Colors.amber.shade800;
-      case 'Arızalı':
-        return Colors.red.shade800;
-      default:
-        return Colors.grey.shade800;
-    }
+    return Colors.white;
   }
 
   IconData getStatusIcon(String status) {
@@ -101,17 +91,33 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
       // Arama filtresi
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
-        return item.deviceId.toLowerCase().contains(query) ||
-               item.musteri.toLowerCase().contains(query) ||
-               item.technician.toLowerCase().contains(query) ||
-               (item.description ?? '').toLowerCase().contains(query);
+        final deviceId = item.deviceId.toLowerCase();
+        final description = item.description.toLowerCase();
+        final technician = item.technician.toLowerCase();
+        final musteri = item.musteri.toLowerCase();
+        
+        if (!deviceId.contains(query) && 
+            !description.contains(query) && 
+            !technician.contains(query) && 
+            !musteri.contains(query)) {
+          return false;
+        }
       }
       
       return true;
     }).toList();
-    
-    // Sıralama uygula
-    return _sortItems(filteredItems);
+
+    // Sıralama
+    switch (_selectedSortBy) {
+      case 'En Yeni':
+        filteredItems.sort((a, b) => b.date.compareTo(a.date));
+        break;
+      case 'En Eski':
+        filteredItems.sort((a, b) => a.date.compareTo(b.date));
+        break;
+    }
+
+    return filteredItems;
   }
 
   void _onSearchChanged(String value) {
@@ -136,18 +142,6 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
     }
   }
 
-  List<ServiceHistory> _sortItems(List<ServiceHistory> items) {
-    switch (_selectedSortBy) {
-      case 'En Yeni':
-        return items..sort((a, b) => b.date.compareTo(a.date));
-      case 'En Eski':
-        return items..sort((a, b) => a.date.compareTo(b.date));
-      default:
-        return items..sort((a, b) => b.date.compareTo(a.date));
-    }
-  }
-
-  // Toplu işlem metodları
   void _toggleSelectionMode() {
     setState(() {
       _isSelectionMode = !_isSelectionMode;
@@ -167,12 +161,7 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
     });
   }
 
-  void _selectAllItems(List<ServiceHistory> items) {
-    setState(() {
-      _selectedItems.clear();
-      _selectedItems.addAll(items.map((item) => item.id));
-    });
-  }
+
 
   void _deselectAllItems() {
     setState(() {
@@ -181,22 +170,20 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
   }
 
   void _deleteSelectedItems() {
-    if (_selectedItems.isEmpty) return;
+    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Seçili Kayıtları Sil'),
-        content: Text('${_selectedItems.length} kayıt silinecek. Emin misiniz?'),
+        content: Text('${_selectedItems.length} kayıt silinecek. Bu işlem geri alınamaz.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('İptal'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
-              // Seçili kayıtları provider'dan sil
-              final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
               final selectedCount = _selectedItems.length;
               
               // Seçili kayıtları listeden çıkar
@@ -236,51 +223,74 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd MMMM yyyy', 'tr_TR');
+    final isWide = MediaQuery.of(context).size.width > 600;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF23408E),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          _isSelectionMode ? '${_selectedItems.length} seçili' : 'Tüm Servis İşlemleri',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          if (!_isSelectionMode)
-            IconButton(
-              icon: const Icon(Icons.select_all, color: Colors.white),
-              onPressed: _toggleSelectionMode,
-              tooltip: 'Toplu Seçim',
-            ),
-          if (_isSelectionMode) ...[
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: _toggleSelectionMode,
-              tooltip: 'Seçimi İptal Et',
-            ),
-            if (_selectedItems.isNotEmpty) ...[
-              IconButton(
-                icon: const Icon(Icons.clear_all, color: Colors.white),
-                onPressed: _deselectAllItems,
-                tooltip: 'Seçimi Temizle',
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.white),
-                onPressed: _deleteSelectedItems,
-                tooltip: 'Seçili Kayıtları Sil',
+      backgroundColor: const Color(0xFFF5F6FA),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(isWide ? 90 : 70),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF23408E),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF23408E).withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
-          ],
-        ],
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + (isWide ? 10 : 6),
+            left: isWide ? 32 : 18,
+            right: isWide ? 32 : 18,
+            bottom: isWide ? 12 : 8,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _isSelectionMode ? '${_selectedItems.length} seçili' : 'Tüm Servis İşlemleri',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isWide ? 22 : 20,
+                  ),
+                ),
+              ),
+              if (!_isSelectionMode)
+                IconButton(
+                  icon: const Icon(Icons.select_all, color: Colors.white, size: 24),
+                  onPressed: _toggleSelectionMode,
+                  tooltip: 'Toplu Seçim',
+                ),
+              if (_isSelectionMode) ...[
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                  onPressed: _toggleSelectionMode,
+                  tooltip: 'Seçimi İptal Et',
+                ),
+                if (_selectedItems.isNotEmpty) ...[
+                  IconButton(
+                    icon: const Icon(Icons.clear_all, color: Colors.white, size: 24),
+                    onPressed: _deselectAllItems,
+                    tooltip: 'Seçimi Temizle',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.white, size: 24),
+                    onPressed: _deleteSelectedItems,
+                    tooltip: 'Seçili Kayıtları Sil',
+                  ),
+                ],
+              ],
+            ],
+          ),
+        ),
       ),
       body: Consumer<ServiceHistoryProvider>(
         builder: (context, serviceHistoryProvider, child) {
@@ -289,252 +299,159 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
           
           return Column(
             children: [
-              // Arama ve Filtreleme Bölümü
+              // Arama çubuğu
               Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    // Arama Çubuğu
-                    TextField(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      decoration: InputDecoration(
-                        hintText: 'Cihaz, müşteri, teknisyen veya açıklama ara...',
-                        prefixIcon: const Icon(Icons.search, color: Color(0xFF23408E)),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, color: Color(0xFF23408E)),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _onSearchChanged('');
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    const SizedBox(height: 12),
-                    // Durum ve Sıralama Filtreleri
-                    Row(
-                      children: [
-                        // Durum Filtresi
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Durum: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                              const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
-                                value: _selectedStatus,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
-                                items: _statusOptions.map((status) => DropdownMenuItem(
-                                  value: status,
-                                  child: Text(status),
-                                )).toList(),
-                                onChanged: _onStatusFilterChanged,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Sıralama Filtresi
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Sıralama: ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                              const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
-                                value: _selectedSortBy,
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: Colors.grey.shade50,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
-                                items: _sortOptions.map((sort) => DropdownMenuItem(
-                                  value: sort,
-                                  child: Text(sort),
-                                )).toList(),
-                                onChanged: _onSortByChanged,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Sonuç Sayısı ve Tümünü Seç Butonu
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${filteredItems.length} kayıt bulundu',
-                          style: const TextStyle(
-                            color: Color(0xFF23408E),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                        if (_isSelectionMode && filteredItems.isNotEmpty)
-                          TextButton.icon(
-                            onPressed: () => _selectAllItems(filteredItems),
-                            icon: const Icon(Icons.select_all, size: 16),
-                            label: const Text('Tümünü Seç'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFF23408E),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            ),
-                          ),
-                        if (_searchQuery.isNotEmpty || _selectedStatus != 'Tümü' || _selectedSortBy != 'En Yeni')
-                          TextButton.icon(
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'Cihaz ara...',
+                    border: InputBorder.none,
+                    icon: const Icon(Icons.search, color: Color(0xFF23408E)),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.grey),
                             onPressed: () {
                               _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                                _selectedStatus = 'Tümü';
-                                _selectedSortBy = 'En Yeni';
-                              });
+                              _onSearchChanged('');
                             },
-                            icon: const Icon(Icons.clear_all, size: 16),
-                            label: const Text('Filtreleri Temizle'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFF23408E),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            ),
+                          )
+                        : null,
+                  ),
+                ),
+              ),
+              // Filtreler
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedStatus,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
                           ),
-                      ],
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: _statusOptions.map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status),
+                        )).toList(),
+                        onChanged: _onStatusFilterChanged,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedSortBy,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: _sortOptions.map((sort) => DropdownMenuItem(
+                          value: sort,
+                          child: Text(sort),
+                        )).toList(),
+                        onChanged: _onSortByChanged,
+                      ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
               // Liste
               Expanded(
                 child: filteredItems.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.search_off, size: 64, color: Colors.grey),
-                            SizedBox(height: 16),
+                            Icon(
+                              Icons.history,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
                             Text(
-                              'Arama kriterlerinize uygun kayıt bulunamadı',
-                              style: TextStyle(color: Colors.grey, fontSize: 16),
+                              'Servis geçmişi bulunamadı',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Filtreleri temizleyip tekrar deneyin',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
+                              ),
                             ),
                           ],
                         ),
                       )
                     : RefreshIndicator(
                         onRefresh: () async {
-                          // Yenileme işlemi
                           await Future.delayed(const Duration(seconds: 1));
                           setState(() {});
                         },
-                        child: ListView.separated(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: filteredItems.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 18),
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];
                             final isSelected = _selectedItems.contains(item.id);
-
-                            final statusBgColor = getStatusBgColor(item.status);
-                            final statusTextColor = getStatusTextColor(item.status);
-                            final statusIcon = getStatusIcon(item.status);
-                            final statusLabel = getStatusLabel(item.status);
                             
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF23408E).withOpacity(0.1) : Colors.white,
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.07),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                                border: Border.all(
-                                  color: isSelected ? const Color(0xFF23408E) : Colors.grey.shade100,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-                                leading: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (_isSelectionMode)
-                                      Checkbox(
-                                        value: isSelected,
-                                        onChanged: (value) => _toggleItemSelection(item.id),
-                                        activeColor: const Color(0xFF23408E),
-                                      ),
-                                    Icon(statusIcon, color: getStatusTextColor(item.status), size: 32),
-                                  ],
-                                ),
-                                title: Text(
-                                  '${item.deviceId} - ${item.description}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1C1C1C)),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Tarih: ${dateFormat.format(item.date)}', style: const TextStyle(fontSize: 13, color: Color(0xFF23408E))),
-                                    Text('Müşteri/Kurum: ${item.musteri}', style: const TextStyle(fontSize: 13, color: Color(0xFF23408E), fontWeight: FontWeight.w600)),
-                                    Text('Teknisyen: ${item.technician}', style: const TextStyle(fontSize: 13, color: Color(0xFF23408E))),
-                                  ],
-                                ),
-                                trailing: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: statusBgColor,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(statusLabel, style: TextStyle(color: statusTextColor, fontWeight: FontWeight.bold, fontSize: 13)),
-                                ),
-                                onTap: () {
-                                  if (_isSelectionMode) {
-                                    _toggleItemSelection(item.id);
-                                  } else {
-                                    Navigator.of(context).push(
-                                      PageRouteBuilder(
-                                        pageBuilder: (_, __, ___) => ServiceHistoryDetailScreen(serviceHistory: item),
-                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                          return FadeTransition(opacity: animation, child: child);
-                                        },
-                                      ),
-                                    );
-                                  }
-                                },
-                                onLongPress: () {
-                                  if (!_isSelectionMode) {
-                                    _toggleSelectionMode();
-                                    _toggleItemSelection(item.id);
-                                  }
-                                },
-                              ),
+                            return _ServiceHistoryCard(
+                              item: item,
+                              isSelected: isSelected,
+                              isSelectionMode: _isSelectionMode,
+                              onTap: () {
+                                if (_isSelectionMode) {
+                                  _toggleItemSelection(item.id);
+                                } else {
+                                  Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      pageBuilder: (_, __, ___) => ServiceHistoryDetailScreen(serviceHistory: item),
+                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                        return FadeTransition(opacity: animation, child: child);
+                                      },
+                                    ),
+                                  );
+                                }
+                              },
+                              onLongPress: () {
+                                if (!_isSelectionMode) {
+                                  _toggleSelectionMode();
+                                  _toggleItemSelection(item.id);
+                                }
+                              },
+                              onSelectionChanged: (value) {
+                                _toggleItemSelection(item.id);
+                              },
                             );
                           },
                         ),
@@ -543,6 +460,214 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _ServiceHistoryCard extends StatelessWidget {
+  final ServiceHistory item;
+  final bool isSelected;
+  final bool isSelectionMode;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  final ValueChanged<bool> onSelectionChanged;
+
+  const _ServiceHistoryCard({
+    required this.item,
+    required this.isSelected,
+    required this.isSelectionMode,
+    required this.onTap,
+    required this.onLongPress,
+    required this.onSelectionChanged,
+    Key? key,
+  }) : super(key: key);
+
+  String _formatDate(DateTime date) {
+    final months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  Color getStatusBgColor(String status) {
+    switch (status) {
+      case 'Başarılı':
+        return const Color(0xFF43A047);
+      case 'Beklemede':
+        return const Color(0xFFFFC107);
+      case 'Arızalı':
+        return const Color(0xFFE53935);
+      default:
+        return const Color(0xFF43A047);
+    }
+  }
+
+  Color getStatusTextColor(String status) {
+    return Colors.white;
+  }
+
+  String getStatusLabel(String status) {
+    switch (status) {
+      case 'Başarılı':
+        return 'Başarılı';
+      case 'Beklemede':
+        return 'Beklemede';
+      case 'Arızalı':
+        return 'Arızalı';
+      default:
+        return status;
+    }
+  }
+
+  IconData getStatusIcon(String status) {
+    switch (status) {
+      case 'Başarılı':
+        return Icons.check_circle_rounded;
+      case 'Beklemede':
+        return Icons.hourglass_bottom_rounded;
+      case 'Arızalı':
+        return Icons.error_rounded;
+      default:
+        return Icons.info_outline_rounded;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width > 600;
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              const Color(0xFF23408E).withOpacity(0.02),
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  if (isSelectionMode)
+                    Checkbox(
+                      value: isSelected,
+                      onChanged: (value) => onSelectionChanged(value ?? false),
+                      activeColor: const Color(0xFF23408E),
+                    ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: getStatusBgColor(item.status).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      getStatusIcon(item.status),
+                      size: isWide ? 20 : 18,
+                      color: getStatusBgColor(item.status),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.deviceId,
+                          style: TextStyle(
+                            fontSize: isWide ? 16 : 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatDate(item.date),
+                          style: TextStyle(
+                            fontSize: isWide ? 12 : 11,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: getStatusBgColor(item.status),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      getStatusLabel(item.status),
+                      style: TextStyle(
+                        fontSize: isWide ? 11 : 10,
+                        fontWeight: FontWeight.bold,
+                        color: getStatusTextColor(item.status),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (item.description.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  item.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: isWide ? 13 : 12,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF23408E).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(Icons.person, size: isWide ? 18 : 16, color: const Color(0xFF23408E)),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    item.technician,
+                    style: TextStyle(fontSize: isWide ? 14 : 12, color: Colors.black87, fontWeight: FontWeight.w500),
+                  ),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF23408E).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.visibility, size: 16, color: Color(0xFF23408E)),
+                      label: const Text('Detaylar', style: TextStyle(fontSize: 12, color: Color(0xFF23408E), fontWeight: FontWeight.w600)),
+                      onPressed: onTap,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

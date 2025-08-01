@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/service_history.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 
 class ServiceHistoryDetailScreen extends StatelessWidget {
   final ServiceHistory serviceHistory;
@@ -98,6 +99,42 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Açıklama: ${serviceHistory.description}', style: const TextStyle(fontSize: 16, color: Color(0xFF1C1C1C))),
             const SizedBox(height: 8),
+            
+            // Fotoğraflar bölümü
+            if (serviceHistory.photos != null && serviceHistory.photos!.isNotEmpty) ...[
+              const Text('Fotoğraflar:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1C))),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 120,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: serviceHistory.photos!.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 12),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(serviceHistory.photos![index]),
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 120,
+                              height: 120,
+                              color: Colors.grey.shade300,
+                              child: const Icon(Icons.error, color: Colors.grey),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (serviceHistory.kullanilanParcalar.isNotEmpty)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import '../models/stock_part.dart';
 import '../models/device.dart';
 import '../models/service_history.dart';
@@ -354,6 +355,21 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       }
     }
     
+    // Fotoğrafı kaydet
+    List<String> photoPaths = [];
+    if (_pickedImage != null) {
+      // Fotoğrafı uygulama belgeleri dizinine kaydet
+      final appDir = await getApplicationDocumentsDirectory();
+      final photosDir = Directory('${appDir.path}/service_photos');
+      if (!await photosDir.exists()) {
+        await photosDir.create(recursive: true);
+      }
+      
+      final fileName = 'service_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final savedFile = await _pickedImage!.copy('${photosDir.path}/$fileName');
+      photoPaths.add(savedFile.path);
+    }
+
     // Servis geçmişine ekleme (Provider ile)
     final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
     serviceHistoryProvider.addServiceHistory(
@@ -372,6 +388,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
           stokAdedi: sp.adet,
           criticalLevel: sp.part.criticalLevel,
         )).toList(),
+        photos: photoPaths.isNotEmpty ? photoPaths : null,
       ),
     );
     

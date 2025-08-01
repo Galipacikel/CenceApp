@@ -10,6 +10,7 @@ class ServiceHistory {
   final String technician;
   final String status;
   final List<StockPart> kullanilanParcalar; // Kullanılan parçaların listesi
+  final List<String>? photos; // Fotoğrafların yolları
 
   ServiceHistory({
     required this.id,
@@ -20,6 +21,7 @@ class ServiceHistory {
     required this.technician,
     required this.status,
     this.kullanilanParcalar = const [],
+    this.photos,
   });
 
   // Json işlemleri şimdilik basitleştirildi, ileride detaylandırılacak
@@ -35,6 +37,7 @@ class ServiceHistory {
       kullanilanParcalar: (json['kullanilanParcalar'] as List? ?? [])
           .map((item) => StockPart.fromJson(item))
           .toList(),
+      photos: (json['photos'] as List? ?? []).cast<String>(),
     );
   }
 
@@ -48,6 +51,7 @@ class ServiceHistory {
       'technician': technician,
       'status': status,
       'kullanilanParcalar': kullanilanParcalar.map((p) => p.toJson()).toList(),
+      'photos': photos ?? [],
     };
   }
 }
