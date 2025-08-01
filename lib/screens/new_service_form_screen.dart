@@ -360,7 +360,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       ServiceHistory(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         date: _date!,
-        deviceId: _selectedDevice!.modelName, // ID yerine cihaz adını kaydet
+        deviceId: '${_selectedDevice!.modelName} (${_selectedDevice!.serialNumber})', // Cihaz adı ve seri numarasını kaydet
         musteri: _customerController.text,
         description: _descriptionController.text,
         technician: _technicianController.text,
@@ -378,7 +378,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     Navigator.pop(context, {
       'formTipi': _formTipi,
       'date': _date!,
-      'deviceId': _selectedDevice!.id,
+      'deviceId': '${_selectedDevice!.modelName} (${_selectedDevice!.serialNumber})',
       'customer': _customerController.text,
       'technician': _technicianController.text,
       'description': _descriptionController.text,

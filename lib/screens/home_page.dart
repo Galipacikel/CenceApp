@@ -11,7 +11,7 @@ import 'service_history_detail_screen.dart';
 import 'notification_settings_screen.dart';
 import 'support_request_screen.dart';
 import '../models/service_history.dart';
-import '../models/stock_part.dart';
+
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,31 +33,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {
-    final result = await Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const NewServiceFormScreen()),
     );
-    if (result != null && result is Map<String, dynamic>) {
-      final int formTipi = result['formTipi'] ?? 0;
-      String status = 'Başarılı';
-      if (formTipi == 2) status = 'Arızalı';
-      final newHistory = ServiceHistory(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        date: result['date'] ?? DateTime.now(),
-        deviceId: result['deviceId'] ?? '',
-        musteri: result['customer'] ?? '',
-        description: result['description'] ?? '',
-        technician: result['technician'] ?? '',
-        status: status,
-        kullanilanParcalar: (result['usedParts'] as List?)?.map((p) => StockPart(
-          id: p['partCode'] ?? '',
-          parcaAdi: p['partName'] ?? '',
-          parcaKodu: p['partCode'] ?? '',
-          stokAdedi: p['quantity'] ?? 1,
-          criticalLevel: 5,
-        )).toList() ?? [],
-      );
-      Provider.of<ServiceHistoryProvider>(context, listen: false).addServiceHistory(newHistory);
-    }
   }
 
   @override

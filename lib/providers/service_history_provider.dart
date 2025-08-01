@@ -21,6 +21,10 @@ class ServiceHistoryProvider extends ChangeNotifier {
     _serviceHistoryList
       ..clear()
       ..addAll(list);
+    
+    // Verileri tarihe göre sırala (en yeni en üstte)
+    _serviceHistoryList.sort((a, b) => b.date.compareTo(a.date));
+    
     notifyListeners();
   }
 
@@ -33,6 +37,10 @@ class ServiceHistoryProvider extends ChangeNotifier {
     _serviceHistoryList
       ..clear()
       ..addAll(mockList);
+    
+    // Mock data'yı tarihe göre sırala (en yeni en üstte)
+    _serviceHistoryList.sort((a, b) => b.date.compareTo(a.date));
+    
     notifyListeners();
   }
 
