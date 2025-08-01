@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/service_history.dart';
+import 'package:provider/provider.dart';
+import '../providers/service_history_provider.dart';
 import 'service_history_detail_screen.dart';
 
-class AllServiceHistoryScreen extends StatelessWidget {
-  final ServiceHistoryRepository repository;
-  AllServiceHistoryScreen({Key? key, ServiceHistoryRepository? repository})
-      : repository = repository ?? MockServiceHistoryRepository(),
-        super(key: key);
+class AllServiceHistoryScreen extends StatefulWidget {
+  const AllServiceHistoryScreen({Key? key}) : super(key: key);
+
+  @override
+  State<AllServiceHistoryScreen> createState() => _AllServiceHistoryScreenState();
+}
+
+class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
 
   String getStatusLabel(String status) {
     switch (status) {
@@ -130,16 +134,12 @@ class AllServiceHistoryScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: FutureBuilder<List<ServiceHistory>>(
-        future: repository.getAll(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      body: Consumer<ServiceHistoryProvider>(
+        builder: (context, serviceHistoryProvider, child) {
+          final items = serviceHistoryProvider.all;
+          if (items.isEmpty) {
             return const Center(child: Text('Kayıt bulunamadı.'));
           }
-          final items = snapshot.data!;
           return ListView.separated(
             itemCount: items.length,
             separatorBuilder: (context, index) => const SizedBox(height: 18),
