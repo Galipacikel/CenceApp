@@ -635,22 +635,20 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
             TextField(
               readOnly: true,
               controller: _dateController,
+              onTap: () async {
+                final now = DateTime.now();
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: now,
+                  firstDate: DateTime(now.year - 5),
+                  lastDate: DateTime(now.year + 5),
+                  locale: const Locale('tr', 'TR'),
+                );
+                if (picked != null) setState(() => _date = picked);
+              },
               decoration: InputDecoration(
                 hintText: 'gg.aa.yyyy',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  onPressed: () async {
-                    final now = DateTime.now();
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: now,
-                      firstDate: DateTime(now.year - 5),
-                      lastDate: DateTime(now.year + 5),
-                      locale: const Locale('tr', 'TR'),
-                    );
-                    if (picked != null) setState(() => _date = picked);
-                  },
-                ),
+                suffixIcon: const Icon(Icons.calendar_today_outlined),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),

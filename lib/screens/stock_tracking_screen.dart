@@ -742,7 +742,25 @@ class _StokTakibiScreenState extends State<StokTakibiScreen> with SingleTickerPr
                                           ),
                                         ),
                                       ),
-                                      if (p.stokAdedi <= p.criticalLevel)
+                                      if (p.stokAdedi == 0)
+                                        Container(
+                                          margin: const EdgeInsets.only(left: 8),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFD32F2F).withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: const Color(0xFFD32F2F), width: 1),
+                                          ),
+                                          child: Text(
+                                            'Stok tükendi',
+                                            style: GoogleFonts.montserrat(
+                                              color: const Color(0xFFD32F2F),
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        )
+                                      else if (p.stokAdedi <= p.criticalLevel)
                                         Container(
                                           margin: const EdgeInsets.only(left: 8),
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1145,13 +1163,13 @@ class _PartCard extends StatelessWidget {
       curve: Curves.easeInOut,
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        color: isOutOfStock ? Colors.red.shade200 : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(cardRadius),
         border: Border.all(
           color: isOutOfStock
-              ? Colors.red.withOpacity(0.7)
+              ? const Color(0xFFD32F2F)
               : isCritical ? Colors.red.withOpacity(0.35) : primaryBlue.withOpacity(0.10),
-          width: isOutOfStock ? 2 : isCritical ? 2 : 1,
+          width: isOutOfStock ? 1.5 : isCritical ? 2 : 1,
         ),
         boxShadow: [
           if (isOutOfStock)
@@ -1208,31 +1226,15 @@ class _PartCard extends StatelessWidget {
               ),
             ),
             if (isOutOfStock)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade400,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.red.shade700, width: 1.5),
+              Text(
+                'Stok tükendi',
+                style: GoogleFonts.montserrat(
+                  color: const Color(0xFFD32F2F),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.block, color: Colors.white, size: 18),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Stok Bitti',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (!isOutOfStock && isCritical)
+              )
+            else if (isCritical)
               Container(
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
