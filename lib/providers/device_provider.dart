@@ -1,93 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../models/device.dart';
+import '../repositories/firestore_device_repository.dart';
 
 class DeviceProvider extends ChangeNotifier {
-  final List<Device> _devices = [
-    Device(
-      id: 'CİHAZ-001',
-      modelName: 'Solunum Cihazı X-2000',
-      serialNumber: 'SN-A12345',
-      customer: 'Acıbadem Hastanesi',
-      installDate: '15.01.2023',
-      warrantyStatus: 'Devam Ediyor',
-      lastMaintenance: '15.01.2024',
-      warrantyEndDate: DateTime(2025, 1, 15),
-    ),
-    Device(
-      id: 'CİHAZ-002',
-      modelName: 'Kalp Şok Cihazı Pro-500',
-      serialNumber: 'SN-B67890',
-      customer: 'Medipol Kliniği',
-      installDate: '10.03.2022',
-      warrantyStatus: 'Bitti',
-      lastMaintenance: '10.03.2023',
-      warrantyEndDate: DateTime(2024, 3, 10),
-    ),
-    Device(
-      id: 'CİHAZ-003',
-      modelName: 'EKG Monitörü Card-10',
-      serialNumber: 'SN-C13579',
-      customer: 'Şifa Sağlık Merkezi',
-      installDate: '20.06.2021',
-      warrantyStatus: 'Devam Ediyor',
-      lastMaintenance: '20.06.2023',
-      warrantyEndDate: DateTime(2025, 6, 20),
-    ),
-    // Aynı model farklı müşteriler
-    Device(
-      id: 'CİHAZ-004',
-      modelName: 'EKG Monitörü Card-10',
-      serialNumber: 'SN-C24680',
-      customer: 'Memorial Hastanesi',
-      installDate: '05.09.2022',
-      warrantyStatus: 'Devam Ediyor',
-      lastMaintenance: '05.09.2023',
-      warrantyEndDate: DateTime(2024, 9, 5),
-    ),
-    Device(
-      id: 'CİHAZ-005',
-      modelName: 'EKG Monitörü Card-10',
-      serialNumber: 'SN-C35791',
-      customer: 'Liv Hastanesi',
-      installDate: '12.11.2021',
-      warrantyStatus: 'Bitti',
-      lastMaintenance: '12.11.2022',
-      warrantyEndDate: DateTime(2023, 11, 12),
-    ),
-    Device(
-      id: 'CİHAZ-006',
-      modelName: 'Solunum Cihazı X-2000',
-      serialNumber: 'SN-A24680',
-      customer: 'Anadolu Sağlık Merkezi',
-      installDate: '08.04.2023',
-      warrantyStatus: 'Devam Ediyor',
-      lastMaintenance: '08.04.2024',
-      warrantyEndDate: DateTime(2025, 4, 8),
-    ),
-    Device(
-      id: 'CİHAZ-007',
-      modelName: 'Kalp Şok Cihazı Pro-500',
-      serialNumber: 'SN-B13579',
-      customer: 'Koç Üniversitesi Hastanesi',
-      installDate: '25.07.2022',
-      warrantyStatus: 'Devam Ediyor',
-      lastMaintenance: '25.07.2023',
-      warrantyEndDate: DateTime(2024, 7, 25),
-    ),
-    Device(
-      id: 'CİHAZ-008',
-      modelName: 'Kalp Şok Cihazı Pro-500',
-      serialNumber: 'SN-B24680',
-      customer: 'Hacettepe Üniversitesi Hastanesi',
-      installDate: '03.12.2021',
-      warrantyStatus: 'Bitti',
-      lastMaintenance: '03.12.2022',
-      warrantyEndDate: DateTime(2023, 12, 3),
-    ),
-  ];
+  final List<Device> _devices = [];
+  final FirestoreDeviceRepository _repository = FirestoreDeviceRepository();
 
   List<Device> get devices => List.unmodifiable(_devices);
+
+  Future<void> fetchAll() async {
+    final list = await _repository.getAll();
+    _devices
+      ..clear()
+      ..addAll(list);
+    notifyListeners();
+  }
 
   void addDevice(Device device) {
     _devices.insert(0, device);
@@ -109,7 +37,9 @@ class DeviceProvider extends ChangeNotifier {
 
   Device? findBySerial(String serialNumber) {
     try {
-      return _devices.firstWhere((device) => device.serialNumber == serialNumber);
+      return _devices.firstWhere(
+        (device) => device.serialNumber == serialNumber,
+      );
     } catch (e) {
       return null;
     }
@@ -117,13 +47,16 @@ class DeviceProvider extends ChangeNotifier {
 
   List<Device> search(String query) {
     if (query.isEmpty) return [];
-    
+
     final lowercaseQuery = query.toLowerCase();
-    return _devices.where((device) =>
-      device.modelName.toLowerCase().contains(lowercaseQuery) ||
-      device.serialNumber.toLowerCase().contains(lowercaseQuery) ||
-      device.customer.toLowerCase().contains(lowercaseQuery)
-    ).toList();
+    return _devices
+        .where(
+          (device) =>
+              device.modelName.toLowerCase().contains(lowercaseQuery) ||
+              device.serialNumber.toLowerCase().contains(lowercaseQuery) ||
+              device.customer.toLowerCase().contains(lowercaseQuery),
+        )
+        .toList();
   }
 
   // Model bazında gruplandırma
@@ -170,4 +103,4 @@ class DeviceProvider extends ChangeNotifier {
     }
     return unique.length;
   }
-} 
+}

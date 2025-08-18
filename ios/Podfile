@@ -1,0 +1,226 @@
+# Uncomment this line to define a global platform for your project
+platform :ios, '12.0'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+require 'fileutils'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks! :linkage => :static
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+  end
+
+  # Force all Pods to use iOS 12.0 minimum deployment target
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      deployment_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+      if deployment_target.nil? || deployment_target.to_f < 12.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+      end
+      # Ensure C++17 to satisfy gRPC and modern C++ usage
+      config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++17'
+      config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
+      
+      # Allow non-modular includes to fix Firebase header errors
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      # Removed to avoid breaking automatic framework linking which caused undefined symbols
+      # config.build_settings['CLANG_MODULES_AUTOLINK'] = 'NO'
+      config.build_settings['DEFINES_MODULE'] = 'YES'
+    end
+  end
+
+  # Fix: remove invalid compiler flag that makes clang think "-G" is being passed
+  installer.pods_project.targets.each do |target|
+    target.build_phases.each do |phase|
+      next unless phase.respond_to?(:files)
+      phase.files.each do |file|
+        next unless file.respond_to?(:settings) && file.settings
+        flags = file.settings['COMPILER_FLAGS']
+        if flags && flags.include?('-GCC_WARN_INHIBIT_ALL_WARNINGS')
+          file.settings['COMPILER_FLAGS'] = flags.gsub('-GCC_WARN_INHIBIT_ALL_WARNINGS', '')
+        end
+      end
+    end
+  end
+
+  # Patch gRPC basic_seq.h for Xcode 16.3 Clang parse issue
+  begin
+    pods_root = File.expand_path('Pods', __dir__)
+    grpc_paths = [
+      File.join(pods_root, 'gRPC-Core', 'src', 'core', 'lib', 'promise', 'detail', 'basic_seq.h'),
+      File.join(pods_root, 'gRPC-C++', 'src', 'core', 'lib', 'promise', 'detail', 'basic_seq.h')
+    ]
+    grpc_paths.each do |path|
+      next unless File.exist?(path)
+      begin
+        content = File.read(path)
+      rescue
+        FileUtils.chmod(0644, path) rescue nil
+        content = File.read(path)
+      end
+      if content.include?('Traits::template CallSeqFactory(') && !content.include?('Traits::template CallSeqFactory<>(')
+        patched = content.gsub('Traits::template CallSeqFactory(', 'Traits::template CallSeqFactory<>(')
+        begin
+          FileUtils.chmod(0644, path) rescue nil
+          File.write(path, patched)
+          puts "Patched gRPC basic_seq.h at #{path}"
+        rescue => e
+          puts "Warning: could not write patch to #{path}: #{e}"
+        end
+      end
+    end
+  rescue => e
+    puts "Warning: failed to patch gRPC basic_seq.h: #{e}"
+  end
+
+  # Strip non-modular header search paths that can trigger "Include of non-modular header inside framework module"
+  begin
+    xcconfig_globs = [
+      File.expand_path('Pods/Target Support Files/Pods-Runner/*.xcconfig', __dir__),
+      File.expand_path('Pods/Target Support Files/Pods-RunnerTests/*.xcconfig', __dir__)
+    ]
+    xcconfig_paths = xcconfig_globs.flat_map { |g| Dir.glob(g) }
+    xcconfig_paths.each do |path|
+      begin
+        FileUtils.chmod(0644, path)
+        content = File.read(path)
+        new_content = content
+          .gsub(/\s*\$\{PODS_ROOT\}\/Firebase\/CoreOnly\/Sources\s*/, ' ')
+          .gsub(/\s*\$\{PODS_ROOT\}\/GoogleMLKit\/MLKitCore\/Sources\s*/, ' ')
+        if new_content != content
+          File.open(path, 'w') { |f| f.write(new_content) }
+          puts "Stripped non-modular header search paths from: #{path}"
+        end
+      rescue => e
+        puts "Failed to sanitize HEADER_SEARCH_PATHS in #{path}: #{e}"
+      end
+    end
+  rescue => e
+    puts "Failed to process xcconfig sanitization: #{e}"
+  end
+
+  # Replace umbrella Firebase imports in plugin headers with modular headers
+  begin
+    plugin_root = File.expand_path('.symlinks/plugins', __dir__)
+    pub_cache_paths = [
+      ENV['HOME'] ? File.join(ENV['HOME'], '.pub-cache/hosted/pub.dev/firebase_auth-*/ios') : nil,
+      ENV['HOME'] ? File.join(ENV['HOME'], '.pub-cache/hosted/pub.dev/firebase_messaging-*/ios') : nil,
+      ENV['HOME'] ? File.join(ENV['HOME'], '.pub-cache/hosted/pub.dev/firebase_storage-*/ios') : nil,
+      ENV['HOME'] ? File.join(ENV['HOME'], '.pub-cache/hosted/pub.dev/cloud_firestore-*/ios') : nil
+    ].compact
+    
+    all_roots = []
+    all_roots << plugin_root if Dir.exist?(plugin_root)
+    pub_cache_paths.each do |pub_cache_path|
+      Dir.glob(pub_cache_path).each { |p| all_roots << p if Dir.exist?(p) }
+    end
+    
+    unless all_roots.empty?
+      mappings = [
+        { plugin: 'firebase_auth', needle: '#import <Firebase/Firebase.h>', replacement: "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseAuth/FirebaseAuth.h>", module_replacement: '@import FirebaseCore; @import FirebaseAuth;' },
+        { plugin: 'firebase_messaging', needle: '#import <Firebase/Firebase.h>', replacement: "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseMessaging/FirebaseMessaging.h>\n#import <FirebaseAuth/FirebaseAuth.h>", module_replacement: '@import FirebaseCore; @import FirebaseMessaging; @import FirebaseAuth;' },
+        { plugin: 'firebase_storage', needle: '#import <Firebase/Firebase.h>', replacement: "@import FirebaseCore; @import FirebaseStorage;", module_replacement: '@import FirebaseCore; @import FirebaseStorage;' },
+        { plugin: 'cloud_firestore', needle: '#import <Firebase/Firebase.h>', replacement: "#import <FirebaseCore/FirebaseCore.h>\n#import <FirebaseFirestore/FirebaseFirestore.h>", module_replacement: '@import FirebaseCore; @import FirebaseFirestore;' }
+      ]
+      
+      all_roots.each do |root_dir|
+        mappings.each do |m|
+          Dir.glob(File.join(root_dir, '**/*')).each do |path|
+            next unless File.exist?(path) && File.file?(path)
+            next unless path.end_with?('.h', '.m', '.mm')
+            next unless path.include?(m[:plugin])
+            begin
+              content = File.read(path)
+              new_content = content
+              if new_content.include?(m[:needle])
+                new_content = new_content.gsub(m[:needle], m[:replacement])
+              end
+              if new_content.include?('@import Firebase;')
+                new_content = new_content.gsub('@import Firebase;', m[:module_replacement])
+              end
+              # Special-case: FirebaseStorage is Swift-based and does not ship FirebaseStorage.h; switch to module import.
+              if m[:plugin] == 'firebase_storage' && new_content.include?('#import <FirebaseStorage/FirebaseStorage.h>')
+                new_content = new_content.gsub('#import <FirebaseStorage/FirebaseStorage.h>', '@import FirebaseStorage;')
+              end
+              next if new_content == content
+              FileUtils.chmod(0644, path) rescue nil
+              File.open(path, 'w') { |f| f.write(new_content) }
+              puts "Rewrote Firebase imports in: #{path}"
+            rescue => e
+              puts "Failed to patch Firebase import in #{path}: #{e}"
+            end
+          end
+        end
+      end
+    else
+      puts "No plugin roots found, skipping Firebase import patching."
+    end
+  rescue => e
+    puts "Error during Firebase import patching: #{e}"
+  end
+
+  # Ensure FLTFirebaseMessagingPlugin.m conditionally imports FirebaseAuth to resolve FIRAuth usage
+  begin
+    plugin_root = File.expand_path('.symlinks/plugins', __dir__)
+    messaging_impl = File.join(plugin_root, 'firebase_messaging/ios/Classes/FLTFirebaseMessagingPlugin.m')
+    if File.exist?(messaging_impl)
+      content = File.read(messaging_impl)
+      pattern = '#import "FLTFirebaseMessagingPlugin.h"'
+      insertion = "#import \"FLTFirebaseMessagingPlugin.h\"\n#if __has_include(<FirebaseAuth/FirebaseAuth.h>)\n#import <FirebaseAuth/FirebaseAuth.h>\n#endif"
+      has_direct_import = !!(content =~ /^\s*#import\s*<FirebaseAuth\/FirebaseAuth\.h>/)
+      has_module_import = content.include?('@import FirebaseAuth;')
+      unless has_direct_import || has_module_import
+        new_content = nil
+        if content.include?(pattern)
+          new_content = content.sub(pattern, insertion)
+        else
+          # Fallback: prepend at top if expected pattern not found
+          new_content = insertion + "\n" + content
+        end
+        if new_content && new_content != content
+          FileUtils.chmod(0644, messaging_impl) rescue nil
+          File.open(messaging_impl, 'w') { |f| f.write(new_content) }
+          puts "Inserted conditional FirebaseAuth import into: #{messaging_impl}"
+        end
+      end
+    else
+      puts "Messaging implementation not found at #{messaging_impl}, skipping FirebaseAuth import insertion."
+    end
+  rescue => e
+    puts "Error while inserting FirebaseAuth import: #{e}"
+  end
+
+  installer.pods_project.save
+end

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/service_history.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
 
 class ServiceHistoryDetailScreen extends StatelessWidget {
   final ServiceHistory serviceHistory;
-  const ServiceHistoryDetailScreen({Key? key, required this.serviceHistory}) : super(key: key);
+  const ServiceHistoryDetailScreen({super.key, required this.serviceHistory});
 
   Color getStatusBgColor(String status) {
     switch (status) {
@@ -326,7 +325,7 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                    )).toList(),
+                    )),
                     const SizedBox(height: 20),
                   ],
                 ],
@@ -371,23 +370,25 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                             margin: const EdgeInsets.only(right: 12),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                File(serviceHistory.photos![index]),
-                                width: 120,
-                                height: 120,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
+                              child: serviceHistory.photos![index].startsWith('http')
+                                ? Image.network(
+                                    serviceHistory.photos![index],
                                     width: 120,
                                     height: 120,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade300,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(Icons.error, color: Colors.grey),
-                                  );
-                                },
-                              ),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 120,
+                                        height: 120,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade300,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(Icons.error, color: Colors.grey),
+                                      );
+                                    },
+                                  )
+                                : const SizedBox.shrink(),
                             ),
                           );
                         },
@@ -446,4 +447,4 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
       ],
     );
   }
-} 
+}

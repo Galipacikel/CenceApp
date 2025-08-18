@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_state_provider.dart';
 
 class CustomAppBar extends StatelessWidget {
-  const CustomAppBar({Key? key}) : super(key: key);
+  const CustomAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppStateProvider>(context);
+    final userProfile = appState.userProfile;
+    final isAdmin = appState.currentUser?.isAdmin ?? false;
+    final displayName = (userProfile != null && userProfile.fullName.isNotEmpty)
+        ? userProfile.fullName
+        : 'Kullanıcı';
+
     return Container(
       padding: const EdgeInsets.only(top: 32, left: 16, right: 16, bottom: 12),
       decoration: const BoxDecoration(
@@ -40,13 +49,13 @@ class CustomAppBar extends StatelessWidget {
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: const [
-                  Text('Ayşe Demir', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
-                  Text('Admin', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                children: [
+                  Text(displayName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                  Text(isAdmin ? 'Admin' : 'Teknisyen', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                 ],
               ),
-              SizedBox(width: 8),
-              CircleAvatar(
+              const SizedBox(width: 8),
+              const CircleAvatar(
                 radius: 18,
                 backgroundImage: AssetImage('assets/images/profile_placeholder.png'),
                 backgroundColor: Colors.white,
@@ -57,4 +66,4 @@ class CustomAppBar extends StatelessWidget {
       ),
     );
   }
-} 
+}

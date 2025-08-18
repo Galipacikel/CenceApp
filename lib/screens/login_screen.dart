@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/firestore_paths.dart';
+import '../services/username_auth_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state_provider.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
-  final TextEditingController _emailController = TextEditingController();
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+
+  final UsernameAuthService _usernameAuth = UsernameAuthService();
 
   @override
   void initState() {
@@ -27,9 +37,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
     _animationController.forward();
   }
 
@@ -40,33 +54,122 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 
   Future<void> _login() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kullanıcı adı ve şifre zorunludur.')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
-    
-    await Future.delayed(const Duration(milliseconds: 800));
-    
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const HomePage(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
+    try {
+      final credential = await _usernameAuth.signInWithUsername(
+        username: username,
+        password: password,
       );
+
+      final uid = credential?.user?.uid;
+      if (uid != null) {
+        try {
+          final usersRef =
+              FirebaseFirestore.instance.collection(FirestorePaths.users);
+          final userRef = usersRef.doc(uid);
+          final userDoc = await userRef.get();
+
+          // Kullanıcının girdiği değer email gibi mi?
+          final bool inputLooksLikeEmail =
+              RegExp(r'^[\w\.-]+@([\w\-]+\.)+[A-Za-z]{2,}$')
+                  .hasMatch(username);
+
+          if (!userDoc.exists) {
+            final dataToSet = <String, dynamic>{
+              'email': credential?.user?.email,
+              'full_name': credential?.user?.displayName ?? '',
+              'role': 'technician',
+              'is_admin': false,
+              'created_at': FieldValue.serverTimestamp(),
+            };
+            if (!inputLooksLikeEmail) {
+              dataToSet['username'] = username;
+              dataToSet['username_lowercase'] = username.toLowerCase();
+            }
+            await userRef.set(dataToSet, SetOptions(merge: true));
+          } else {
+            // Eksikse kullanıcı adını ekle (migrasyon için)
+            final data = userDoc.data() as Map<String, dynamic>;
+            if (!(data.containsKey('username') && data['username'] != null) &&
+                !inputLooksLikeEmail) {
+              await userRef.set({
+                'username': username,
+                'username_lowercase': username.toLowerCase(),
+              }, SetOptions(merge: true));
+            }
+            // is_admin alanı yoksa rol'e göre varsayılan ata
+            if (!data.containsKey('is_admin')) {
+              final bool isAdmin = (data['role'] == 'admin');
+              await userRef.set({'is_admin': isAdmin}, SetOptions(merge: true));
+            }
+          }
+        } on FirebaseException catch (e) {
+          debugPrint('User doc read/create error: ${e.code} - ${e.message}');
+        }
+      }
+
+      // Provider'ı güncelle: current user ve userProfile'ı yükle
+      if (mounted) {
+        final appState = Provider.of<AppStateProvider>(context, listen: false);
+        final authService = AuthService();
+        final appUser = await authService.getCurrentUserProfile();
+        appState.updateCurrentUser(appUser);
+      }
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const HomePage(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      String message = 'Giriş yapılamadı';
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'Kullanıcı adı bulunamadı';
+          break;
+        case 'wrong-password':
+          message = 'Şifre hatalı';
+          break;
+        default:
+          message = e.message ?? message;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
-    
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: Stack(
@@ -85,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ),
           ),
-          
+
           // Dekoratif şekiller
           Positioned(
             top: -100,
@@ -111,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ),
           ),
-          
+
           // Ana içerik
           SafeArea(
             child: FadeTransition(
@@ -144,7 +247,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF23408E).withOpacity(0.1),
+                                  color: const Color(
+                                    0xFF23408E,
+                                  ).withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -154,7 +259,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 ),
                               ),
                               const SizedBox(height: 20),
-                              
+
                               // Cence yazısı
                               RichText(
                                 text: const TextSpan(
@@ -164,14 +269,29 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                     letterSpacing: 1.5,
                                   ),
                                   children: [
-                                    TextSpan(text: 'Ce', style: TextStyle(color: Color(0xFF1C1C1C))),
-                                    TextSpan(text: 'n', style: TextStyle(color: Color(0xFF23408E))),
-                                    TextSpan(text: 'ce', style: TextStyle(color: Color(0xFF1C1C1C))),
+                                    TextSpan(
+                                      text: 'Ce',
+                                      style: TextStyle(
+                                        color: Color(0xFF1C1C1C),
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: 'n',
+                                      style: TextStyle(
+                                        color: Color(0xFF23408E),
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: 'ce',
+                                      style: TextStyle(
+                                        color: Color(0xFF1C1C1C),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              
+
                               Text(
                                 'Teknik Servis Yönetimi',
                                 style: TextStyle(
@@ -181,15 +301,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 ),
                               ),
                               const SizedBox(height: 32),
-                              
+
                               // Giriş formu
                               _buildLoginForm(),
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 40),
-                        
+
                         // Alt bilgi
                         Column(
                           children: [
@@ -228,13 +348,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       children: [
         // Kullanıcı adı
         _buildTextField(
-          controller: _emailController,
+          controller: _usernameController,
           hintText: 'Kullanıcı Adı',
           icon: Icons.person_outline_rounded,
           keyboardType: TextInputType.text,
         ),
         const SizedBox(height: 16),
-        
+
         // Şifre
         _buildTextField(
           controller: _passwordController,
@@ -249,7 +369,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           },
         ),
         const SizedBox(height: 24),
-        
+
         // Giriş butonu
         SizedBox(
           width: double.infinity,
@@ -275,10 +395,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   )
                 : const Text(
                     'Giriş Yap',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
           ),
         ),
@@ -312,18 +429,21 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
-                    obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                    obscureText
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
                     color: Colors.grey.shade600,
                   ),
                   onPressed: onTogglePassword,
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
       ),
     );
   }
 }
-
- 

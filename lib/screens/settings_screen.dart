@@ -10,17 +10,17 @@ import 'privacy_policy_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
 import 'login_screen.dart';
-import '../models/app_settings.dart';
-import 'dart:io';
+// import '../models/app_settings.dart';
+// import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final Color primaryBlue = const Color(0xFF23408E);
-    final Color lightBlue = const Color(0xFF64B5F6);
+    // final Color lightBlue = const Color(0xFF64B5F6);
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
     final Color textColor = const Color(0xFF232946);
@@ -71,7 +71,11 @@ class SettingsScreen extends StatelessWidget {
                         CircleAvatar(
                           radius: 32,
                           backgroundColor: primaryBlue,
-                          child: Icon(Icons.person, color: Colors.white, size: 32),
+                          child: Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 32,
+                          ),
                         ),
                         const SizedBox(width: 18),
                         Expanded(
@@ -79,13 +83,22 @@ class SettingsScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${user.name} ${user.surname}',
-                                style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18, color: textColor),
+                                ((user?.name ?? '').isEmpty && (user?.surname ?? '').isEmpty)
+                                    ? 'Kullanıcı'
+                                    : '${user?.name ?? ''} ${user?.surname ?? ''}'.trim(),
+                                style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: textColor,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                user.title,
-                                style: GoogleFonts.montserrat(fontSize: 14, color: subtitleColor),
+                                user?.title ?? 'Teknisyen',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 14,
+                                  color: subtitleColor,
+                                ),
                               ),
                             ],
                           ),
@@ -93,7 +106,11 @@ class SettingsScreen extends StatelessWidget {
                         IconButton(
                           icon: Icon(Icons.edit, color: primaryBlue),
                           onPressed: () {
-                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileEditScreen()));
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ProfileEditScreen(),
+                              ),
+                            );
                           },
                           splashRadius: 24,
                           tooltip: 'Profili Düzenle',
@@ -108,7 +125,9 @@ class SettingsScreen extends StatelessWidget {
               _SettingsCard(
                 icon: Icons.lock_outline,
                 title: 'Şifre Değiştir',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChangePasswordScreen())),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => ChangePasswordScreen()),
+                ),
                 iconColor: primaryBlue,
                 cardColor: cardColor,
                 cardRadius: cardRadius,
@@ -117,7 +136,11 @@ class SettingsScreen extends StatelessWidget {
               _SettingsCard(
                 icon: Icons.notifications_active_outlined,
                 title: 'Bildirim Ayarları',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationSettingsScreen())),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => NotificationSettingsScreen(),
+                  ),
+                ),
                 iconColor: primaryBlue,
                 cardColor: cardColor,
                 cardRadius: cardRadius,
@@ -126,7 +149,9 @@ class SettingsScreen extends StatelessWidget {
               _SettingsCard(
                 icon: Icons.palette_outlined,
                 title: 'Tema ve Görünüm',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ThemeSettingsScreen())),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => ThemeSettingsScreen()),
+                ),
                 iconColor: primaryBlue,
                 cardColor: cardColor,
                 cardRadius: cardRadius,
@@ -135,7 +160,9 @@ class SettingsScreen extends StatelessWidget {
               _SettingsCard(
                 icon: Icons.help_outline,
                 title: 'Yardım Merkezi',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => HelpCenterScreen())),
+                onTap: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => HelpCenterScreen())),
                 iconColor: primaryBlue,
                 cardColor: cardColor,
                 cardRadius: cardRadius,
@@ -144,7 +171,9 @@ class SettingsScreen extends StatelessWidget {
               _SettingsCard(
                 icon: Icons.support_agent_outlined,
                 title: 'Destek Talebi',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SupportRequestScreen())),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => SupportRequestScreen()),
+                ),
                 iconColor: primaryBlue,
                 cardColor: cardColor,
                 cardRadius: cardRadius,
@@ -153,7 +182,9 @@ class SettingsScreen extends StatelessWidget {
               _SettingsCard(
                 icon: Icons.info_outline,
                 title: 'Uygulama Bilgisi',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AppInfoScreen())),
+                onTap: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => AppInfoScreen())),
                 iconColor: primaryBlue,
                 cardColor: cardColor,
                 cardRadius: cardRadius,
@@ -162,7 +193,9 @@ class SettingsScreen extends StatelessWidget {
               _SettingsCard(
                 icon: Icons.privacy_tip_outlined,
                 title: 'Gizlilik ve Koşullar',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PrivacyPolicyScreen())),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => PrivacyPolicyScreen()),
+                ),
                 iconColor: primaryBlue,
                 cardColor: cardColor,
                 cardRadius: cardRadius,
@@ -174,7 +207,9 @@ class SettingsScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red.shade600,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -188,7 +223,11 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         title: Row(
                           children: [
-                            Icon(Icons.logout, color: Colors.red.shade600, size: 20),
+                            Icon(
+                              Icons.logout,
+                              color: Colors.red.shade600,
+                              size: 20,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'Çıkış Yap',
@@ -226,12 +265,17 @@ class SettingsScreen extends StatelessWidget {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                             ),
                             onPressed: () {
                               Navigator.of(context).pop();
                               Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginScreen(),
+                                ),
                                 (route) => false,
                               );
                             },
@@ -249,7 +293,13 @@ class SettingsScreen extends StatelessWidget {
                   );
                 },
                 icon: const Icon(Icons.logout),
-                label: Text('Çıkış Yap', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
+                label: Text(
+                  'Çıkış Yap',
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
               const SizedBox(height: 18),
             ],
@@ -276,8 +326,7 @@ class _SettingsCard extends StatelessWidget {
     required this.cardColor,
     required this.cardRadius,
     required this.textColor,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +349,11 @@ class _SettingsCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 16, color: textColor),
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: textColor,
+                    ),
                   ),
                 ),
                 const Icon(Icons.chevron_right, color: Color(0xFFB0B6C3)),
@@ -311,4 +364,4 @@ class _SettingsCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

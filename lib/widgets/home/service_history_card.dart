@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cence_app/screens/all_service_history_screen.dart';
 import 'package:cence_app/models/service_history.dart';
+import 'package:cence_app/repositories/firestore_service_history_repository.dart';
 
 class ServiceHistoryCard extends StatelessWidget {
   final VoidCallback? onSeeAll;
   final ServiceHistoryRepository repository;
-  ServiceHistoryCard({Key? key, this.onSeeAll, ServiceHistoryRepository? repository})
-      : repository = repository ?? MockServiceHistoryRepository(),
-        super(key: key);
+  ServiceHistoryCard({super.key, this.onSeeAll})
+    : repository = FirestoreServiceHistoryRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -39,14 +39,18 @@ class ServiceHistoryCard extends StatelessWidget {
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 0,
+                          vertical: 0,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (context) => const AllServiceHistoryScreen(),
+                            builder: (context) =>
+                                const AllServiceHistoryScreen(),
                           ),
                         );
                       },
@@ -74,12 +78,16 @@ class ServiceHistoryCard extends StatelessWidget {
                   }
                   final items = snapshot.data!;
                   return Column(
-                    children: items.map((item) => _ServiceItem(
-                      title: '${item.deviceId} - ${item.description}',
-                      serial: '',
-                      status: item.status,
-                      statusColor: _getStatusColor(item.status),
-                    )).toList(),
+                    children: items
+                        .map(
+                          (item) => _ServiceItem(
+                            title: '${item.deviceId} - ${item.description}',
+                            serial: '',
+                            status: item.status,
+                            statusColor: _getStatusColor(item.status),
+                          ),
+                        )
+                        .toList(),
                   );
                 },
               ),
@@ -102,8 +110,7 @@ class _ServiceItem extends StatelessWidget {
     required this.serial,
     required this.status,
     required this.statusColor,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -117,9 +124,12 @@ class _ServiceItem extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
-                
+
                 Text(
                   'Seri No: $serial',
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
@@ -159,4 +169,4 @@ Color _getStatusColor(String status) {
     default:
       return const Color(0xFFBDBDBD);
   }
-} 
+}

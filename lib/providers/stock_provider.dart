@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import '../models/stock_part.dart';
+import '../repositories/firestore_stock_repository.dart';
 
 class StockProvider extends ChangeNotifier {
-  final List<StockPart> _parts = [
-    StockPart(id: '1', parcaAdi: 'Anakart', parcaKodu: '77889', stokAdedi: 0, criticalLevel: 2),
-    StockPart(id: '2', parcaAdi: 'Ekran', parcaKodu: '44556', stokAdedi: 3, criticalLevel: 3),
-    StockPart(id: '3', parcaAdi: 'Kablo', parcaKodu: '67890', stokAdedi: 5, criticalLevel: 4),
-    StockPart(id: '4', parcaAdi: 'Sensör', parcaKodu: '12345', stokAdedi: 10, criticalLevel: 5),
-    StockPart(id: '5', parcaAdi: 'Batarya', parcaKodu: '11223', stokAdedi: 20, criticalLevel: 6),
-  ];
+  final List<StockPart> _parts = [];
+  final FirestoreStockRepository _repository = FirestoreStockRepository();
 
   List<StockPart> get parts => List.unmodifiable(_parts);
+
+  Future<void> fetchAll() async {
+    final list = await _repository.getAll();
+    _parts
+      ..clear()
+      ..addAll(list);
+    notifyListeners();
+  }
 
   void updateCriticalLevel(String partId, int newLevel) {
     final index = _parts.indexWhere((p) => p.id == partId);
@@ -57,4 +61,4 @@ class StockProvider extends ChangeNotifier {
     final normal = _parts.where((p) => p.stokAdedi > p.criticalLevel).toList();
     return [...critical, ...normal];
   }
-} 
+}

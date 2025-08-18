@@ -4,7 +4,7 @@ import '../providers/app_state_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ThemeSettingsScreen extends StatelessWidget {
-  const ThemeSettingsScreen({Key? key}) : super(key: key);
+  const ThemeSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +13,7 @@ class ThemeSettingsScreen extends StatelessWidget {
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
     final Color textColor = const Color(0xFF232946);
-    final Color subtitleColor = const Color(0xFF4A4A4A);
+    // final Color subtitleColor = const Color(0xFF4A4A4A);
     final double cardRadius = 18;
     final isWide = MediaQuery.of(context).size.width > 600;
     final themeMode = appState.appSettings.themeMode;
@@ -55,7 +55,14 @@ class ThemeSettingsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Tema Seçimi', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 16, color: textColor)),
+                    Text(
+                      'Tema Seçimi',
+                      style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: textColor,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     _ThemeOption(
                       label: 'Açık Tema',
@@ -88,12 +95,20 @@ class ThemeSettingsScreen extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryBlue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 onPressed: () {},
-                child: Text('Kaydet', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(
+                  'Kaydet',
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ],
           ),
@@ -109,7 +124,13 @@ class _ThemeOption extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final Color primaryBlue;
-  const _ThemeOption({required this.label, required this.icon, required this.selected, required this.onTap, required this.primaryBlue, Key? key}) : super(key: key);
+  const _ThemeOption({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    required this.primaryBlue,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +150,11 @@ class _ThemeOption extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.montserrat(fontWeight: FontWeight.w500, fontSize: 15, color: selected ? primaryBlue : Colors.black87),
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                    color: selected ? primaryBlue : Colors.black87,
+                  ),
                 ),
               ),
               if (selected)
@@ -140,4 +165,4 @@ class _ThemeOption extends StatelessWidget {
       ),
     );
   }
-} 
+}

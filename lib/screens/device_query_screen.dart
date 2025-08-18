@@ -9,7 +9,7 @@ import '../providers/device_provider.dart';
 import '../models/device.dart';
 
 class CihazSorgulaScreen extends StatefulWidget {
-  const CihazSorgulaScreen({Key? key}) : super(key: key);
+  const CihazSorgulaScreen({super.key});
 
   @override
   State<CihazSorgulaScreen> createState() => _CihazSorgulaScreenState();
@@ -816,7 +816,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
               trailing: buildWarrantyChip(device.calculatedWarrantyStatus, device.daysUntilWarrantyExpiry),
               onTap: () => _showDeviceDetails(device),
             ),
-          )).toList(),
+          )),
         ],
       ),
     );
@@ -1140,8 +1140,7 @@ class _DetailRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.onCopy,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

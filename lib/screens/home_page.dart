@@ -12,11 +12,12 @@ import '../models/service_history.dart';
 
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
+import '../providers/stock_provider.dart';
 
 import '../providers/device_provider.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -28,12 +29,29 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    // Firestore'dan ilk verileri yükle
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final deviceProvider = Provider.of<DeviceProvider>(
+        context,
+        listen: false,
+      );
+      final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
+        context,
+        listen: false,
+      );
+      final stockProvider = Provider.of<StockProvider>(context, listen: false);
+      await Future.wait([
+        deviceProvider.fetchAll(),
+        serviceHistoryProvider.fetchAll(),
+        stockProvider.fetchAll(),
+      ]);
+    });
   }
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const NewServiceFormScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const NewServiceFormScreen()));
   }
 
   @override
@@ -77,27 +95,36 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Cence yazısı
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                                                   RichText(
-                                 text: const TextSpan(
-                                   style: TextStyle(
-                                     fontSize: 24,
-                                     fontWeight: FontWeight.bold,
-                                     letterSpacing: 1.2,
-                                   ),
-                                   children: [
-                                     TextSpan(text: 'Ce', style: TextStyle(color: Colors.white)),
-                                     TextSpan(text: 'n', style: TextStyle(color: Colors.white)),
-                                     TextSpan(text: 'ce', style: TextStyle(color: Colors.white)),
-                                   ],
-                                 ),
-                               ),
+                    RichText(
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Ce',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          TextSpan(
+                            text: 'n',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          TextSpan(
+                            text: 'ce',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
                     Text(
                       'Medikal Cihazlar',
                       style: TextStyle(
@@ -131,14 +158,23 @@ class _HomePageState extends State<HomePage> {
     final width = MediaQuery.of(context).size.width;
 
     final cardIconSize = isWide ? 36.0 : 26.0;
-    final gridCrossAxisCount = width > 1100 ? 5 : width > 800 ? 4 : isWide ? 3 : 2;
+    final gridCrossAxisCount = width > 1100
+        ? 5
+        : width > 800
+        ? 4
+        : isWide
+        ? 3
+        : 2;
     final gridSpacing = isWide ? 24.0 : 12.0;
     final iconColor = const Color(0xFF23408E);
     final serviceHistoryList = Provider.of<ServiceHistoryProvider>(context).all;
     return Container(
       color: const Color(0xFFF5F6FA),
       child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: isWide ? 40 : 14, vertical: isWide ? 24 : 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: isWide ? 40 : 14,
+          vertical: isWide ? 24 : 10,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -163,7 +199,9 @@ class _HomePageState extends State<HomePage> {
                     iconSize: cardIconSize,
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const CihazSorgulaScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const CihazSorgulaScreen(),
+                        ),
                       );
                     },
                     iconColor: iconColor,
@@ -181,7 +219,9 @@ class _HomePageState extends State<HomePage> {
                     iconSize: cardIconSize,
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => ServisGecmisiScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => ServisGecmisiScreen(),
+                        ),
                       );
                     },
                     iconColor: iconColor,
@@ -205,15 +245,27 @@ class _HomePageState extends State<HomePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Son Servis İşlemleri', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1C1C1C))),
+                const Text(
+                  'Son Servis İşlemleri',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Color(0xFF1C1C1C),
+                  ),
+                ),
                 TextButton(
                   style: TextButton.styleFrom(
                     foregroundColor: const Color(0xFF23408E),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => AllServiceHistoryScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => AllServiceHistoryScreen(),
+                      ),
                     );
                   },
                   child: const Text('Tümünü Gör'),
@@ -234,7 +286,10 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 24),
             // Footer
             Center(
-              child: Text('Cence Medikal © 2025', style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+              child: Text(
+                'Cence Medikal © 2025',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+              ),
             ),
           ],
         ),
@@ -256,16 +311,33 @@ class _WelcomeSummary extends StatelessWidget {
         CircleAvatar(
           backgroundColor: const Color(0xFF23408E),
           radius: 22,
-          child: Text(user[0], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
+          child: Text(
+            user[0],
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+            ),
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Hoş geldin, $user!', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1C1C1C))),
+              Text(
+                'Hoş geldin, $user!',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF1C1C1C),
+                ),
+              ),
               const SizedBox(height: 2),
-              Text('Sistemde $device cihaz, $service servis kaydı var.', style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+              Text(
+                'Sistemde $device cihaz, $service servis kaydı var.',
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+              ),
             ],
           ),
         ),
@@ -273,8 +345,6 @@ class _WelcomeSummary extends StatelessWidget {
     );
   }
 }
-
-
 
 class _ModernQuickAccessCard extends StatelessWidget {
   final IconData icon;
@@ -288,8 +358,7 @@ class _ModernQuickAccessCard extends StatelessWidget {
     required this.iconSize,
     required this.onTap,
     required this.iconColor,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -314,7 +383,10 @@ class _ModernQuickAccessCard extends StatelessWidget {
             ],
             border: Border.all(color: Colors.grey.shade100, width: 1.2),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10), // Daha az padding
+          padding: const EdgeInsets.symmetric(
+            vertical: 18,
+            horizontal: 10,
+          ), // Daha az padding
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -324,7 +396,11 @@ class _ModernQuickAccessCard extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 padding: const EdgeInsets.all(10), // Daha az padding
-                child: Icon(icon, size: iconSize, color: iconColor), // Küçük ikon
+                child: Icon(
+                  icon,
+                  size: iconSize,
+                  color: iconColor,
+                ), // Küçük ikon
               ),
               const SizedBox(height: 10), // Daha az spacing
               Text(
@@ -346,7 +422,7 @@ class _ModernQuickAccessCard extends StatelessWidget {
 }
 
 class _ModernServiceHistoryCard extends StatelessWidget {
-  const _ModernServiceHistoryCard({Key? key}) : super(key: key);
+  const _ModernServiceHistoryCard();
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +431,10 @@ class _ModernServiceHistoryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16), // küçültüldü
-        border: Border.all(color: Colors.grey.shade100, width: 1.2), // inceltildi
+        border: Border.all(
+          color: Colors.grey.shade100,
+          width: 1.2,
+        ), // inceltildi
       ),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -373,7 +452,7 @@ class _ModernServiceHistoryCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: Color(0xFF6F7489),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -382,7 +461,7 @@ class _ModernServiceHistoryCard extends StatelessWidget {
 
 class _ModernServiceCard extends StatelessWidget {
   final ServiceHistory item;
-  const _ModernServiceCard({required this.item, Key? key}) : super(key: key);
+  const _ModernServiceCard({required this.item});
 
   Map<String, dynamic> getStatusData(String status) {
     switch (status) {
@@ -426,10 +505,12 @@ class _ModernServiceCard extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => ServiceHistoryDetailScreen(serviceHistory: item),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+            pageBuilder: (_, __, ___) =>
+                ServiceHistoryDetailScreen(serviceHistory: item),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           ),
         );
       },
@@ -453,7 +534,10 @@ class _ModernServiceCard extends StatelessWidget {
             ],
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 10,
+              horizontal: 16,
+            ),
             leading: Icon(
               statusData['icon'],
               color: statusData['color'],
@@ -473,10 +557,7 @@ class _ModernServiceCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4.0),
               child: Text(
                 'Teknisyen: ${item.technician}',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               ),
             ),
             trailing: Container(
@@ -499,4 +580,4 @@ class _ModernServiceCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

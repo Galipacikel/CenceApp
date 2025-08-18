@@ -1,4 +1,3 @@
-
 import 'package:cence_app/models/stock_part.dart';
 
 class ServiceHistory {
@@ -61,65 +60,3 @@ abstract class ServiceHistoryRepository {
   Future<List<ServiceHistory>> getRecent({int count = 3});
   Future<void> add(ServiceHistory history);
 }
-
-class MockServiceHistoryRepository implements ServiceHistoryRepository {
-  final List<ServiceHistory> _mockList = [
-    ServiceHistory(
-      id: '1',
-      date: DateTime(2024, 3, 15),
-      deviceId: 'CİHAZ-001', // Örnek cihaz ID'si
-      musteri: 'A Hastanesi',
-      description: 'Yıllık kalibrasyon ve parça kontrolü yapıldı.',
-      technician: 'Ahmet Yılmaz',
-      status: 'Başarılı',
-      kullanilanParcalar: [
-        // Örnek kullanılan parça
-        StockPart(id: '3', parcaAdi: 'Kablo', parcaKodu: '67890', stokAdedi: 1, criticalLevel: 5)
-      ]
-    ),
-    ServiceHistory(
-      id: '2',
-      date: DateTime(2024, 2, 28),
-      deviceId: 'CİHAZ-002',
-      musteri: 'B Kliniği',
-      description: 'Güç kaynağı değiştirildi.',
-      technician: 'Mehmet Demir',
-      status: 'Başarılı',
-    ),
-    ServiceHistory(
-      id: '3',
-      date: DateTime(2024, 1, 10),
-      deviceId: 'CİHAZ-001',
-      musteri: 'A Hastanesi',
-      description: 'Cihaz yazılımı v2.1.0 sürümüne güncellendi.',
-      technician: 'Elif Kaya',
-      status: 'Beklemede',
-    ),
-    ServiceHistory(
-      id: '4',
-      date: DateTime(2023, 12, 5),
-      deviceId: 'CİHAZ-003',
-      musteri: 'C Sağlık Merkezi',
-      description: 'Filtreler değiştirildi, genel temizlik yapıldı.',
-      technician: 'Ahmet Yılmaz',
-      status: 'Arızalı',
-    ),
-  ];
-
-  @override
-  Future<List<ServiceHistory>> getAll() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    return List<ServiceHistory>.from(_mockList);
-  }
-
-  @override
-  Future<List<ServiceHistory>> getRecent({int count = 3}) async {
-    await Future.delayed(const Duration(milliseconds: 100));
-    return _mockList.take(count).toList();
-  }
-
-  @override
-  Future<void> add(ServiceHistory history) async {
-    _mockList.insert(0, history);
-  }
-} 

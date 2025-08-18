@@ -3,10 +3,11 @@ import '../models/service_history.dart';
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
 import 'service_history_detail_screen.dart';
+import '../providers/app_state_provider.dart'
+    ;
 
 class ServisGecmisiScreen extends StatefulWidget {
-  
-  ServisGecmisiScreen({Key? key}) : super(key: key);
+  const ServisGecmisiScreen({super.key});
 
   @override
   State<ServisGecmisiScreen> createState() => _ServisGecmisiScreenState();
@@ -16,15 +17,20 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatus = 'Tümü';
-  final List<String> _statusOptions = ['Tümü', 'Başarılı', 'Arızalı', 'Beklemede'];
-  
+  final List<String> _statusOptions = [
+    'Tümü',
+    'Başarılı',
+    'Arızalı',
+    'Beklemede',
+  ];
+
   // Sıralama seçenekleri
   String _selectedSortBy = 'En Yeni';
   final List<String> _sortOptions = ['En Yeni', 'En Eski'];
-  
+
   // Toplu işlemler için
   bool _isSelectionMode = false;
-  Set<String> _selectedItems = {};
+  final Set<String> _selectedItems = {};
 
   @override
   void initState() {
@@ -32,13 +38,15 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
   }
 
   List<ServiceHistory> get filteredHistory {
-    List<ServiceHistory> list = List.from(Provider.of<ServiceHistoryProvider>(context).all);
-    
+    List<ServiceHistory> list = List.from(
+      Provider.of<ServiceHistoryProvider>(context).all,
+    );
+
     // Durum filtresi
     if (_selectedStatus != 'Tümü') {
       list = list.where((k) => k.status == _selectedStatus).toList();
     }
-    
+
     // Arama filtresi
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
@@ -47,14 +55,14 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
         final description = item.description.toLowerCase();
         final technician = item.technician.toLowerCase();
         final musteri = item.musteri.toLowerCase();
-        
-        return deviceId.contains(query) || 
-               description.contains(query) || 
-               technician.contains(query) || 
-               musteri.contains(query);
+
+        return deviceId.contains(query) ||
+            description.contains(query) ||
+            technician.contains(query) ||
+            musteri.contains(query);
       }).toList();
     }
-    
+
     // Sıralama
     switch (_selectedSortBy) {
       case 'En Yeni':
@@ -64,7 +72,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
         list.sort((a, b) => a.date.compareTo(b.date));
         break;
     }
-    
+
     return list;
   }
 
@@ -115,15 +123,26 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
     });
   }
 
-  void _deselectAllItems() {
-    setState(() {
-      _selectedItems.clear();
-    });
-  }
+  // removed unused _deselectAllItems
 
   void _deleteSelectedItems() {
-    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
-    
+    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
+      context,
+      listen: false,
+    );
+    final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
+            .currentUser
+            ?.isAdmin ??
+        false;
+    if (!isAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silme yetkisi sadece admin kullanıcılar içindir.'),
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -136,16 +155,17 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                 color: Colors.red.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.delete_forever, color: Colors.red.shade600, size: 24),
+              child: Icon(
+                Icons.delete_forever,
+                color: Colors.red.shade600,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
                 'Seçili Kayıtları Sil',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ),
           ],
@@ -161,7 +181,11 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
             const SizedBox(height: 8),
             Text(
               'Bu işlem geri alınamaz.',
-              style: TextStyle(fontSize: 14, color: Colors.red.shade600, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.red.shade600,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -176,20 +200,22 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
           ElevatedButton(
             onPressed: () {
               final selectedCount = _selectedItems.length;
-              
+
               // Seçili kayıtları listeden çıkar
               final currentList = serviceHistoryProvider.all;
-              final updatedList = currentList.where((item) => !_selectedItems.contains(item.id)).toList();
-              
+              final updatedList = currentList
+                  .where((item) => !_selectedItems.contains(item.id))
+                  .toList();
+
               // Provider'ı güncelle
               serviceHistoryProvider.setAll(updatedList);
-              
+
               // Seçim modunu kapat
               setState(() {
                 _selectedItems.clear();
                 _isSelectionMode = false;
               });
-              
+
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -203,14 +229,18 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                   backgroundColor: Colors.green,
                   duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Sil'),
           ),
@@ -257,13 +287,19 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      _isSelectionMode ? '${_selectedItems.length} seçili' : 'Servis Geçmişi',
+                      _isSelectionMode
+                          ? '${_selectedItems.length} seçili'
+                          : 'Servis Geçmişi',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -273,19 +309,32 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                   ),
                   if (!_isSelectionMode)
                     IconButton(
-                      icon: const Icon(Icons.select_all, color: Colors.white, size: 24),
+                      icon: const Icon(
+                        Icons.select_all,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                       onPressed: _toggleSelectionMode,
                       tooltip: 'Toplu Seçim',
                     ),
                   if (_isSelectionMode) ...[
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                       onPressed: _toggleSelectionMode,
                       tooltip: 'Seçimi İptal Et',
                     ),
-                    if (_selectedItems.isNotEmpty) ...[
+                    if (_selectedItems.isNotEmpty &&
+                        (Provider.of<AppStateProvider>(context).currentUser?.isAdmin ?? false)) ...[
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.white, size: 24),
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                         onPressed: _deleteSelectedItems,
                         tooltip: 'Seçili Kayıtları Sil',
                       ),
@@ -333,96 +382,113 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
               ),
             ),
           ),
-                        // Filtreler
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
+          // Filtreler
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedStatus,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            ),
-                            items: _statusOptions.map((status) => DropdownMenuItem(
-                              value: status,
-                              child: Text(status),
-                            )).toList(),
-                            onChanged: _onStatusFilterChanged,
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedStatus,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedSortBy,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
+                        items: _statusOptions
+                            .map(
+                              (status) => DropdownMenuItem(
+                                value: status,
+                                child: Text(status),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            ),
-                            items: _sortOptions.map((sort) => DropdownMenuItem(
-                              value: sort,
-                              child: Text(sort),
-                            )).toList(),
-                            onChanged: _onSortByChanged,
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Seçim modunda "Tümünü Seç" bildirim çubuğu
-                    if (_isSelectionMode) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF23408E).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFF23408E).withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: InkWell(
-                          onTap: () => _selectAllItems(filteredHistory),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.select_all,
-                                color: const Color(0xFF23408E),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Tümünü Seç',
-                                style: TextStyle(
-                                  color: const Color(0xFF23408E),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                            )
+                            .toList(),
+                        onChanged: _onStatusFilterChanged,
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedSortBy,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                        items: _sortOptions
+                            .map(
+                              (sort) => DropdownMenuItem(
+                                value: sort,
+                                child: Text(sort),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _onSortByChanged,
+                      ),
+                    ),
                   ],
                 ),
-              ),
+                // Seçim modunda "Tümünü Seç" bildirim çubuğu
+                if (_isSelectionMode) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF23408E).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF23408E).withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: InkWell(
+                      onTap: () => _selectAllItems(filteredHistory),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.select_all,
+                            color: const Color(0xFF23408E),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Tümünü Seç',
+                            style: TextStyle(
+                              color: const Color(0xFF23408E),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           // Servis geçmişi listesi
           Expanded(
@@ -467,7 +533,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                       itemBuilder: (context, index) {
                         final kayit = filteredHistory[index];
                         final isSelected = _selectedItems.contains(kayit.id);
-                        
+
                         return _ServisKaydiCard(
                           kayit: kayit,
                           isSelected: isSelected,
@@ -478,7 +544,9 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                             } else {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => ServiceHistoryDetailScreen(serviceHistory: kayit),
+                                  builder: (_) => ServiceHistoryDetailScreen(
+                                    serviceHistory: kayit,
+                                  ),
                                 ),
                               );
                             }
@@ -518,12 +586,23 @@ class _ServisKaydiCard extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     required this.onSelectionChanged,
-    Key? key,
-  }) : super(key: key);
+  });
 
   String _formatDate(DateTime date) {
-    final months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
-                   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    final months = [
+      'Ocak',
+      'Şubat',
+      'Mart',
+      'Nisan',
+      'Mayıs',
+      'Haziran',
+      'Temmuz',
+      'Ağustos',
+      'Eylül',
+      'Ekim',
+      'Kasım',
+      'Aralık',
+    ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
@@ -573,7 +652,7 @@ class _ServisKaydiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -584,10 +663,7 @@ class _ServisKaydiCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              const Color(0xFF23408E).withOpacity(0.02),
-            ],
+            colors: [Colors.white, const Color(0xFF23408E).withOpacity(0.02)],
           ),
         ),
         child: Padding(
@@ -640,7 +716,10 @@ class _ServisKaydiCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: getStatusBgColor(kayit.status),
                       borderRadius: BorderRadius.circular(6),
@@ -677,12 +756,20 @@ class _ServisKaydiCard extends StatelessWidget {
                       color: const Color(0xFF23408E).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Icon(Icons.person, size: isWide ? 18 : 16, color: const Color(0xFF23408E)),
+                    child: Icon(
+                      Icons.person,
+                      size: isWide ? 18 : 16,
+                      color: const Color(0xFF23408E),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Text(
                     kayit.technician,
-                    style: TextStyle(fontSize: isWide ? 14 : 12, color: Colors.black87, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: isWide ? 14 : 12,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const Spacer(),
                   Container(
@@ -691,11 +778,25 @@ class _ServisKaydiCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TextButton.icon(
-                      icon: const Icon(Icons.visibility, size: 16, color: Color(0xFF23408E)),
-                      label: const Text('Detaylar', style: TextStyle(fontSize: 12, color: Color(0xFF23408E), fontWeight: FontWeight.w600)),
+                      icon: const Icon(
+                        Icons.visibility,
+                        size: 16,
+                        color: Color(0xFF23408E),
+                      ),
+                      label: const Text(
+                        'Detaylar',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF23408E),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       onPressed: onTap,
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -709,4 +810,4 @@ class _ServisKaydiCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

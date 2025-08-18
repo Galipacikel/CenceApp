@@ -3,27 +3,35 @@ import 'package:provider/provider.dart';
 import '../models/service_history.dart';
 import '../providers/service_history_provider.dart';
 import 'service_history_detail_screen.dart';
+import '../providers/app_state_provider.dart'
+    ;
 
 class AllServiceHistoryScreen extends StatefulWidget {
-  const AllServiceHistoryScreen({Key? key}) : super(key: key);
+  const AllServiceHistoryScreen({super.key});
 
   @override
-  State<AllServiceHistoryScreen> createState() => _AllServiceHistoryScreenState();
+  State<AllServiceHistoryScreen> createState() =>
+      _AllServiceHistoryScreenState();
 }
 
 class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatus = 'Tümü';
-  final List<String> _statusOptions = ['Tümü', 'Başarılı', 'Arızalı', 'Beklemede'];
-  
+  final List<String> _statusOptions = [
+    'Tümü',
+    'Başarılı',
+    'Arızalı',
+    'Beklemede',
+  ];
+
   // Sıralama seçenekleri
   String _selectedSortBy = 'En Yeni';
   final List<String> _sortOptions = ['En Yeni', 'En Eski'];
-  
+
   // Toplu işlemler için
   bool _isSelectionMode = false;
-  Set<String> _selectedItems = {};
+  final Set<String> _selectedItems = {};
 
   String getStatusLabel(String status) {
     switch (status) {
@@ -43,7 +51,7 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
       case 'Başarılı':
         return const Color(0xFF43A047);
       case 'Beklemede':
-       return const Color.fromARGB(255, 223, 238, 20);
+        return const Color.fromARGB(255, 223, 238, 20);
       case 'Arızalı':
         return const Color(0xFFE53935);
       default:
@@ -87,7 +95,7 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
       if (_selectedStatus != 'Tümü' && item.status != _selectedStatus) {
         return false;
       }
-      
+
       // Arama filtresi
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
@@ -95,15 +103,15 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
         final description = item.description.toLowerCase();
         final technician = item.technician.toLowerCase();
         final musteri = item.musteri.toLowerCase();
-        
-        if (!deviceId.contains(query) && 
-            !description.contains(query) && 
-            !technician.contains(query) && 
+
+        if (!deviceId.contains(query) &&
+            !description.contains(query) &&
+            !technician.contains(query) &&
             !musteri.contains(query)) {
           return false;
         }
       }
-      
+
       return true;
     }).toList();
 
@@ -161,23 +169,32 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
     });
   }
 
-
-
   void _selectAllItems(List<ServiceHistory> items) {
     setState(() {
       _selectedItems.addAll(items.map((item) => item.id));
     });
   }
 
-  void _deselectAllItems() {
-    setState(() {
-      _selectedItems.clear();
-    });
-  }
+  // removed unused _deselectAllItems
 
   void _deleteSelectedItems() {
-    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
-    
+    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
+      context,
+      listen: false,
+    );
+    final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
+            .currentUser
+            ?.isAdmin ??
+        false;
+    if (!isAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silme yetkisi sadece admin kullanıcılar içindir.'),
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -190,16 +207,17 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                 color: Colors.red.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.delete_forever, color: Colors.red.shade600, size: 24),
+              child: Icon(
+                Icons.delete_forever,
+                color: Colors.red.shade600,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
                 'Seçili Kayıtları Sil',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ),
           ],
@@ -215,7 +233,11 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
             const SizedBox(height: 8),
             Text(
               'Bu işlem geri alınamaz.',
-              style: TextStyle(fontSize: 14, color: Colors.red.shade600, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.red.shade600,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -230,20 +252,22 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
           ElevatedButton(
             onPressed: () {
               final selectedCount = _selectedItems.length;
-              
+
               // Seçili kayıtları listeden çıkar
               final currentList = serviceHistoryProvider.all;
-              final updatedList = currentList.where((item) => !_selectedItems.contains(item.id)).toList();
-              
+              final updatedList = currentList
+                  .where((item) => !_selectedItems.contains(item.id))
+                  .toList();
+
               // Provider'ı güncelle
               serviceHistoryProvider.setAll(updatedList);
-              
+
               // Seçim modunu kapat
               setState(() {
                 _selectedItems.clear();
                 _isSelectionMode = false;
               });
-              
+
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -257,14 +281,18 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                   backgroundColor: Colors.green,
                   duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Sil'),
           ),
@@ -288,9 +316,6 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
         preferredSize: Size.fromHeight(isWide ? 90 : 70),
         child: Consumer<ServiceHistoryProvider>(
           builder: (context, serviceHistoryProvider, child) {
-            final allItems = serviceHistoryProvider.all;
-            final filteredItems = _filterAndSearchItems(allItems);
-            
             return Container(
               decoration: BoxDecoration(
                 color: const Color(0xFF23408E),
@@ -312,13 +337,19 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      _isSelectionMode ? '${_selectedItems.length} seçili' : 'Tüm Servis İşlemleri',
+                      _isSelectionMode
+                          ? '${_selectedItems.length} seçili'
+                          : 'Tüm Servis İşlemleri',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -328,19 +359,32 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                   ),
                   if (!_isSelectionMode)
                     IconButton(
-                      icon: const Icon(Icons.select_all, color: Colors.white, size: 24),
+                      icon: const Icon(
+                        Icons.select_all,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                       onPressed: _toggleSelectionMode,
                       tooltip: 'Toplu Seçim',
                     ),
                   if (_isSelectionMode) ...[
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 24),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                       onPressed: _toggleSelectionMode,
                       tooltip: 'Seçimi İptal Et',
                     ),
-                    if (_selectedItems.isNotEmpty) ...[
+                    if (_selectedItems.isNotEmpty &&
+                        (Provider.of<AppStateProvider>(context).currentUser?.isAdmin ?? false)) ...[
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.white, size: 24),
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                         onPressed: _deleteSelectedItems,
                         tooltip: 'Seçili Kayıtları Sil',
                       ),
@@ -356,13 +400,15 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
         builder: (context, serviceHistoryProvider, child) {
           final allItems = serviceHistoryProvider.all;
           final filteredItems = _filterAndSearchItems(allItems);
-          
           return Column(
             children: [
               // Arama çubuğu
               Container(
                 margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -410,12 +456,19 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: BorderSide.none,
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                             ),
-                            items: _statusOptions.map((status) => DropdownMenuItem(
-                              value: status,
-                              child: Text(status),
-                            )).toList(),
+                            items: _statusOptions
+                                .map(
+                                  (status) => DropdownMenuItem(
+                                    value: status,
+                                    child: Text(status),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: _onStatusFilterChanged,
                           ),
                         ),
@@ -430,12 +483,19 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: BorderSide.none,
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                             ),
-                            items: _sortOptions.map((sort) => DropdownMenuItem(
-                              value: sort,
-                              child: Text(sort),
-                            )).toList(),
+                            items: _sortOptions
+                                .map(
+                                  (sort) => DropdownMenuItem(
+                                    value: sort,
+                                    child: Text(sort),
+                                  ),
+                                )
+                                .toList(),
                             onChanged: _onSortByChanged,
                           ),
                         ),
@@ -446,7 +506,10 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                       const SizedBox(height: 12),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF23408E).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -527,7 +590,7 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];
                             final isSelected = _selectedItems.contains(item.id);
-                            
+
                             return _ServiceHistoryCard(
                               item: item,
                               isSelected: isSelected,
@@ -538,10 +601,22 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                                 } else {
                                   Navigator.of(context).push(
                                     PageRouteBuilder(
-                                      pageBuilder: (_, __, ___) => ServiceHistoryDetailScreen(serviceHistory: item),
-                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                        return FadeTransition(opacity: animation, child: child);
-                                      },
+                                      pageBuilder: (_, __, ___) =>
+                                          ServiceHistoryDetailScreen(
+                                            serviceHistory: item,
+                                          ),
+                                      transitionsBuilder:
+                                          (
+                                            context,
+                                            animation,
+                                            secondaryAnimation,
+                                            child,
+                                          ) {
+                                            return FadeTransition(
+                                              opacity: animation,
+                                              child: child,
+                                            );
+                                          },
                                     ),
                                   );
                                 }
@@ -583,12 +658,23 @@ class _ServiceHistoryCard extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     required this.onSelectionChanged,
-    Key? key,
-  }) : super(key: key);
+  });
 
   String _formatDate(DateTime date) {
-    final months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
-                   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    final months = [
+      'Ocak',
+      'Şubat',
+      'Mart',
+      'Nisan',
+      'Mayıs',
+      'Haziran',
+      'Temmuz',
+      'Ağustos',
+      'Eylül',
+      'Ekim',
+      'Kasım',
+      'Aralık',
+    ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
@@ -638,7 +724,7 @@ class _ServiceHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -649,10 +735,7 @@ class _ServiceHistoryCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              const Color(0xFF23408E).withOpacity(0.02),
-            ],
+            colors: [Colors.white, const Color(0xFF23408E).withOpacity(0.02)],
           ),
         ),
         child: Padding(
@@ -705,7 +788,10 @@ class _ServiceHistoryCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: getStatusBgColor(item.status),
                       borderRadius: BorderRadius.circular(6),
@@ -742,12 +828,20 @@ class _ServiceHistoryCard extends StatelessWidget {
                       color: const Color(0xFF23408E).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Icon(Icons.person, size: isWide ? 18 : 16, color: const Color(0xFF23408E)),
+                    child: Icon(
+                      Icons.person,
+                      size: isWide ? 18 : 16,
+                      color: const Color(0xFF23408E),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Text(
                     item.technician,
-                    style: TextStyle(fontSize: isWide ? 14 : 12, color: Colors.black87, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontSize: isWide ? 14 : 12,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const Spacer(),
                   Container(
@@ -756,11 +850,25 @@ class _ServiceHistoryCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TextButton.icon(
-                      icon: const Icon(Icons.visibility, size: 16, color: Color(0xFF23408E)),
-                      label: const Text('Detaylar', style: TextStyle(fontSize: 12, color: Color(0xFF23408E), fontWeight: FontWeight.w600)),
+                      icon: const Icon(
+                        Icons.visibility,
+                        size: 16,
+                        color: Color(0xFF23408E),
+                      ),
+                      label: const Text(
+                        'Detaylar',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF23408E),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       onPressed: onTap,
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -774,4 +882,4 @@ class _ServiceHistoryCard extends StatelessWidget {
       ),
     );
   }
-} 
+}

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+// import 'package:path_provider/path_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/firestore_paths.dart';
+import '../services/storage_service.dart';
+import '../services/service_record_service.dart';
 import '../models/stock_part.dart';
 import '../models/device.dart';
 import '../models/service_history.dart';
@@ -14,7 +19,11 @@ import '../providers/app_state_provider.dart';
 class NewServiceFormScreen extends StatefulWidget {
   final StockPartRepository? stockRepository;
   final DeviceRepository? deviceRepository;
-  const NewServiceFormScreen({Key? key, this.stockRepository, this.deviceRepository}) : super(key: key);
+  const NewServiceFormScreen({
+    super.key,
+    this.stockRepository,
+    this.deviceRepository,
+  });
 
   @override
   State<NewServiceFormScreen> createState() => _NewServiceFormScreenState();
@@ -34,30 +43,34 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   final TextEditingController _customerController = TextEditingController();
   DateTime? _date;
   late TextEditingController _dateController;
-  File? _pickedImage;
-  
+  XFile? _pickedImage;
+  Uint8List? _pickedImageBytes;
+
   // Garanti özellikleri
-  final TextEditingController _warrantyDurationController = TextEditingController();
-  
+  final TextEditingController _warrantyDurationController =
+      TextEditingController();
+
   // Parça seçimi için yeni alanlar
   final TextEditingController _partSearchController = TextEditingController();
   List<StockPart> _allParts = [];
   List<StockPart> _filteredParts = [];
-  
+
   // Diğer parça seçeneği için
   bool _showOtherPartInput = false;
-  final TextEditingController _otherPartNameController = TextEditingController();
-  final TextEditingController _otherPartQuantityController = TextEditingController();
-  
+  final TextEditingController _otherPartNameController =
+      TextEditingController();
+  final TextEditingController _otherPartQuantityController =
+      TextEditingController();
+
   // Cihaz seçimi için
   Device? _selectedDevice;
   final TextEditingController _deviceSearchController = TextEditingController();
   List<Device> _allDevices = [];
   List<Device> _filteredDevices = [];
   bool _showDeviceSuggestions = false;
-  final DeviceRepository _deviceRepository = MockDeviceRepository();
+  // Firestore üzerinden DeviceProvider kullanılacak
 
-  List<SelectedPart> _selectedParts = [];
+  final List<SelectedPart> _selectedParts = [];
   bool _isSaving = false; // Çift kaydetmeyi önlemek için flag
 
   @override
@@ -67,7 +80,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     _warrantyDurationController.text = '24';
     _loadParts();
     _loadDevices();
-    
+
     // Teknisyen adını otomatik doldur
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _technicianController.text = _getTechnicianName();
@@ -98,26 +111,31 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   }
 
   Future<void> _loadDevices() async {
-    final devices = await _deviceRepository.getAll();
+    final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
+    if (deviceProvider.devices.isEmpty) {
+      await deviceProvider.fetchAll();
+    }
+    final devices = deviceProvider.devices;
     setState(() {
       _allDevices = devices;
       _filteredDevices = devices;
     });
   }
 
-
-
   void _filterParts(String query) {
     setState(() {
       List<StockPart> baseParts = _allParts;
-      
+
       if (query.isEmpty) {
         _filteredParts = baseParts;
       } else {
-        _filteredParts = baseParts.where((part) =>
-          part.parcaAdi.toLowerCase().contains(query.toLowerCase()) ||
-          part.parcaKodu.toLowerCase().contains(query.toLowerCase())
-        ).toList();
+        _filteredParts = baseParts
+            .where(
+              (part) =>
+                  part.parcaAdi.toLowerCase().contains(query.toLowerCase()) ||
+                  part.parcaKodu.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
       }
       _filteredParts.sort((a, b) {
         return a.parcaAdi.compareTo(b.parcaAdi);
@@ -130,23 +148,28 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       if (query.isEmpty) {
         _filteredDevices = _allDevices;
       } else {
-        _filteredDevices = _allDevices.where((device) =>
-          device.modelName.toLowerCase().contains(query.toLowerCase()) ||
-          device.serialNumber.toLowerCase().contains(query.toLowerCase())
-        ).toList();
+        _filteredDevices = _allDevices
+            .where(
+              (device) =>
+                  device.modelName.toLowerCase().contains(
+                    query.toLowerCase(),
+                  ) ||
+                  device.serialNumber.toLowerCase().contains(
+                    query.toLowerCase(),
+                  ),
+            )
+            .toList();
       }
       _showDeviceSuggestions = true;
     });
   }
-
-
 
   void _selectDevice(Device device) {
     setState(() {
       _selectedDevice = device;
       _deviceSearchController.text = device.modelName;
       _showDeviceSuggestions = false;
-      
+
       // Kurulum tarihi seçili değilse bugünün tarihini ata
       if (_date == null) {
         _date = DateTime.now();
@@ -157,13 +180,18 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
 
   // Kullanıcı profilinden teknisyen adını al
   String _getTechnicianName() {
-    final appStateProvider = Provider.of<AppStateProvider>(context, listen: false);
+    final appStateProvider = Provider.of<AppStateProvider>(
+      context,
+      listen: false,
+    );
     final userProfile = appStateProvider.userProfile;
-    return userProfile.fullName;
+    return userProfile?.fullName ?? 'Teknisyen';
   }
 
   void _updateDateController() {
-    _dateController.text = _date == null ? '' : '${_date!.day.toString().padLeft(2, '0')}.${_date!.month.toString().padLeft(2, '0')}.${_date!.year}';
+    _dateController.text = _date == null
+        ? ''
+        : '${_date!.day.toString().padLeft(2, '0')}.${_date!.month.toString().padLeft(2, '0')}.${_date!.year}';
   }
 
   // Garanti başlangıç tarihi artık kullanılmıyor, otomatik hesaplanıyor
@@ -179,12 +207,18 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt_outlined, color: Color(0xFF23408E)),
+              leading: const Icon(
+                Icons.camera_alt_outlined,
+                color: Color(0xFF23408E),
+              ),
               title: const Text('Kamera ile Çek'),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: Color(0xFF23408E)),
+              leading: const Icon(
+                Icons.photo_library_outlined,
+                color: Color(0xFF23408E),
+              ),
               title: const Text('Galeriden Seç'),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
@@ -196,8 +230,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       final picker = ImagePicker();
       final picked = await picker.pickImage(source: source, imageQuality: 70);
       if (picked != null) {
+        final bytes = await picked.readAsBytes();
         setState(() {
-          _pickedImage = File(picked.path);
+          _pickedImage = picked;
+          _pickedImageBytes = bytes;
         });
       }
     }
@@ -208,16 +244,20 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     if (adet > part.stokAdedi) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.'),
+          content: Text(
+            'Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.',
+          ),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 2),
         ),
       );
       return;
     }
-    
+
     setState(() {
-      final idx = _selectedParts.indexWhere((sp) => sp.part.parcaKodu == part.parcaKodu);
+      final idx = _selectedParts.indexWhere(
+        (sp) => sp.part.parcaKodu == part.parcaKodu,
+      );
       if (idx >= 0) {
         _selectedParts[idx].adet = adet;
       } else {
@@ -235,11 +275,15 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   void _addOtherPart() {
     if (_otherPartNameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen parça adını girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('Lütfen parça adını girin.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
       );
       return;
     }
-    
+
     int quantity = 1;
     try {
       if (_otherPartQuantityController.text.isNotEmpty) {
@@ -247,18 +291,26 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Geçerli bir miktar girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('Geçerli bir miktar girin.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
       );
       return;
     }
-    
+
     if (quantity <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Miktar 0\'dan büyük olmalıdır.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('Miktar 0\'dan büyük olmalıdır.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
       );
       return;
     }
-    
+
     // Özel parça için geçici bir StockPart oluştur
     final customPart = StockPart(
       id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
@@ -267,16 +319,20 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       stokAdedi: quantity,
       criticalLevel: 0,
     );
-    
+
     setState(() {
       _selectedParts.add(SelectedPart(part: customPart, adet: quantity));
       _otherPartNameController.clear();
       _otherPartQuantityController.clear();
       _showOtherPartInput = false;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${customPart.parcaAdi} eklendi.'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
+      SnackBar(
+        content: Text('${customPart.parcaAdi} eklendi.'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 
@@ -284,24 +340,36 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     // Çift kaydetmeyi önle
     if (_isSaving) return;
     _isSaving = true;
-    
+
     if (_selectedDevice == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen bir cihaz seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('Lütfen bir cihaz seçin.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
       );
       _isSaving = false;
       return;
     }
     if (_customerController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen müşteri/kurum adı girin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('Lütfen müşteri/kurum adı girin.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
       );
       _isSaving = false;
       return;
     }
     if (_date == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen bir tarih seçin.'), backgroundColor: Colors.red, duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text('Lütfen bir tarih seçin.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
       );
       _isSaving = false;
       return;
@@ -340,89 +408,102 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       serialNumber: _selectedDevice!.serialNumber,
       customer: _customerController.text,
       installDate: _dateController.text,
-      warrantyStatus: warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate) ? 'Devam Ediyor' : 'Bitti',
+      warrantyStatus:
+          warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
+          ? 'Devam Ediyor'
+          : 'Bitti',
       lastMaintenance: _dateController.text,
       warrantyEndDate: warrantyEndDate,
     );
     deviceProvider.updateDevice(updatedDevice);
 
-    // Stoktan düşme işlemi (Provider ile) - sadece stok parçaları için
-    final stockProvider = Provider.of<StockProvider>(context, listen: false);
-    for (final sp in _selectedParts) {
-      // Sadece stok parçaları için stok düşürme işlemi yap
-      if (sp.part.parcaKodu != 'ÖZEL') {
-        stockProvider.decreaseStock(sp.part.id, sp.adet);
-      }
-    }
-    
-    // Fotoğrafı kaydet
-    List<String> photoPaths = [];
+    // Fotoğrafı Storage'a yükle ve URL'leri hazırla
+    final List<String> photoUrls = [];
+    final recordId = FirebaseFirestore.instance
+        .collection(FirestorePaths.deviceServiceRecords(_selectedDevice!.id))
+        .doc()
+        .id;
     if (_pickedImage != null) {
-      // Fotoğrafı uygulama belgeleri dizinine kaydet
-      final appDir = await getApplicationDocumentsDirectory();
-      final photosDir = Directory('${appDir.path}/service_photos');
-      if (!await photosDir.exists()) {
-        await photosDir.create(recursive: true);
-      }
-      
-      final fileName = 'service_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final savedFile = await _pickedImage!.copy('${photosDir.path}/$fileName');
-      photoPaths.add(savedFile.path);
+      final storage = StorageService();
+      final fileName = 'img_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final url = await storage.uploadFile(
+        file: _pickedImage!, // XFile veriyoruz
+        storagePath: 'service_images/$recordId/$fileName',
+      );
+      photoUrls.add(url);
     }
 
-    // Servis geçmişine ekleme (Provider ile)
-    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
-    serviceHistoryProvider.addServiceHistory(
-      ServiceHistory(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        date: _date!,
-        deviceId: '${_selectedDevice!.modelName} (${_selectedDevice!.serialNumber})', // Cihaz adı ve seri numarasını kaydet
-        musteri: _customerController.text,
-        description: _descriptionController.text,
-        technician: _technicianController.text,
-        status: _formTipi == 2 ? 'Arızalı' : 'Başarılı',
-        kullanilanParcalar: _selectedParts.map((sp) => StockPart(
-          id: sp.part.id,
-          parcaAdi: sp.part.parcaAdi,
-          parcaKodu: sp.part.parcaKodu,
-          stokAdedi: sp.adet,
-          criticalLevel: sp.part.criticalLevel,
-        )).toList(),
-        photos: photoPaths.isNotEmpty ? photoPaths : null,
-      ),
+    // Firestore'a servis kaydı oluştur (stok düşüşü ile)
+    final service = ServiceRecordService();
+    final technicianUid =
+        FirebaseAuth.instance.currentUser?.uid ?? _technicianController.text;
+    final history = ServiceHistory(
+      id: recordId,
+      date: _date!,
+      deviceId: _selectedDevice!.id,
+      musteri: _customerController.text,
+      description: _descriptionController.text,
+      technician: technicianUid, // technician_id için uid kullan
+      status: _formTipi == 2 ? 'Arızalı' : 'Başarılı',
+      kullanilanParcalar: _selectedParts
+          .map(
+            (sp) => StockPart(
+              id: sp.part.id,
+              parcaAdi: sp.part.parcaAdi,
+              parcaKodu: sp.part.parcaKodu,
+              stokAdedi: sp.adet,
+              criticalLevel: sp.part.criticalLevel,
+            ),
+          )
+          .toList(),
+      photos: photoUrls.isNotEmpty ? photoUrls : null,
     );
-    
+
+    await service.createWithStockDecreaseWithId(recordId, history);
+    // UI listesine de ekleyelim
+    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
+      context,
+      listen: false,
+    );
+    serviceHistoryProvider.addServiceHistory(history);
+
     Navigator.pop(context, {
       'formTipi': _formTipi,
       'date': _date!,
-      'deviceId': '${_selectedDevice!.modelName} (${_selectedDevice!.serialNumber})',
+      'deviceId': _selectedDevice!.id,
       'customer': _customerController.text,
-      'technician': _technicianController.text,
+      'technician': technicianUid,
       'description': _descriptionController.text,
       'warrantyDuration': warrantyDuration,
       'warrantyStartDate': _date,
       'warrantyEndDate': warrantyEndDate,
-      'usedParts': _selectedParts.map((sp) => {
-        'partCode': sp.part.parcaKodu,
-        'partName': sp.part.parcaAdi,
-        'quantity': sp.adet,
-      }).toList(),
+      'usedParts': _selectedParts
+          .map(
+            (sp) => {
+              'partCode': sp.part.parcaKodu,
+              'partName': sp.part.parcaAdi,
+              'quantity': sp.adet,
+            },
+          )
+          .toList(),
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kayıt başarıyla eklendi!'), backgroundColor: Colors.green, duration: Duration(seconds: 2)),
+      const SnackBar(
+        content: Text('Kayıt başarıyla eklendi!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
     );
-    
+
     // Flag'i sıfırla
     _isSaving = false;
   }
-
-
 
   String _calculateWarrantyEndDate() {
     if (_date == null || _warrantyDurationController.text.isEmpty) {
       return 'Hesaplanamıyor';
     }
-    
+
     try {
       final warrantyDuration = int.parse(_warrantyDurationController.text);
       final warrantyEndDate = DateTime(
@@ -445,7 +526,11 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
         backgroundColor: const Color(0xFF23408E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -459,11 +544,17 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Form doldurma konusunda yardım için destek ekibimizle iletişime geçin.'),
+                  content: Text(
+                    'Form doldurma konusunda yardım için destek ekibimizle iletişime geçin.',
+                  ),
                   duration: Duration(seconds: 3),
                 ),
               );
@@ -476,7 +567,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Form Tipi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const Text(
+              'Form Tipi',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -504,9 +598,15 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
             ),
             const SizedBox(height: 22),
             // Device Information
-            const Text('Cihaz Bilgileri', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const Text(
+              'Cihaz Bilgileri',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            ),
             const SizedBox(height: 8),
-            const Text('Cihaz', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text(
+              'Cihaz',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
             const SizedBox(height: 4),
             // Responsive device selection
             LayoutBuilder(
@@ -514,18 +614,21 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-            TextField(
+                    TextField(
                       controller: _deviceSearchController,
                       readOnly: false,
-              decoration: InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Model, seri numarası veya müşteri...',
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
                         suffixIcon: _selectedDevice != null
                             ? IconButton(
                                 icon: const Icon(Icons.clear),
@@ -549,7 +652,9 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                     if (_showDeviceSuggestions && _filteredDevices.isNotEmpty)
                       Container(
                         constraints: BoxConstraints(
-                          maxHeight: constraints.maxHeight > 300 ? 300 : constraints.maxHeight * 0.5,
+                          maxHeight: constraints.maxHeight > 300
+                              ? 300
+                              : constraints.maxHeight * 0.5,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -568,7 +673,9 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                           itemBuilder: (context, index) {
                             final device = _filteredDevices[index];
                             return ListTile(
-                              title: Text('${device.modelName} (${device.serialNumber})'),
+                              title: Text(
+                                '${device.modelName} (${device.serialNumber})',
+                              ),
                               onTap: () => _selectDevice(device),
                             );
                           },
@@ -579,7 +686,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
               },
             ),
             const SizedBox(height: 22),
-            const Text('Müşteri/Kurum Bilgileri', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const Text(
+              'Müşteri/Kurum Bilgileri',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            ),
             const SizedBox(height: 8),
             TextField(
               controller: _customerController,
@@ -588,7 +698,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 hintText: 'Müşteri veya kurum adı girin',
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -596,7 +709,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            
+
             // Photo upload area
             Row(
               children: [
@@ -609,28 +722,43 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                     elevation: 0,
                   ),
                   onPressed: _pickImage,
-                  icon: const Icon(Icons.camera_alt_outlined, color: Colors.white),
-                  label: const Text('Fotoğraf Çek', style: TextStyle(color: Colors.white)),
+                  icon: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: Colors.white,
+                  ),
+                  label: const Text(
+                    'Fotoğraf Çek',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 if (_pickedImage != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      _pickedImage!,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                    ),
+                    child: (_pickedImageBytes != null)
+                        ? Image.memory(
+                            _pickedImageBytes!,
+                            width: 70,
+                            height: 70,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stack) => const SizedBox(width: 70, height: 70),
+                          )
+                        : const SizedBox(width: 70, height: 70),
                   ),
               ],
             ),
             const SizedBox(height: 18),
             // Form Details
-            const Text('Form Detayları', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const Text(
+              'Form Detayları',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+            ),
             const SizedBox(height: 8),
             // Installation Date header
-            const Text('Kurulum Tarihi', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text(
+              'Kurulum Tarihi',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
             const SizedBox(height: 4),
             TextField(
               readOnly: true,
@@ -651,7 +779,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 suffixIcon: const Icon(Icons.calendar_today_outlined),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -659,10 +790,13 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Garanti Bilgileri (Sadece Kurulum formunda göster)
             if (_formTipi == 0) ...[
-              const Text('Garanti Süresi (Ay)', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+              const Text(
+                'Garanti Süresi (Ay)',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              ),
               const SizedBox(height: 4),
               TextField(
                 controller: _warrantyDurationController,
@@ -671,7 +805,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                   hintText: '24',
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 14,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -683,19 +820,29 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 },
               ),
               const SizedBox(height: 8),
-              
+
               // Garanti Bitiş Tarihi (Otomatik Hesaplanan)
-              if (_date != null && _warrantyDurationController.text.isNotEmpty) ...[
+              if (_date != null &&
+                  _warrantyDurationController.text.isNotEmpty) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE3F6ED),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF43A047).withOpacity(0.3)),
+                    border: Border.all(
+                      color: const Color(0xFF43A047).withOpacity(0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, color: Color(0xFF43A047), size: 16),
+                      const Icon(
+                        Icons.info_outline,
+                        color: Color(0xFF43A047),
+                        size: 16,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -712,12 +859,15 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 ),
                 const SizedBox(height: 8),
               ],
-              
+
               const SizedBox(height: 12),
             ],
-            
+
             // Technician header
-            const Text('Teknisyen', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text(
+              'Teknisyen',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
             const SizedBox(height: 4),
             TextField(
               controller: _technicianController,
@@ -727,7 +877,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 hintText: 'Teknisyen adı otomatik doldurulur',
                 filled: true,
                 fillColor: Colors.grey.shade50,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -737,7 +890,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
             ),
             const SizedBox(height: 12),
             // Used Parts header
-            const Text('Kullanılan Parçalar (Opsiyonel)', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text(
+              'Kullanılan Parçalar (Opsiyonel)',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
             const SizedBox(height: 4),
             // Part search box
             TextField(
@@ -747,7 +903,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 prefixIcon: Icon(Icons.search, color: Color(0xFF23408E)),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -781,11 +940,19 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                         }
                       });
                     },
-                    icon: Icon(_showOtherPartInput ? Icons.remove : Icons.add, color: Color(0xFF23408E)),
-                    label: Text(_showOtherPartInput ? 'İptal' : 'Diğer Parça Ekle', style: TextStyle(color: Color(0xFF23408E))),
+                    icon: Icon(
+                      _showOtherPartInput ? Icons.remove : Icons.add,
+                      color: Color(0xFF23408E),
+                    ),
+                    label: Text(
+                      _showOtherPartInput ? 'İptal' : 'Diğer Parça Ekle',
+                      style: TextStyle(color: Color(0xFF23408E)),
+                    ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: Color(0xFF23408E)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
@@ -803,7 +970,14 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Özel Parça Ekle', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF23408E))),
+                    const Text(
+                      'Özel Parça Ekle',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0xFF23408E),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _otherPartNameController,
@@ -811,7 +985,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                         hintText: 'Parça adını girin...',
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 12,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide.none,
@@ -829,7 +1006,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                               hintText: 'Miktar (varsayılan: 1)',
                               filled: true,
                               fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 12,
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                                 borderSide: BorderSide.none,
@@ -842,9 +1022,14 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                           onPressed: _addOtherPart,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF23408E),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                          child: const Text('Ekle', style: TextStyle(color: Colors.white)),
+                          child: const Text(
+                            'Ekle',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ],
                     ),
@@ -869,44 +1054,58 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                       child: _filteredParts.isEmpty
                           ? const Padding(
                               padding: EdgeInsets.all(20),
-                              child: Center(child: Text('Aramanıza uygun parça bulunamadı', style: TextStyle(color: Colors.grey))),
+                              child: Center(
+                                child: Text(
+                                  'Aramanıza uygun parça bulunamadı',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
                             )
                           : ListView.separated(
                               shrinkWrap: true,
                               itemCount: _filteredParts.length,
-                              separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade100),
+                              separatorBuilder: (_, __) => Divider(
+                                height: 1,
+                                color: Colors.grey.shade100,
+                              ),
                               itemBuilder: (context, index) {
                                 final part = _filteredParts[index];
                                 final selected = _selectedParts.firstWhere(
                                   (sp) => sp.part.parcaKodu == part.parcaKodu,
-                                  orElse: () => SelectedPart(part: part, adet: 0),
+                                  orElse: () =>
+                                      SelectedPart(part: part, adet: 0),
                                 );
                                 final isSelected = selected.adet > 0;
                                 final isOutOfStock = part.stokAdedi == 0;
-                                final isCriticalLevel = part.stokAdedi <= part.criticalLevel && part.stokAdedi > 0;
+                                // final isCriticalLevel = part.stokAdedi <= part.criticalLevel && part.stokAdedi > 0;
                                 return AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: isOutOfStock
                                         ? Colors.grey.shade100
                                         : isSelected
-                                            ? const Color(0xFFE3F6ED)
-                                            : Colors.white,
+                                        ? const Color(0xFFE3F6ED)
+                                        : Colors.white,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: isSelected
                                           ? const Color(0xFF43A047)
                                           : isOutOfStock
-                                              ? Colors.grey.shade300
-                                              : Colors.grey.shade200,
+                                          ? Colors.grey.shade300
+                                          : Colors.grey.shade200,
                                       width: isSelected ? 2 : 1,
                                     ),
                                     boxShadow: [
                                       if (isSelected)
                                         BoxShadow(
-                                          color: const Color(0xFF43A047).withOpacity(0.08),
+                                          color: const Color(
+                                            0xFF43A047,
+                                          ).withOpacity(0.08),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -917,11 +1116,17 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                       GestureDetector(
                                         onTap: isOutOfStock
                                             ? () {
-                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
                                                   SnackBar(
-                                                    content: Text('${part.parcaAdi} stokta bulunmuyor.'),
+                                                    content: Text(
+                                                      '${part.parcaAdi} stokta bulunmuyor.',
+                                                    ),
                                                     backgroundColor: Colors.red,
-                                                    duration: const Duration(seconds: 2),
+                                                    duration: const Duration(
+                                                      seconds: 2,
+                                                    ),
                                                   ),
                                                 );
                                               }
@@ -929,7 +1134,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                                 if (isSelected) {
                                                   _removeSelectedPart(part);
                                                 } else {
-                                                  _addOrUpdateSelectedPart(part, 1);
+                                                  _addOrUpdateSelectedPart(
+                                                    part,
+                                                    1,
+                                                  );
                                                 }
                                               },
                                         child: Container(
@@ -938,46 +1146,104 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color: isSelected ? const Color(0xFF43A047) : Colors.grey.shade400,
+                                              color: isSelected
+                                                  ? const Color(0xFF43A047)
+                                                  : Colors.grey.shade400,
                                               width: 2,
                                             ),
-                                            color: isSelected ? const Color(0xFF43A047) : Colors.white,
+                                            color: isSelected
+                                                ? const Color(0xFF43A047)
+                                                : Colors.white,
                                           ),
                                           child: isSelected
-                                              ? const Icon(Icons.check, color: Colors.white, size: 18)
+                                              ? const Icon(
+                                                  Icons.check,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                )
                                               : null,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               children: [
-                                                Text(part.parcaAdi, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: isOutOfStock ? Colors.grey : Colors.black)),
+                                                Text(
+                                                  part.parcaAdi,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 15,
+                                                    color: isOutOfStock
+                                                        ? Colors.grey
+                                                        : Colors.black,
+                                                  ),
+                                                ),
                                                 if (isOutOfStock)
                                                   Padding(
-                                                    padding: const EdgeInsets.only(left: 8.0),
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          left: 8.0,
+                                                        ),
                                                     child: Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 2,
+                                                          ),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.red.shade100,
-                                                        borderRadius: BorderRadius.circular(8),
+                                                        color:
+                                                            Colors.red.shade100,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
                                                       ),
-                                                      child: const Text('Stokta Yok', style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
+                                                      child: const Text(
+                                                        'Stokta Yok',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
                                                     ),
                                                   )
-                                                else if (part.stokAdedi <= part.criticalLevel)
+                                                else if (part.stokAdedi <=
+                                                    part.criticalLevel)
                                                   Padding(
-                                                    padding: const EdgeInsets.only(left: 8.0),
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                          left: 8.0,
+                                                        ),
                                                     child: Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 2,
+                                                          ),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.orange.shade100,
-                                                        borderRadius: BorderRadius.circular(8),
+                                                        color: Colors
+                                                            .orange
+                                                            .shade100,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
                                                       ),
-                                                      child: const Text('Kritik Seviye', style: TextStyle(color: Colors.orange, fontSize: 11, fontWeight: FontWeight.bold)),
+                                                      child: const Text(
+                                                        'Kritik Seviye',
+                                                        style: TextStyle(
+                                                          color: Colors.orange,
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
                                               ],
@@ -986,35 +1252,62 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                             Row(
                                               children: [
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 7,
+                                                        vertical: 2,
+                                                      ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.grey.shade100,
-                                                    borderRadius: BorderRadius.circular(6),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
                                                   ),
-                                                  child: Text('Kod: ${part.parcaKodu}', style: const TextStyle(fontSize: 12, color: Color(0xFF23408E))),
+                                                  child: Text(
+                                                    'Kod: ${part.parcaKodu}',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Color(0xFF23408E),
+                                                    ),
+                                                  ),
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 7,
+                                                        vertical: 2,
+                                                      ),
                                                   decoration: BoxDecoration(
-                                                    color: part.stokAdedi == 0 
-                                                        ? Colors.red.shade100 
-                                                        : part.stokAdedi <= part.criticalLevel 
-                                                            ? Colors.orange.shade100 
-                                                            : Colors.grey.shade100,
-                                                    borderRadius: BorderRadius.circular(6),
+                                                    color: part.stokAdedi == 0
+                                                        ? Colors.red.shade100
+                                                        : part.stokAdedi <=
+                                                              part.criticalLevel
+                                                        ? Colors.orange.shade100
+                                                        : Colors.grey.shade100,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
                                                   ),
                                                   child: Text(
-                                                    'Stok: ${part.stokAdedi}', 
+                                                    'Stok: ${part.stokAdedi}',
                                                     style: TextStyle(
-                                                      fontSize: 12, 
-                                                      color: part.stokAdedi == 0 
-                                                          ? Colors.red 
-                                                          : part.stokAdedi <= part.criticalLevel 
-                                                              ? Colors.orange 
-                                                              : const Color(0xFF23408E),
-                                                      fontWeight: part.stokAdedi == 0 || part.stokAdedi <= part.criticalLevel 
-                                                          ? FontWeight.bold 
+                                                      fontSize: 12,
+                                                      color: part.stokAdedi == 0
+                                                          ? Colors.red
+                                                          : part.stokAdedi <=
+                                                                part.criticalLevel
+                                                          ? Colors.orange
+                                                          : const Color(
+                                                              0xFF23408E,
+                                                            ),
+                                                      fontWeight:
+                                                          part.stokAdedi == 0 ||
+                                                              part.stokAdedi <=
+                                                                  part.criticalLevel
+                                                          ? FontWeight.bold
                                                           : FontWeight.normal,
                                                     ),
                                                   ),
@@ -1028,24 +1321,55 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                         Row(
                                           children: [
                                             IconButton(
-                                              icon: const Icon(Icons.remove_circle_outline, size: 24, color: Color(0xFF23408E)),
+                                              icon: const Icon(
+                                                Icons.remove_circle_outline,
+                                                size: 24,
+                                                color: Color(0xFF23408E),
+                                              ),
                                               splashRadius: 20,
                                               onPressed: selected.adet > 1
-                                                  ? () => _addOrUpdateSelectedPart(part, selected.adet - 1)
+                                                  ? () =>
+                                                        _addOrUpdateSelectedPart(
+                                                          part,
+                                                          selected.adet - 1,
+                                                        )
                                                   : null,
                                             ),
-                                            Text('${selected.adet}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                            Text(
+                                              '${selected.adet}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
                                             IconButton(
-                                              icon: const Icon(Icons.add_circle_outline, size: 24, color: Color(0xFF23408E)),
+                                              icon: const Icon(
+                                                Icons.add_circle_outline,
+                                                size: 24,
+                                                color: Color(0xFF23408E),
+                                              ),
                                               splashRadius: 20,
-                                              onPressed: part.stokAdedi > selected.adet
-                                                  ? () => _addOrUpdateSelectedPart(part, selected.adet + 1)
+                                              onPressed:
+                                                  part.stokAdedi > selected.adet
+                                                  ? () =>
+                                                        _addOrUpdateSelectedPart(
+                                                          part,
+                                                          selected.adet + 1,
+                                                        )
                                                   : () {
-                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
                                                         SnackBar(
-                                                          content: Text('Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.'),
-                                                          backgroundColor: Colors.red,
-                                                          duration: const Duration(seconds: 2),
+                                                          content: Text(
+                                                            'Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.',
+                                                          ),
+                                                          backgroundColor:
+                                                              Colors.red,
+                                                          duration:
+                                                              const Duration(
+                                                                seconds: 2,
+                                                              ),
                                                         ),
                                                       );
                                                     },
@@ -1063,13 +1387,26 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                         padding: const EdgeInsets.only(top: 8.0, left: 2),
                         child: Wrap(
                           spacing: 8,
-                          children: _selectedParts.map((sp) => Chip(
-                            label: Text('${sp.part.parcaAdi} x${sp.adet}'),
-                            backgroundColor: const Color(0xFFE3F6ED),
-                            labelStyle: const TextStyle(color: Color(0xFF23408E), fontWeight: FontWeight.w600),
-                            deleteIcon: const Icon(Icons.close, size: 18, color: Color(0xFF23408E)),
-                            onDeleted: () => _removeSelectedPart(sp.part),
-                          )).toList(),
+                          children: _selectedParts
+                              .map(
+                                (sp) => Chip(
+                                  label: Text(
+                                    '${sp.part.parcaAdi} x${sp.adet}',
+                                  ),
+                                  backgroundColor: const Color(0xFFE3F6ED),
+                                  labelStyle: const TextStyle(
+                                    color: Color(0xFF23408E),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  deleteIcon: const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Color(0xFF23408E),
+                                  ),
+                                  onDeleted: () => _removeSelectedPart(sp.part),
+                                ),
+                              )
+                              .toList(),
                         ),
                       ),
                   ],
@@ -1078,7 +1415,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
             ),
             const SizedBox(height: 12),
             // Description header
-            const Text('Açıklama', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            const Text(
+              'Açıklama',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+            ),
             const SizedBox(height: 4),
             TextField(
               controller: _descriptionController,
@@ -1089,7 +1429,10 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                 hintText: 'Yapılan işlemi ve notlarınızı buraya yazın...',
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 14,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -1126,14 +1469,17 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
   }
 }
 
-
-
 class _FormTypeChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
   final Color color;
-  const _FormTypeChip({required this.label, required this.selected, required this.onTap, required this.color, Key? key}) : super(key: key);
+  const _FormTypeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1157,4 +1503,4 @@ class _FormTypeChip extends StatelessWidget {
       ),
     );
   }
-} 
+}

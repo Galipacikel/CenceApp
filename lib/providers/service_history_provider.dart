@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/service_history.dart';
-
+import '../repositories/firestore_service_history_repository.dart';
 
 class ServiceHistoryProvider extends ChangeNotifier {
   final List<ServiceHistory> _serviceHistoryList = [];
+  final FirestoreServiceHistoryRepository _repository =
+      FirestoreServiceHistoryRepository();
 
   List<ServiceHistory> get all => List.unmodifiable(_serviceHistoryList);
 
@@ -12,19 +14,24 @@ class ServiceHistoryProvider extends ChangeNotifier {
   }
 
   void addServiceHistory(ServiceHistory history) {
-    print('DEBUG: addServiceHistory çağrıldı - ID: ${history.id}');
+    debugPrint('DEBUG: addServiceHistory çağrıldı - ID: ${history.id}');
     _serviceHistoryList.insert(0, history);
     notifyListeners();
+  }
+
+  Future<void> fetchAll() async {
+    final list = await _repository.getAll();
+    setAll(list);
   }
 
   void setAll(List<ServiceHistory> list) {
     _serviceHistoryList
       ..clear()
       ..addAll(list);
-    
+
     // Verileri tarihe göre sırala (en yeni en üstte)
     _serviceHistoryList.sort((a, b) => b.date.compareTo(a.date));
-    
+
     notifyListeners();
   }
 
@@ -33,16 +40,7 @@ class ServiceHistoryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void loadMockData(List<ServiceHistory> mockList) {
-    _serviceHistoryList
-      ..clear()
-      ..addAll(mockList);
-    
-    // Mock data'yı tarihe göre sırala (en yeni en üstte)
-    _serviceHistoryList.sort((a, b) => b.date.compareTo(a.date));
-    
-    notifyListeners();
-  }
+  // Mock yükleme kaldırıldı
 
   void update(int idx, Map<String, dynamic> yeni) {
     if (idx < 0 || idx >= _serviceHistoryList.length) return;
@@ -64,4 +62,4 @@ class ServiceHistoryProvider extends ChangeNotifier {
     _serviceHistoryList.removeWhere((e) => e.id == id);
     notifyListeners();
   }
-} 
+}

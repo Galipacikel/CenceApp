@@ -8,13 +8,13 @@ class QuickAccessCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   const QuickAccessCard({
-    Key? key,
+    super.key,
     required this.icon,
     required this.label,
     this.onTap,
     this.iconSize = 32,
     this.padding = const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

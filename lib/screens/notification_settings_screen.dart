@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state_provider.dart';
+// import 'package:provider/provider.dart';
+// import '../providers/app_state_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class NotificationSettingsScreen extends StatelessWidget {
-  const NotificationSettingsScreen({Key? key}) : super(key: key);
+  const NotificationSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +12,7 @@ class NotificationSettingsScreen extends StatelessWidget {
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
     final Color textColor = const Color(0xFF232946);
-    final Color subtitleColor = const Color(0xFF4A4A4A);
+    // final Color subtitleColor = const Color(0xFF4A4A4A);
     final double cardRadius = 18;
     return Scaffold(
       backgroundColor: background,
@@ -80,14 +80,22 @@ class NotificationSettingsScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryBlue,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             onPressed: () {
               // Kaydet işlemi
             },
-            child: Text('Kaydet', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
+            child: Text(
+              'Kaydet',
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
           ),
         ],
       ),
@@ -101,7 +109,13 @@ class _NotificationSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   final Color primaryBlue;
-  const _NotificationSwitch({required this.title, required this.subtitle, required this.value, required this.onChanged, required this.primaryBlue, Key? key}) : super(key: key);
+  const _NotificationSwitch({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    required this.primaryBlue,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -114,18 +128,27 @@ class _NotificationSwitch extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+              Text(
+                title,
+                style: GoogleFonts.montserrat(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: textColor,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(subtitle, style: GoogleFonts.montserrat(fontSize: 13, color: subtitleColor)),
+              Text(
+                subtitle,
+                style: GoogleFonts.montserrat(
+                  fontSize: 13,
+                  color: subtitleColor,
+                ),
+              ),
             ],
           ),
         ),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeColor: primaryBlue,
-        ),
+        Switch(value: value, onChanged: onChanged, activeColor: primaryBlue),
       ],
     );
   }
-} 
+}
