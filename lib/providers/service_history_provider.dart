@@ -1,51 +1,92 @@
 import 'package:flutter/material.dart';
 import '../models/service_history.dart';
 import '../repositories/firestore_service_history_repository.dart';
+import 'base_provider.dart';
 
-class ServiceHistoryProvider extends ChangeNotifier {
-  final List<ServiceHistory> _serviceHistoryList = [];
+class ServiceHistoryProvider extends BaseProvider<ServiceHistory> {
   final FirestoreServiceHistoryRepository _repository =
       FirestoreServiceHistoryRepository();
 
-  List<ServiceHistory> get all => List.unmodifiable(_serviceHistoryList);
+  List<ServiceHistory> get all => items;
 
   List<ServiceHistory> getRecent({int count = 3}) {
-    return _serviceHistoryList.take(count).toList();
+    return items.take(count).toList();
+  }
+
+  // Legacy method for backward compatibility
+  void setAll(List<ServiceHistory> list) {
+    setItems(list);
   }
 
   void addServiceHistory(ServiceHistory history) {
     debugPrint('DEBUG: addServiceHistory çağrıldı - ID: ${history.id}');
-    _serviceHistoryList.insert(0, history);
-    notifyListeners();
+    addItem(history);
   }
 
+  @override
   Future<void> fetchAll() async {
-    final list = await _repository.getAll();
-    setAll(list);
+    setLoading(true);
+    try {
+      final list = await _repository.getAll();
+      setItems(list);
+      // Verileri tarihe göre sırala (en yeni en üstte)
+      final sortedList = List<ServiceHistory>.from(items);
+      sortedList.sort((a, b) => b.date.compareTo(a.date));
+      setItems(sortedList);
+    } catch (e) {
+      setError(e.toString());
+    } finally {
+      setLoading(false);
+    }
   }
 
-  void setAll(List<ServiceHistory> list) {
-    _serviceHistoryList
-      ..clear()
-      ..addAll(list);
-
-    // Verileri tarihe göre sırala (en yeni en üstte)
-    _serviceHistoryList.sort((a, b) => b.date.compareTo(a.date));
-
-    notifyListeners();
+  @override
+  Future<void> add(ServiceHistory item) async {
+    setLoading(true);
+    try {
+      await _repository.add(item);
+      addServiceHistory(item);
+    } catch (e) {
+      setError(e.toString());
+    } finally {
+      setLoading(false);
+    }
   }
 
-  void clear() {
-    _serviceHistoryList.clear();
-    notifyListeners();
+  @override
+  Future<void> update(String id, ServiceHistory item) async {
+    setLoading(true);
+    try {
+      await _repository.update(id, item);
+      final index = items.indexWhere((e) => e.id == id);
+      if (index != -1) {
+        updateItem(index, item);
+      }
+    } catch (e) {
+      setError(e.toString());
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // Mock yükleme kaldırıldı
+  @override
+  Future<void> delete(String id) async {
+    setLoading(true);
+    try {
+      await _repository.delete(id);
+      removeWhere((e) => e.id == id);
+    } catch (e) {
+      setError(e.toString());
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  void update(int idx, Map<String, dynamic> yeni) {
-    if (idx < 0 || idx >= _serviceHistoryList.length) return;
-    final eski = _serviceHistoryList[idx];
-    _serviceHistoryList[idx] = ServiceHistory(
+  // Legacy method for backward compatibility
+  void updateLegacy(int idx, Map<String, dynamic> yeni) {
+    if (idx < 0 || idx >= items.length) return;
+    final eski = items[idx];
+    final updatedItem = ServiceHistory(
       id: eski.id,
       date: yeni['tarih'] ?? eski.date,
       deviceId: yeni['cihaz'] ?? eski.deviceId,
@@ -55,11 +96,6 @@ class ServiceHistoryProvider extends ChangeNotifier {
       status: yeni['durum'] ?? eski.status,
       kullanilanParcalar: eski.kullanilanParcalar,
     );
-    notifyListeners();
-  }
-
-  void delete(String id) {
-    _serviceHistoryList.removeWhere((e) => e.id == id);
-    notifyListeners();
+    updateItem(idx, updatedItem);
   }
 }

@@ -59,4 +59,6 @@ abstract class ServiceHistoryRepository {
   Future<List<ServiceHistory>> getAll();
   Future<List<ServiceHistory>> getRecent({int count = 3});
   Future<void> add(ServiceHistory history);
+  Future<void> update(String id, ServiceHistory history);
+  Future<void> delete(String id);
 }

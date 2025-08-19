@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   // Ana renkler
   static const Color primaryBlue = Color(0xFF23408E);
+  static const Color primaryColor = Color(0xFF23408E);
   static const Color criticalRed = Color(0xFFE53935);
   
   // Metin renkleri
@@ -12,6 +13,12 @@ class AppColors {
   
   // Arka plan renkleri
   static const Color cardColor = Colors.white;
+  static const Color surfaceColor = Colors.white;
+  static const Color disabledColor = Color(0xFFF5F5F5);
+  
+  // Border renkleri
+  static const Color borderColor = Color(0xFFE0E0E0);
+  static const Color errorColor = Color(0xFFE53935);
   
   // Kritik durumlar için renkler
   static const Color criticalBackground = Color(0xFFFFCDD2);
