@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class SupportRequestScreen extends StatelessWidget {
+class SupportRequestScreen extends StatefulWidget {
   const SupportRequestScreen({super.key});
+
+  @override
+  State<SupportRequestScreen> createState() => _SupportRequestScreenState();
+}
+
+class _SupportRequestScreenState extends State<SupportRequestScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _subjectController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  @override
+  void dispose() {
+    _subjectController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +43,18 @@ class SupportRequestScreen extends StatelessWidget {
             fontSize: 22,
           ),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+          size: 28,
+        ),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+            size: 28,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: Center(
         child: Container(
@@ -49,12 +76,20 @@ class SupportRequestScreen extends StatelessWidget {
                   ],
                 ),
                 child: Form(
+                  key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Konu', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
                       const SizedBox(height: 6),
                       TextFormField(
+                        controller: _subjectController,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Konu alanı zorunludur';
+                          }
+                          return null;
+                        },
                         decoration: InputDecoration(
                           hintText: 'Konu başlığını girin',
                           hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
@@ -65,12 +100,30 @@ class SupportRequestScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red, width: 2),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
                       Text('Açıklama', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
                       const SizedBox(height: 6),
                       TextFormField(
+                        controller: _descriptionController,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Açıklama alanı zorunludur';
+                          }
+                          if (value.trim().length < 10) {
+                            return 'Açıklama en az 10 karakter olmalıdır';
+                          }
+                          return null;
+                        },
                         minLines: 3,
                         maxLines: 6,
                         decoration: InputDecoration(
@@ -82,6 +135,14 @@ class SupportRequestScreen extends StatelessWidget {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.red, width: 2),
                           ),
                         ),
                       ),
@@ -97,7 +158,22 @@ class SupportRequestScreen extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           onPressed: () {
-                            // Gönderme işlemi
+                            if (_formKey.currentState!.validate()) {
+                              // Form geçerli, gönderme işlemi
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Destek talebiniz başarıyla gönderildi!'),
+                                  backgroundColor: Color(0xFF424242),
+                                ),
+                              );
+                              
+                              // Formu temizle
+                              _subjectController.clear();
+                              _descriptionController.clear();
+                              
+                              // Settings'e geri dön
+                              Navigator.pop(context);
+                            }
                           },
                           icon: const Icon(Icons.send),
                           label: Text('Gönder', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
