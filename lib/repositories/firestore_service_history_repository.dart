@@ -54,6 +54,35 @@ class FirestoreServiceHistoryRepository implements ServiceHistoryRepository {
     return snapshot.docs.map((d) => _fromFirestore(d.id, d.data())).toList();
   }
 
+  @override
+  Future<void> update(String id, ServiceHistory history) async {
+    // Find the document in the collection group
+    final snapshot = await _firestore
+        .collectionGroup(FirestorePaths.serviceRecords)
+        .where(FieldPath.documentId, isEqualTo: id)
+        .get();
+    
+    if (snapshot.docs.isNotEmpty) {
+      final doc = snapshot.docs.first;
+      final recordData = _toFirestoreMap(history, id: id);
+      await doc.reference.update(recordData);
+    }
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    // Find the document in the collection group
+    final snapshot = await _firestore
+        .collectionGroup(FirestorePaths.serviceRecords)
+        .where(FieldPath.documentId, isEqualTo: id)
+        .get();
+    
+    if (snapshot.docs.isNotEmpty) {
+      final doc = snapshot.docs.first;
+      await doc.reference.delete();
+    }
+  }
+
   Map<String, dynamic> _toFirestoreMap(
     ServiceHistory history, {
     required String id,

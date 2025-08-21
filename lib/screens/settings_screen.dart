@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'profile_edit_screen.dart';
-import 'change_password_screen.dart';
 import 'notification_settings_screen.dart';
 import 'theme_settings_screen.dart';
 import 'help_center_screen.dart';
 import 'support_request_screen.dart';
-import 'app_info_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
@@ -13,6 +11,7 @@ import 'login_screen.dart';
 // import '../models/app_settings.dart';
 // import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -29,281 +28,263 @@ class SettingsScreen extends StatelessWidget {
     final isWide = MediaQuery.of(context).size.width > 600;
     return Scaffold(
       backgroundColor: background,
-      appBar: AppBar(
-        backgroundColor: cardColor,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'Ayarlar',
-          style: GoogleFonts.montserrat(
-            color: textColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-        iconTheme: IconThemeData(color: primaryBlue),
-      ),
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: isWide ? 500 : double.infinity),
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-            children: [
-              // Kullanıcı Kartı
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(cardRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Consumer<AppStateProvider>(
-                  builder: (context, appState, _) {
-                    final user = appState.userProfile;
-                    return Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 32,
-                          backgroundColor: primaryBlue,
-                          child: Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 32,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: isWide ? 500 : double.infinity),
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+                    children: [
+                      // Kullanıcı Kartı
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: cardColor,
+                          borderRadius: BorderRadius.circular(cardRadius),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Consumer<AppStateProvider>(
+                          builder: (context, appState, _) {
+                            final user = appState.userProfile;
+                            return Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 32,
+                                  backgroundColor: primaryBlue,
+                                  backgroundImage: user?.profileImagePath != null 
+                                      ? FileImage(File(user!.profileImagePath!))
+                                      : null,
+                                  child: user?.profileImagePath == null
+                                      ? Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 32,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 18),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        ((user?.name ?? '').isEmpty && (user?.surname ?? '').isEmpty)
+                                            ? 'Kullanıcı'
+                                            : '${user?.name ?? ''} ${user?.surname ?? ''}'.trim(),
+                                        style: GoogleFonts.montserrat(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        user?.title ?? 'Teknisyen',
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 14,
+                                          color: subtitleColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.edit, color: primaryBlue),
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => ProfileEditScreen(),
+                                      ),
+                                    );
+                                  },
+                                  splashRadius: 24,
+                                  tooltip: 'Profili Düzenle',
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      // Ayar Kartları
+                      _SettingsCard(
+                        icon: Icons.notifications_active_outlined,
+                        title: 'Bildirim Ayarları',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => NotificationSettingsScreen(),
                           ),
                         ),
-                        const SizedBox(width: 18),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        iconColor: primaryBlue,
+                        cardColor: cardColor,
+                        cardRadius: cardRadius,
+                        textColor: textColor,
+                      ),
+                      _SettingsCard(
+                        icon: Icons.palette_outlined,
+                        title: 'Tema ve Görünüm',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => ThemeSettingsScreen()),
+                        ),
+                        iconColor: primaryBlue,
+                        cardColor: cardColor,
+                        cardRadius: cardRadius,
+                        textColor: textColor,
+                      ),
+                      _SettingsCard(
+                        icon: Icons.help_outline,
+                        title: 'Yardım Merkezi',
+                        onTap: () => Navigator.of(
+                          context,
+                        ).push(MaterialPageRoute(builder: (_) => HelpCenterScreen())),
+                        iconColor: primaryBlue,
+                        cardColor: cardColor,
+                        cardRadius: cardRadius,
+                        textColor: textColor,
+                      ),
+                      _SettingsCard(
+                        icon: Icons.support_agent_outlined,
+                        title: 'Destek Talebi',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => SupportRequestScreen()),
+                        ),
+                        iconColor: primaryBlue,
+                        cardColor: cardColor,
+                        cardRadius: cardRadius,
+                        textColor: textColor,
+                      ),
+                      _SettingsCard(
+                        icon: Icons.privacy_tip_outlined,
+                        title: 'Gizlilik ve Koşullar',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => PrivacyPolicyScreen()),
+                        ),
+                        iconColor: primaryBlue,
+                        cardColor: cardColor,
+                        cardRadius: cardRadius,
+                        textColor: textColor,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Çıkış Butonu - Navigation bar'ın hemen üzerinde
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          title: Row(
                             children: [
+                              Icon(
+                                Icons.logout,
+                                color: Colors.red.shade600,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 6),
                               Text(
-                                ((user?.name ?? '').isEmpty && (user?.surname ?? '').isEmpty)
-                                    ? 'Kullanıcı'
-                                    : '${user?.name ?? ''} ${user?.surname ?? ''}'.trim(),
+                                'Çıkış Yap',
                                 style: GoogleFonts.montserrat(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: textColor,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                user?.title ?? 'Teknisyen',
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 14,
-                                  color: subtitleColor,
+                                  fontSize: 16,
+                                  color: Colors.red.shade600,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.edit, color: primaryBlue),
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ProfileEditScreen(),
-                              ),
-                            );
-                          },
-                          splashRadius: 24,
-                          tooltip: 'Profili Düzenle',
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Ayar Kartları
-              _SettingsCard(
-                icon: Icons.lock_outline,
-                title: 'Şifre Değiştir',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => ChangePasswordScreen()),
-                ),
-                iconColor: primaryBlue,
-                cardColor: cardColor,
-                cardRadius: cardRadius,
-                textColor: textColor,
-              ),
-              _SettingsCard(
-                icon: Icons.notifications_active_outlined,
-                title: 'Bildirim Ayarları',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => NotificationSettingsScreen(),
-                  ),
-                ),
-                iconColor: primaryBlue,
-                cardColor: cardColor,
-                cardRadius: cardRadius,
-                textColor: textColor,
-              ),
-              _SettingsCard(
-                icon: Icons.palette_outlined,
-                title: 'Tema ve Görünüm',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => ThemeSettingsScreen()),
-                ),
-                iconColor: primaryBlue,
-                cardColor: cardColor,
-                cardRadius: cardRadius,
-                textColor: textColor,
-              ),
-              _SettingsCard(
-                icon: Icons.help_outline,
-                title: 'Yardım Merkezi',
-                onTap: () => Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => HelpCenterScreen())),
-                iconColor: primaryBlue,
-                cardColor: cardColor,
-                cardRadius: cardRadius,
-                textColor: textColor,
-              ),
-              _SettingsCard(
-                icon: Icons.support_agent_outlined,
-                title: 'Destek Talebi',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => SupportRequestScreen()),
-                ),
-                iconColor: primaryBlue,
-                cardColor: cardColor,
-                cardRadius: cardRadius,
-                textColor: textColor,
-              ),
-              _SettingsCard(
-                icon: Icons.info_outline,
-                title: 'Uygulama Bilgisi',
-                onTap: () => Navigator.of(
-                  context,
-                ).push(MaterialPageRoute(builder: (_) => AppInfoScreen())),
-                iconColor: primaryBlue,
-                cardColor: cardColor,
-                cardRadius: cardRadius,
-                textColor: textColor,
-              ),
-              _SettingsCard(
-                icon: Icons.privacy_tip_outlined,
-                title: 'Gizlilik ve Koşullar',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => PrivacyPolicyScreen()),
-                ),
-                iconColor: primaryBlue,
-                cardColor: cardColor,
-                cardRadius: cardRadius,
-                textColor: textColor,
-              ),
-              const SizedBox(height: 32),
-              // Çıkış Butonu
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        title: Row(
-                          children: [
-                            Icon(
-                              Icons.logout,
-                              color: Colors.red.shade600,
-                              size: 20,
+                          content: Text(
+                            'Çıkış yapmak istediğinizden emin misiniz?',
+                            style: GoogleFonts.montserrat(
+                              fontSize: 14,
+                              color: const Color(0xFF4A4A4A),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Çıkış Yap',
-                              style: GoogleFonts.montserrat(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.red.shade600,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text(
+                                'İptal',
+                                style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: const Color(0xFF4A4A4A),
+                                ),
+                              ),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade600,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                    builder: (_) => const LoginScreen(),
+                                  ),
+                                  (route) => false,
+                                );
+                              },
+                              child: Text(
+                                'Çıkış Yap',
+                                style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
-                        ),
-                        content: Text(
-                          'Çıkış yapmak istediğinizden emin misiniz?',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 14,
-                            color: const Color(0xFF4A4A4A),
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text(
-                              'İptal',
-                              style: GoogleFonts.montserrat(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: const Color(0xFF4A4A4A),
-                              ),
-                            ),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade600,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginScreen(),
-                                ),
-                                (route) => false,
-                              );
-                            },
-                            child: Text(
-                              'Çıkış Yap',
-                              style: GoogleFonts.montserrat(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                icon: const Icon(Icons.logout),
-                label: Text(
-                  'Çıkış Yap',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                        );
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.logout),
+                  label: Text(
+                    'Çıkış Yap',
+                    style: GoogleFonts.montserrat(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

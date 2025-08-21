@@ -7,6 +7,7 @@ import '../services/username_auth_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
 import '../services/auth_service.dart';
+import '../models/app_user.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -51,6 +52,73 @@ class _LoginScreenState extends State<LoginScreen>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  // Mock giriş metodu - Firebase Authentication'ı bypass eder
+  Future<void> _mockLogin() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Mock kullanıcı bilgileri
+      final mockUser = AppUser(
+        uid: 'mock-user-123',
+        email: 'demo@cence.com',
+        username: 'demo_user',
+        fullName: 'Demo Kullanıcı',
+        role: 'technician',
+        isAdminFlag: false,
+        createdAt: DateTime.now(),
+      );
+
+      // Provider'ı güncelle
+      if (mounted) {
+        final appState = Provider.of<AppStateProvider>(context, listen: false);
+        appState.updateCurrentUser(mockUser);
+      }
+
+      // Ana sayfaya yönlendir
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const HomePage(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+      }
+
+      // Başarı mesajı göster
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🔑 Mock giriş başarılı! Demo modunda çalışıyorsunuz.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Mock giriş hatası: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _login() async {
@@ -397,6 +465,28 @@ class _LoginScreenState extends State<LoginScreen>
                     'Giriş Yap',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Mock Giriş Butonu (Geliştirme için)
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _mockLogin,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              '🔑 Mock Giriş (Demo)',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ],

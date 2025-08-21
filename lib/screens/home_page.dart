@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/common/bottom_nav_bar.dart';
+import '../widgets/common/cards/quick_access_card.dart';
+import '../widgets/common/cards/service_card.dart';
+import '../widgets/common/cards/empty_service_card.dart';
+
 import 'device_query_screen.dart';
 import 'new_service_form_screen.dart';
 import 'service_history_screen.dart';
 import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
-import 'service_history_detail_screen.dart';
 import '../models/service_history.dart';
 
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
 import '../providers/stock_provider.dart';
-
 import '../providers/device_provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -179,7 +181,65 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Selamlama ve özet
-            _WelcomeSummary(),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF23408E).withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF23408E).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.waving_hand_rounded,
+                          color: const Color(0xFF23408E),
+                          size: isWide ? 28 : 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hoş Geldiniz!',
+                              style: TextStyle(
+                                fontSize: isWide ? 22 : 20,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1C1C1C),
+                              ),
+                            ),
+                            Text(
+                              'Medikal cihaz yönetim sisteminize hoş geldiniz',
+                              style: TextStyle(
+                                fontSize: isWide ? 15 : 14,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 14),
             // Hızlı Erişim Kartları (animasyonlu)
             AnimatedSwitcher(
@@ -193,7 +253,7 @@ class _HomePageState extends State<HomePage> {
                 childAspectRatio: isWide ? 1.18 : 1.15, // Daha kısa kartlar
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  _ModernQuickAccessCard(
+                  ModernQuickAccessCard(
                     icon: Icons.search,
                     label: 'Cihaz Sorgula',
                     iconSize: cardIconSize,
@@ -206,14 +266,14 @@ class _HomePageState extends State<HomePage> {
                     },
                     iconColor: iconColor,
                   ),
-                  _ModernQuickAccessCard(
+                  ModernQuickAccessCard(
                     icon: Icons.note_add_outlined,
                     label: 'Yeni Servis Formu',
                     iconSize: cardIconSize,
                     onTap: () => _addServiceHistoryFromForm(context),
                     iconColor: iconColor,
                   ),
-                  _ModernQuickAccessCard(
+                  ModernQuickAccessCard(
                     icon: Icons.history,
                     label: 'Servis Geçmişi',
                     iconSize: cardIconSize,
@@ -226,7 +286,7 @@ class _HomePageState extends State<HomePage> {
                     },
                     iconColor: iconColor,
                   ),
-                  _ModernQuickAccessCard(
+                  ModernQuickAccessCard(
                     icon: Icons.inventory_2_outlined,
                     label: 'Stok Takibi',
                     iconSize: cardIconSize,
@@ -274,12 +334,12 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 18),
             if (serviceHistoryList.isEmpty)
-              const _ModernServiceHistoryCard()
+              const EmptyServiceCard()
             else
               Column(
                 children: serviceHistoryList
                     .take(3)
-                    .map((item) => _ModernServiceCard(item: item))
+                    .map((item) => ModernServiceCard(item: item))
                     .toList(),
               ),
 
@@ -292,290 +352,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WelcomeSummary extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Kullanıcı adı ve özet artık provider'dan alınacak
-    final String user = 'Ahmet';
-    final int device = Provider.of<DeviceProvider>(context).uniqueDeviceCount;
-    final int service = Provider.of<ServiceHistoryProvider>(context).all.length;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        CircleAvatar(
-          backgroundColor: const Color(0xFF23408E),
-          radius: 22,
-          child: Text(
-            user[0],
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hoş geldin, $user!',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Color(0xFF1C1C1C),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Sistemde $device cihaz, $service servis kaydı var.',
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ModernQuickAccessCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final double iconSize;
-  final VoidCallback onTap;
-  final Color iconColor;
-  const _ModernQuickAccessCard({
-    required this.icon,
-    required this.label,
-    required this.iconSize,
-    required this.onTap,
-    required this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16), // Küçük radius
-        onTap: onTap,
-        splashColor: iconColor.withOpacity(0.12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16), // Küçük radius
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-            border: Border.all(color: Colors.grey.shade100, width: 1.2),
-          ),
-          padding: const EdgeInsets.symmetric(
-            vertical: 18,
-            horizontal: 10,
-          ), // Daha az padding
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.07),
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(10), // Daha az padding
-                child: Icon(
-                  icon,
-                  size: iconSize,
-                  color: iconColor,
-                ), // Küçük ikon
-              ),
-              const SizedBox(height: 10), // Daha az spacing
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF1C1C1C),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15, // Küçük font
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModernServiceHistoryCard extends StatelessWidget {
-  const _ModernServiceHistoryCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16), // küçültüldü
-        border: Border.all(
-          color: Colors.grey.shade100,
-          width: 1.2,
-        ), // inceltildi
-      ),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 56, // küçültüldü
-            color: Color(0xFFB0B3C0),
-          ),
-          SizedBox(height: 16), // azaltıldı
-          Text(
-            'Henüz servis kaydı yok',
-            style: TextStyle(
-              fontSize: 16, // küçültüldü
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF6F7489),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ModernServiceCard extends StatelessWidget {
-  final ServiceHistory item;
-  const _ModernServiceCard({required this.item});
-
-  Map<String, dynamic> getStatusData(String status) {
-    switch (status) {
-      case 'Başarılı':
-        return {
-          'label': 'Başarılı',
-          'color': Colors.blue.shade800,
-          'bgColor': Colors.blue.shade100,
-          'icon': Icons.check_circle_rounded,
-        };
-      case 'Beklemede':
-        return {
-          'label': 'Beklemede',
-          'color': Colors.amber.shade800,
-          'bgColor': Colors.amber.shade200,
-          'icon': Icons.hourglass_bottom_rounded,
-        };
-      case 'Arızalı':
-        return {
-          'label': 'Arızalı',
-          'color': Colors.red.shade800,
-          'bgColor': Colors.red.shade100,
-          'icon': Icons.error_rounded,
-        };
-      default:
-        return {
-          'label': item.status,
-          'color': Colors.grey.shade800,
-          'bgColor': Colors.grey.shade200,
-          'icon': Icons.info_outline_rounded,
-        };
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final statusData = getStatusData(item.status);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16.0),
-      onTap: () {
-        Navigator.of(context).push(
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) =>
-                ServiceHistoryDetailScreen(serviceHistory: item),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-          ),
-        );
-      },
-      child: Card(
-        elevation: 0,
-        margin: const EdgeInsets.symmetric(vertical: 6.0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.0),
-          side: BorderSide(color: Colors.grey.shade100, width: 1.2),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 10,
-              horizontal: 16,
-            ),
-            leading: Icon(
-              statusData['icon'],
-              color: statusData['color'],
-              size: 32,
-            ),
-            title: Text(
-              '${item.deviceId} - ${item.description}',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Color(0xFF1C1C1C),
-              ),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Text(
-                'Teknisyen: ${item.technician}',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-              ),
-            ),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: statusData['bgColor'],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                statusData['label'],
-                style: TextStyle(
-                  color: statusData['color'],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );

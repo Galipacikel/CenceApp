@@ -15,6 +15,8 @@ import '../providers/stock_provider.dart';
 import '../providers/service_history_provider.dart';
 import '../providers/device_provider.dart';
 import '../providers/app_state_provider.dart';
+import '../widgets/service/form_sections/device_selection_section.dart';
+import '../widgets/service/form_widgets/form_type_chip.dart';
 
 class NewServiceFormScreen extends StatefulWidget {
   final StockPartRepository? stockRepository;
@@ -574,21 +576,21 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
             const SizedBox(height: 10),
             Row(
               children: [
-                _FormTypeChip(
+                FormTypeChip(
                   label: 'Kurulum',
                   selected: _formTipi == 0,
                   color: const Color(0xFF23408E),
                   onTap: () => setState(() => _formTipi = 0),
                 ),
                 const SizedBox(width: 8),
-                _FormTypeChip(
+                FormTypeChip(
                   label: 'Bakım',
                   selected: _formTipi == 1,
                   color: const Color(0xFFFFC107),
                   onTap: () => setState(() => _formTipi = 1),
                 ),
                 const SizedBox(width: 8),
-                _FormTypeChip(
+                FormTypeChip(
                   label: 'Arıza',
                   selected: _formTipi == 2,
                   color: const Color(0xFFE53935),
@@ -597,92 +599,24 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
               ],
             ),
             const SizedBox(height: 22),
-            // Device Information
-            const Text(
-              'Cihaz Bilgileri',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Cihaz',
-              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-            ),
-            const SizedBox(height: 4),
-            // Responsive device selection
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: _deviceSearchController,
-                      readOnly: false,
-                      decoration: InputDecoration(
-                        hintText: 'Model, seri numarası veya müşteri...',
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        suffixIcon: _selectedDevice != null
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  setState(() {
-                                    _selectedDevice = null;
-                                    _deviceSearchController.clear();
-                                    _showDeviceSuggestions = false;
-                                  });
-                                },
-                              )
-                            : null,
-                      ),
-                      onChanged: _filterDevices,
-                      onTap: () {
-                        setState(() {
-                          _showDeviceSuggestions = true;
-                        });
-                      },
-                    ),
-                    if (_showDeviceSuggestions && _filteredDevices.isNotEmpty)
-                      Container(
-                        constraints: BoxConstraints(
-                          maxHeight: constraints.maxHeight > 300
-                              ? 300
-                              : constraints.maxHeight * 0.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _filteredDevices.length,
-                          itemBuilder: (context, index) {
-                            final device = _filteredDevices[index];
-                            return ListTile(
-                              title: Text(
-                                '${device.modelName} (${device.serialNumber})',
-                              ),
-                              onTap: () => _selectDevice(device),
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                );
+            DeviceSelectionSection(
+              deviceSearchController: _deviceSearchController,
+              selectedDevice: _selectedDevice,
+              filteredDevices: _filteredDevices,
+              showDeviceSuggestions: _showDeviceSuggestions,
+              onFilterDevices: _filterDevices,
+              onSelectDevice: _selectDevice,
+              onClearDevice: () {
+                setState(() {
+                  _selectedDevice = null;
+                  _deviceSearchController.clear();
+                  _showDeviceSuggestions = false;
+                });
+              },
+              onShowSuggestions: () {
+                setState(() {
+                  _showDeviceSuggestions = true;
+                });
               },
             ),
             const SizedBox(height: 22),
@@ -1463,42 +1397,6 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FormTypeChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final Color color;
-  const _FormTypeChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? color : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: selected ? color : Colors.grey.shade300),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
         ),
       ),
     );
