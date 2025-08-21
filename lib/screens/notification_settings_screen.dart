@@ -17,18 +17,18 @@ class NotificationSettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
-        backgroundColor: cardColor,
+        backgroundColor: primaryBlue,
         elevation: 0,
         centerTitle: true,
         title: Text(
           'Bildirim Ayarları',
           style: GoogleFonts.montserrat(
-            color: textColor,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
         ),
-        iconTheme: IconThemeData(color: primaryBlue),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),

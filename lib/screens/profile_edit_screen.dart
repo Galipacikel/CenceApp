@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -19,9 +21,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   late TextEditingController _nameController;
   late TextEditingController _surnameController;
   late TextEditingController _titleController;
-  late TextEditingController _emailController;
-  late TextEditingController _phoneController;
-  late TextEditingController _departmentController;
 
   @override
   void initState() {
@@ -39,9 +38,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _titleController = TextEditingController(
       text: capitalizeEachWord(user?.title ?? ''),
     );
-    _emailController = TextEditingController(text: user?.email ?? '');
-    _phoneController = TextEditingController(text: user?.phone ?? '');
-    _departmentController = TextEditingController(text: user?.department ?? '');
   }
 
   @override
@@ -49,9 +45,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _nameController.dispose();
     _surnameController.dispose();
     _titleController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _departmentController.dispose();
     super.dispose();
   }
 
@@ -111,28 +104,27 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   Widget build(BuildContext context) {
     final Color primaryBlue = const Color(0xFF23408E);
-    // final Color lightBlue = const Color(0xFF64B5F6);
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
     final Color textColor = const Color(0xFF232946);
-    // final Color subtitleColor = const Color(0xFF4A4A4A);
+    final Color subtitleColor = const Color(0xFF4A4A4A);
     final double cardRadius = 18;
-    // final appState = Provider.of<AppStateProvider>(context);
+    final user = Provider.of<AppStateProvider>(context, listen: false).userProfile;
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
-        backgroundColor: cardColor,
+        backgroundColor: primaryBlue,
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Profil Düzenle',
+          'Profil Bilgileri',
           style: GoogleFonts.montserrat(
-            color: textColor,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
         ),
-        iconTheme: IconThemeData(color: primaryBlue),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
@@ -163,6 +155,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         CircleAvatar(
                           radius: 38,
                           backgroundColor: primaryBlue,
+                          backgroundImage: _profileImageBytes != null 
+                              ? null 
+                              : (user?.profileImagePath != null 
+                                  ? FileImage(File(user!.profileImagePath!))
+                                  : null),
                           child: ClipOval(
                             child: (_profileImageBytes != null)
                                 ? Image.memory(
@@ -171,11 +168,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                     height: 76,
                                     fit: BoxFit.cover,
                                   )
-                                : Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 38,
-                                  ),
+                                : (user?.profileImagePath == null
+                                    ? Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 38,
+                                      )
+                                    : null),
                           ),
                         ),
                         Container(
@@ -196,95 +195,35 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  _ProfileEditField(
+                  _ProfileInfoField(
                     label: 'Ad',
-                    hint: 'Adınızı girin',
-                    controller: _nameController,
-                    onChanged: (val) {
-                      final fixed = capitalizeEachWord(val);
-                      if (fixed != val) {
-                        final pos = _nameController.selection;
-                        _nameController.value = TextEditingValue(
-                          text: fixed,
-                          selection: pos.copyWith(
-                            baseOffset: fixed.length,
-                            extentOffset: fixed.length,
-                          ),
-                        );
-                      }
-                    },
+                    value: _nameController.text,
                   ),
                   const SizedBox(height: 16),
-                  _ProfileEditField(
+                  _ProfileInfoField(
                     label: 'Soyad',
-                    hint: 'Soyadınızı girin',
-                    controller: _surnameController,
-                    onChanged: (val) {
-                      final fixed = capitalizeEachWord(val);
-                      if (fixed != val) {
-                        final pos = _surnameController.selection;
-                        _surnameController.value = TextEditingValue(
-                          text: fixed,
-                          selection: pos.copyWith(
-                            baseOffset: fixed.length,
-                            extentOffset: fixed.length,
-                          ),
-                        );
-                      }
-                    },
+                    value: _surnameController.text,
                   ),
                   const SizedBox(height: 16),
-                  _ProfileEditField(
+                  _ProfileInfoField(
                     label: 'Unvan',
-                    hint: 'Unvanınızı girin',
-                    controller: _titleController,
-                    onChanged: (val) {
-                      final fixed = capitalizeEachWord(val);
-                      if (fixed != val) {
-                        final pos = _titleController.selection;
-                        _titleController.value = TextEditingValue(
-                          text: fixed,
-                          selection: pos.copyWith(
-                            baseOffset: fixed.length,
-                            extentOffset: fixed.length,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _ProfileEditField(
-                    label: 'E-posta',
-                    hint: 'E-posta adresinizi girin',
-                    controller: _emailController,
-                  ),
-                  const SizedBox(height: 16),
-                  _ProfileEditField(
-                    label: 'Telefon',
-                    hint: 'Telefon numaranızı girin',
-                    controller: _phoneController,
-                  ),
-                  const SizedBox(height: 16),
-                  _ProfileEditField(
-                    label: 'Departman',
-                    hint: 'Departmanınızı girin',
-                    controller: _departmentController,
+                    value: _titleController.text,
                   ),
                   const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryBlue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  if (_profileImage != null) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryBlue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
+                        onPressed: () async {
                           final appState = Provider.of<AppStateProvider>(
                             context,
                             listen: false,
@@ -298,44 +237,36 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             );
                             return;
                           }
-                          final fixedName = capitalizeEachWord(
-                            _nameController.text.trim(),
-                          );
-                          final fixedSurname = capitalizeEachWord(
-                            _surnameController.text.trim(),
-                          );
-                          final fixedTitle = capitalizeEachWord(
-                            _titleController.text.trim(),
-                          );
-                          appState.updateUserProfile(
-                            user.copyWith(
-                              name: fixedName,
-                              surname: fixedSurname,
-                              title: fixedTitle,
-                              email: _emailController.text.trim(),
-                              phone: _phoneController.text.trim(),
-                              department: _departmentController.text.trim(),
-                              profileImagePath:
-                                  _profileImage?.path ?? user.profileImagePath,
-                            ),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Profil başarıyla güncellendi!'),
-                            ),
-                          );
-                          Navigator.pop(context);
-                        }
-                      },
-                      child: Text(
-                        'Kaydet',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          
+                          // Profil fotoğrafını kalıcı olarak kaydet
+                          if (_profileImage != null) {
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setString('profile_image_path', _profileImage!.path);
+                            
+                            appState.updateUserProfile(
+                              user.copyWith(
+                                profileImagePath: _profileImage!.path,
+                              ),
+                            );
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Profil fotoğrafı başarıyla güncellendi!'),
+                              ),
+                            );
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: Text(
+                          'Fotoğrafı Kaydet',
+                          style: GoogleFonts.montserrat(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -346,16 +277,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 }
 
-class _ProfileEditField extends StatelessWidget {
+class _ProfileInfoField extends StatelessWidget {
   final String label;
-  final String hint;
-  final TextEditingController controller;
-  final ValueChanged<String>? onChanged;
-  const _ProfileEditField({
+  final String value;
+  
+  const _ProfileInfoField({
     required this.label,
-    required this.hint,
-    required this.controller,
-    this.onChanged,
+    required this.value,
   });
 
   @override
@@ -374,57 +302,18 @@ class _ProfileEditField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          onChanged: onChanged,
-          validator: (val) {
-            if (val == null || val.trim().isEmpty) return '$label boş olamaz';
-
-            // E-posta validasyonu
-            if (label == 'E-posta') {
-              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-              if (!emailRegex.hasMatch(val.trim())) {
-                return 'Geçerli bir e-posta adresi girin';
-              }
-            }
-
-            // Telefon validasyonu
-            if (label == 'Telefon') {
-              final phoneRegex = RegExp(r'^[\+]?[0-9\s\-\(\)]{10,}$');
-              if (!phoneRegex.hasMatch(val.trim())) {
-                return 'Geçerli bir telefon numarası girin';
-              }
-            }
-
-            // Ad, Soyad, Unvan, Departman için büyük harf kontrolü
-            if (['Ad', 'Soyad', 'Unvan', 'Departman'].contains(label)) {
-              final fixed = val
-                  .split(' ')
-                  .map((word) {
-                    if (word.isEmpty) return word;
-                    return word[0].toUpperCase() +
-                        word.substring(1).toLowerCase();
-                  })
-                  .join(' ');
-              if (val != fixed) return 'Her kelimenin ilk harfi büyük olmalı';
-            }
-
-            return null;
-          },
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.montserrat(
-              color: subtitleColor.withOpacity(0.7),
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            contentPadding: const EdgeInsets.symmetric(
-              vertical: 14,
-              horizontal: 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            value.isEmpty ? 'Belirtilmemiş' : value,
+            style: GoogleFonts.montserrat(
+              fontSize: 15,
+              color: value.isEmpty ? subtitleColor.withOpacity(0.7) : textColor,
             ),
           ),
         ),

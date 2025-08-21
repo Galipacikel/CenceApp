@@ -3,6 +3,7 @@ import '../models/user_profile.dart';
 import '../models/app_settings.dart';
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AppStateProvider extends ChangeNotifier {
   UserProfile? _userProfile; // null olabilir şimdi
@@ -18,6 +19,10 @@ class AppStateProvider extends ChangeNotifier {
   Future<void> initAuth() async {
     _currentUser = await _authService.getCurrentUserProfile();
     
+    // Profil fotoğrafını SharedPreferences'dan yükle
+    final prefs = await SharedPreferences.getInstance();
+    final savedProfileImagePath = prefs.getString('profile_image_path');
+    
     // AppUser varsa UserProfile'a dönüştür
     if (_currentUser != null) {
       _userProfile = UserProfile(
@@ -28,16 +33,20 @@ class AppStateProvider extends ChangeNotifier {
         email: _currentUser!.email,
         phone: null,
         department: 'Teknik Servis',
-        profileImagePath: null,
+        profileImagePath: savedProfileImagePath,
       );
     }
     notifyListeners();
   }
 
-  void updateCurrentUser(AppUser? user) {
+  void updateCurrentUser(AppUser? user) async {
     _currentUser = user;
     
     if (user != null) {
+      // Profil fotoğrafını SharedPreferences'dan yükle
+      final prefs = await SharedPreferences.getInstance();
+      final savedProfileImagePath = prefs.getString('profile_image_path');
+      
       _userProfile = UserProfile(
         id: user.uid,
         name: user.fullName?.split(' ').first ?? '',
@@ -46,7 +55,7 @@ class AppStateProvider extends ChangeNotifier {
         email: user.email,
         phone: null,
         department: 'Teknik Servis',
-        profileImagePath: null,
+        profileImagePath: savedProfileImagePath,
       );
     } else {
       _userProfile = null;

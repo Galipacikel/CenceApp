@@ -16,18 +16,18 @@ class PrivacyPolicyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
-        backgroundColor: cardColor,
+        backgroundColor: primaryBlue,
         elevation: 0,
         centerTitle: true,
         title: Text(
           'Gizlilik ve Koşullar',
           style: GoogleFonts.montserrat(
-            color: textColor,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 22,
           ),
         ),
-        iconTheme: IconThemeData(color: primaryBlue),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Center(
         child: Container(
