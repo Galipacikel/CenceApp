@@ -7,7 +7,7 @@ import '../services/username_auth_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state_provider.dart';
 import '../services/auth_service.dart';
-import '../models/app_user.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -54,72 +54,6 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  // Mock giriş metodu - Firebase Authentication'ı bypass eder
-  Future<void> _mockLogin() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Mock kullanıcı bilgileri
-      final mockUser = AppUser(
-        uid: 'mock-user-123',
-        email: 'demo@cence.com',
-        username: 'demo_user',
-        fullName: 'Demo Kullanıcı',
-        role: 'technician',
-        isAdminFlag: false,
-        createdAt: DateTime.now(),
-      );
-
-      // Provider'ı güncelle
-      if (mounted) {
-        final appState = Provider.of<AppStateProvider>(context, listen: false);
-        appState.updateCurrentUser(mockUser);
-      }
-
-      // Ana sayfaya yönlendir
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const HomePage(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
-        );
-      }
-
-      // Başarı mesajı göster
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🔑 Mock giriş başarılı! Demo modunda çalışıyorsunuz.'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Mock giriş hatası: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
 
   Future<void> _login() async {
     final username = _usernameController.text.trim();
@@ -136,6 +70,12 @@ class _LoginScreenState extends State<LoginScreen>
       _isLoading = true;
     });
     try {
+      // Eğer anonim oturum açıldıysa (kullanıcı-adı eşlemesi için), gerçek girişten önce kapat
+      final auth = FirebaseAuth.instance;
+      if (auth.currentUser != null && auth.currentUser!.isAnonymous) {
+        await auth.signOut();
+      }
+
       final credential = await _usernameAuth.signInWithUsername(
         username: username,
         password: password,
@@ -149,40 +89,32 @@ class _LoginScreenState extends State<LoginScreen>
           final userRef = usersRef.doc(uid);
           final userDoc = await userRef.get();
 
+          if (!userDoc.exists) {
+            // Yetkili kullanıcılar sadece önceden tanımlanır
+            await FirebaseAuth.instance.signOut();
+            throw FirebaseAuthException(
+              code: 'user-not-found',
+              message: 'Yetkisiz kullanıcı veya kullanıcı bulunamadı.',
+            );
+          } else {
+            final data = userDoc.data() as Map<String, dynamic>;
+            final bool isActive = (data['is_active'] as bool?) ?? false;
+            if (!isActive) {
+              await FirebaseAuth.instance.signOut();
+              throw FirebaseAuthException(
+                code: 'user-disabled',
+                message:
+                    'Hesabınız aktif değil. Lütfen yöneticinizle iletişime geçin.',
+              );
+            }
+          }
           // Kullanıcının girdiği değer email gibi mi?
           final bool inputLooksLikeEmail =
               RegExp(r'^[\w\.-]+@([\w\-]+\.)+[A-Za-z]{2,}$')
                   .hasMatch(username);
 
-          if (!userDoc.exists) {
-            final dataToSet = <String, dynamic>{
-              'email': credential?.user?.email,
-              'full_name': credential?.user?.displayName ?? '',
-              'role': 'technician',
-              'is_admin': false,
-              'created_at': FieldValue.serverTimestamp(),
-            };
-            if (!inputLooksLikeEmail) {
-              dataToSet['username'] = username;
-              dataToSet['username_lowercase'] = username.toLowerCase();
-            }
-            await userRef.set(dataToSet, SetOptions(merge: true));
-          } else {
-            // Eksikse kullanıcı adını ekle (migrasyon için)
-            final data = userDoc.data() as Map<String, dynamic>;
-            if (!(data.containsKey('username') && data['username'] != null) &&
-                !inputLooksLikeEmail) {
-              await userRef.set({
-                'username': username,
-                'username_lowercase': username.toLowerCase(),
-              }, SetOptions(merge: true));
-            }
-            // is_admin alanı yoksa rol'e göre varsayılan ata
-            if (!data.containsKey('is_admin')) {
-              final bool isAdmin = (data['role'] == 'admin');
-              await userRef.set({'is_admin': isAdmin}, SetOptions(merge: true));
-            }
-          }
+          // Otomatik kullanıcı oluşturmayı kaldırdık; sadece önceden tanımlı ve aktif kullanıcılar giriş yapabilir.
+          // Gerekli kontroller yukarıda yapılıyor.
         } on FirebaseException catch (e) {
           debugPrint('User doc read/create error: ${e.code} - ${e.message}');
         }
@@ -214,10 +146,25 @@ class _LoginScreenState extends State<LoginScreen>
       String message = 'Giriş yapılamadı';
       switch (e.code) {
         case 'user-not-found':
-          message = 'Kullanıcı adı bulunamadı';
+          message = 'Kullanıcı adı veya e-posta bulunamadı';
           break;
         case 'wrong-password':
           message = 'Şifre hatalı';
+          break;
+        case 'user-disabled':
+          message = 'Hesabınız devre dışı. Lütfen yöneticinizle iletişime geçin.';
+          break;
+        case 'too-many-requests':
+          message = 'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
+          break;
+        case 'network-request-failed':
+          message = 'Ağ hatası. İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
+          break;
+        case 'invalid-credential':
+          message = 'Geçersiz kimlik bilgileri. Bilgilerinizi kontrol edin.';
+          break;
+        case 'invalid-email':
+          message = 'Geçersiz e-posta formatı.';
           break;
         default:
           message = e.message ?? message;
@@ -469,27 +416,8 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         const SizedBox(height: 16),
 
-        // Mock Giriş Butonu (Geliştirme için)
-        SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: _mockLogin,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              '🔑 Mock Giriş (Demo)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-      ],
+        // Mock giriş kaldırıldı
+        ],
     );
   }
 

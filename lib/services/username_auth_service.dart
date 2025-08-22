@@ -2,6 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore_paths.dart';
 
+// Pre-login username->email eşleşmesi için anonim sorgu fallback'i.
+// Varsayılan: kapalı. İsterseniz true yaparak etkinleştirebilirsiniz.
+const bool kEnableAnonymousLookup = false;
+
 class UsernameAuthService {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
@@ -24,6 +28,31 @@ class UsernameAuthService {
         return userData['email'] as String?;
       }
       return null;
+    } on FirebaseException catch (e) {
+      // Kurallar "request.auth != null" gerektiriyorsa ve kullanıcı henüz giriş yapmadıysa
+      // permission-denied hatası gelir. İsteğe bağlı olarak anonim oturum açıp tekrar dene.
+      if (kEnableAnonymousLookup && e.code == 'permission-denied' && _auth.currentUser == null) {
+        try {
+          await _auth.signInAnonymously();
+          final retry = await _firestore
+              .collection(FirestorePaths.users)
+              .where('username_lowercase', isEqualTo: username.toLowerCase())
+              .limit(1)
+              .get();
+          if (retry.docs.isNotEmpty) {
+            final userData = retry.docs.first.data();
+            return userData['email'] as String?;
+          }
+          return null;
+        } on FirebaseAuthException catch (ae) {
+          // Anonymous sign-in kapalıysa kullanıcıya bilgilendirici hata dön
+          if (ae.code == 'operation-not-allowed') {
+            return null;
+          }
+          rethrow;
+        }
+      }
+      return null;
     } catch (e) {
       return null;
     }
@@ -35,28 +64,37 @@ class UsernameAuthService {
     required String password,
   }) async {
     try {
-      // Önce kullanıcı adına göre email'i bul
-      final email = await findEmailByUsername(username);
-
-      if (email != null) {
-        return await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-      }
-
-      // Kullanıcı adı bulunamazsa ve giriş değeri e-posta formatındaysa e-posta ile dene
-      final emailRegex = RegExp(r'^[\w\.-]+@([\w\-]+\.)+[A-Za-z]{2,}$');
-      if (emailRegex.hasMatch(username)) {
+      // Eğer giriş alanına email yazıldıysa direkt e-posta ile giriş dene
+      final bool inputLooksLikeEmail =
+          RegExp(r'^[\w\.-]+@([\w\-]+\.)+[A-Za-z]{2,}$').hasMatch(username);
+      if (inputLooksLikeEmail) {
+        if (_auth.currentUser != null && _auth.currentUser!.isAnonymous) {
+          await _auth.signOut();
+        }
         return await _auth.signInWithEmailAndPassword(
           email: username,
           password: password,
         );
       }
 
-      throw FirebaseAuthException(
-        code: 'user-not-found',
-        message: 'Bu kullanıcı adı ile kayıtlı bir hesap bulunamadı.',
+      // Önce kullanıcı adına göre email'i bul
+      final email = await findEmailByUsername(username);
+
+      if (email == null) {
+        throw FirebaseAuthException(
+          code: 'user-not-found',
+          message: 'Bu kullanıcı adı ile kayıtlı bir hesap bulunamadı.',
+        );
+      }
+
+      // Eğer anonim modda kaldıysak, gerçek girişten önce kapat
+      if (_auth.currentUser != null && _auth.currentUser!.isAnonymous) {
+        await _auth.signOut();
+      }
+
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
     } on FirebaseAuthException {
       rethrow;

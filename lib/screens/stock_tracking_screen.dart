@@ -449,6 +449,18 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
                     ? 'Yeni Cihaz Ekle'
                     : 'Yeni Parça Ekle',
                 onPressed: () {
+                  final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
+                          .currentUser
+                          ?.isAdmin ??
+                      false;
+                  if (!isAdmin) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Ekleme yetkisi sadece admin kullanıcılar içindir.'),
+                      ),
+                    );
+                    return;
+                  }
                   if (_tabController.index == 0) {
                     _showAddDeviceSheet();
                   } else {
@@ -574,8 +586,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
                                       return DeviceTile(
                                         device: device,
                                         onTap: () {},
-                                        onEdit: () => _showEditDeviceSheet(device),
-                                        onDeleteConfirm: () async {
+                                        onEdit: () {
                                           final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
                                                   .currentUser
                                                   ?.isAdmin ??
@@ -583,24 +594,39 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
                                           if (!isAdmin) {
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               const SnackBar(
-                                                content: Text('Silme yetkisi sadece admin kullanıcılar içindir.'),
+                                                content: Text('Düzenleme yetkisi sadece admin kullanıcılar içindir.'),
                                               ),
                                             );
-                                            return false;
+                                            return;
                                           }
-                                          final confirmed = await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => ConfirmationDialog(
-                                              title: 'Cihazı Sil',
-                                              message: '"${device.modelName}" cihazını silmek istediğinize emin misiniz?',
-                                            ),
-                                          );
-                                          if (confirmed == true) {
-                                            Provider.of<DeviceProvider>(context, listen: false).removeDevice(device.id);
-                                            return true;
-                                          }
-                                          return false;
+                                          _showEditDeviceSheet(device);
                                         },
+                                        onDeleteConfirm: () async {
+                                           final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
+                                                   .currentUser
+                                                   ?.isAdmin ??
+                                               false;
+                                           if (!isAdmin) {
+                                             ScaffoldMessenger.of(context).showSnackBar(
+                                               const SnackBar(
+                                                 content: Text('Silme yetkisi sadece admin kullanıcılar içindir.'),
+                                               ),
+                                             );
+                                             return false;
+                                           }
+                                           final confirmed = await showDialog<bool>(
+                                             context: context,
+                                             builder: (ctx) => ConfirmationDialog(
+                                               title: 'Cihazı Sil',
+                                               message: '"${device.modelName}" cihazını silmek istediğinize emin misiniz?',
+                                             ),
+                                           );
+                                           if (confirmed == true) {
+                                             Provider.of<DeviceProvider>(context, listen: false).removeDevice(device.id);
+                                             return true;
+                                           }
+                                           return false;
+                                         },
                                       );
                                     },
                                   ),
@@ -839,7 +865,21 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
                                     (p) => StockPartTile(
                                       part: p,
                                       onTap: () {},
-                                      onEdit: () => _showEditPartSheet(p),
+                                      onEdit: () {
+                                        final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
+                                                .currentUser
+                                                ?.isAdmin ??
+                                            false;
+                                        if (!isAdmin) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Düzenleme yetkisi sadece admin kullanıcılar içindir.'),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        _showEditPartSheet(p);
+                                      },
                                       onDeleteConfirm: () async {
                                         final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
                                                 .currentUser
