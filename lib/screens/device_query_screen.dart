@@ -717,7 +717,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
     );
   }
 
-// Moved to widgets/common/cards/model_details_card.dart
+// Removed unused buildWarrantyChip (moved into ModelDetailsCard as _buildWarrantyChip)
   Widget _buildDeviceCard(Device device) {
     return Container(
       decoration: BoxDecoration(
