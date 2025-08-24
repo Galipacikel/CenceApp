@@ -12,19 +12,25 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  # Upgrade FlutterFire packages to latest major versions (aligned)
+  # FlutterFire (aligned latest majors)
   firebase_core: ^4.0.0
   firebase_auth: ^6.0.1
   cloud_firestore: ^6.0.0
   firebase_storage: ^13.0.0
   firebase_messaging: ^16.0.0
-  provider: ^6.1.1
+
+  # State management (Riverpod)
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Local storage & utils
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   path_provider: ^2.1.2
+  shared_preferences: ^2.3.2
   url_launcher: ^6.3.0
-  shared_preferences: ^2.2.2
 
+  # UI & tools
   cupertino_icons: ^1.0.8
   camera: ^0.10.5+9
   permission_handler: ^11.3.1
@@ -33,11 +39,7 @@ dependencies:
   intl: ^0.20.2
   google_fonts: ^6.2.1
   flutter_slidable: ^4.0.0
-  
-  # State management (Riverpod)
-  flutter_riverpod: ^2.5.1
-  riverpod_annotation: ^2.3.5
-  
+
   # Data classes & JSON
   freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0

@@ -1,1368 +1,173 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../models/stock_part.dart';
-import '../models/device.dart';
-// Removed unused import: service_history model is not used directly in this screen
-// import '../models/service_history.dart';
-import 'package:google_fonts/google_fonts.dart';
-// import 'package:provider/provider.dart';
-// import '../providers/stock_provider.dart';
-// import '../providers/device_provider.dart';
-// import '../repositories/firestore_service_history_repository.dart';
-// import '../repositories/firestore_stock_repository.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as r;
-import 'package:cence_app/core/providers/firebase_providers.dart';
-import 'package:cence_app/features/service_history/providers.dart';
-import 'package:cence_app/features/devices/providers.dart';
-import 'package:cence_app/features/devices/use_cases.dart';
-import 'package:cence_app/features/stock/providers.dart';
-import '../widgets/common/device_tile.dart';
-import '../widgets/common/stock_part_tile.dart';
-import '../widgets/common/confirmation_dialog.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class StokTakibiScreen extends r.ConsumerStatefulWidget {
-  const StokTakibiScreen({super.key});
+import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
+import 'package:cence_app/features/stock_tracking/presentation/providers/filtered_devices_provider.dart';
+import 'package:cence_app/features/stock_tracking/presentation/providers/filtered_parts_provider.dart';
+
+class StokTakibiScreen extends ConsumerWidget {
+  const StokTakibiScreen({Key? key}) : super(key: key);
 
   @override
-  r.ConsumerState<StokTakibiScreen> createState() => _StokTakibiScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inventoryAsync = ref.watch(inventoryProvider);
+    final state = inventoryAsync.valueOrNull;
+    final selectedIndex = state?.selectedTabIndex ?? 0;
+    final showOnlyCritical = state?.showOnlyCritical ?? false;
 
-class _StokTakibiScreenState extends r.ConsumerState<StokTakibiScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  bool showOnlyCritical = false;
-  bool showBanner = true;
-  // Firestore'dan doldurulmuş parça listesi (kullanılmıyor)
-  // List<StockPart> _parcaListesi = [];
-  String deviceSearch = '';
-  String partSearch = '';
-
-  // Servis geçmişi modalinde kullanım için Firestore repo
-  // final ServiceHistoryRepository _serviceHistoryRepository = FirestoreServiceHistoryRepository();
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      setState(() {});
-    });
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    await Future.wait([
-      ref.read(devicesListProvider.future),
-      ref.read(stockPartsProvider.future),
-    ]);
-    if (mounted) {
-      setState(() {
-        showBanner = true;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _showAddPartSheet() {
-    final formKey = GlobalKey<FormState>();
-    final parcaAdiCtrl = TextEditingController();
-    final parcaKoduCtrl = TextEditingController();
-    final stokAdediCtrl = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 20,
+    return DefaultTabController(
+      length: 2,
+      initialIndex: selectedIndex,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Stok Takibi'),
+          bottom: TabBar(
+            onTap: (i) => ref.read(inventoryProvider.notifier).setTab(i),
+            tabs: const [
+              Tab(text: 'Cihazlar'),
+              Tab(text: 'Parçalar'),
+            ],
           ),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Yeni Yedek Parça Ekle',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: parcaAdiCtrl,
-                    decoration: const InputDecoration(labelText: 'Parça Adı'),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                  ),
-                  TextFormField(
-                    controller: parcaKoduCtrl,
-                    decoration: const InputDecoration(labelText: 'Parça Kodu'),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                  ),
-                  TextFormField(
-                    controller: stokAdediCtrl,
-                    decoration: const InputDecoration(labelText: 'Stok Adedi'),
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (v!.isEmpty) return 'Bu alan boş bırakılamaz';
-                      if (int.tryParse(v) == null) {
-                        return 'Lütfen geçerli bir sayı girin';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (formKey.currentState!.validate()) {
-                        // Parça ekleme henüz desteklenmiyor, bu nedenle sadece uyarı gösteriyoruz
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Parça ekleme henüz desteklenmiyor.')),
-                        );
-                        Navigator.pop(context);
-                      }
-                    },
-                    child: const Text('Ekle'),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showAddDeviceSheet() {
-    final formKey = GlobalKey<FormState>();
-    final modelNameCtrl = TextEditingController();
-    final serialNumberCtrl = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Yeni Cihaz Ekle',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: modelNameCtrl,
-                    decoration: const InputDecoration(labelText: 'Model Adı'),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                  ),
-                  TextFormField(
-                    controller: serialNumberCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Seri Numarası',
-                    ),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (formKey.currentState!.validate()) {
-                        final newDevice = Device(
-                          id: 'CİHAZ-${DateTime.now().millisecondsSinceEpoch}',
-                          modelName: modelNameCtrl.text,
-                          serialNumber: serialNumberCtrl.text,
-                          customer: 'Demo Müşteri',
-                          installDate: DateFormat(
-                            'dd.MM.yyyy',
-                          ).format(DateTime.now()),
-                          warrantyStatus: 'Devam Ediyor',
-                          lastMaintenance: DateFormat(
-                            'dd.MM.yyyy',
-                          ).format(DateTime.now()),
-                        );
-                        try {
-                          await ref.read(addDeviceUseCaseProvider)(newDevice);
-                          ref.invalidate(devicesListProvider);
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                        } catch (_) {
-                          if (!ctx.mounted) return;
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(content: Text('Cihaz eklenemedi')),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Ekle'),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showEditDeviceSheet(Device device) {
-    final formKey = GlobalKey<FormState>();
-    final modelNameCtrl = TextEditingController(text: device.modelName);
-    final serialNumberCtrl = TextEditingController(text: device.serialNumber);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Cihazı Düzenle',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: modelNameCtrl,
-                    decoration: const InputDecoration(labelText: 'Model Adı'),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                  ),
-                  TextFormField(
-                    controller: serialNumberCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Seri Numarası',
-                    ),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (formKey.currentState!.validate()) {
-                        final updatedDevice = device.copyWith(
-                          modelName: modelNameCtrl.text,
-                          serialNumber: serialNumberCtrl.text,
-                        );
-                        try {
-                          await ref.read(updateDeviceUseCaseProvider)(updatedDevice);
-                          ref.invalidate(devicesListProvider);
-                          if (!ctx.mounted) return;
-                          Navigator.pop(ctx);
-                        } catch (_) {
-                          if (!ctx.mounted) return;
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            const SnackBar(content: Text('Cihaz güncellenemedi')),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Kaydet'),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showEditPartSheet(StockPart part) {
-    final formKey = GlobalKey<FormState>();
-    final parcaAdiCtrl = TextEditingController(text: part.parcaAdi);
-    final parcaKoduCtrl = TextEditingController(text: part.parcaKodu);
-    final stokAdediCtrl = TextEditingController(
-      text: part.stokAdedi.toString(),
-    );
-    final criticalLevelCtrl = TextEditingController(
-      text: part.criticalLevel.toString(),
-    );
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Parçayı Düzenle',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: parcaAdiCtrl,
-                    decoration: const InputDecoration(labelText: 'Parça Adı'),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                  ),
-                  TextFormField(
-                    controller: parcaKoduCtrl,
-                    decoration: const InputDecoration(labelText: 'Parça Kodu'),
-                    validator: (v) =>
-                        v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
-                  ),
-                  TextFormField(
-                    controller: stokAdediCtrl,
-                    decoration: const InputDecoration(labelText: 'Stok Adedi'),
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (v!.isEmpty) return 'Bu alan boş bırakılamaz';
-                      if (int.tryParse(v) == null) {
-                        return 'Lütfen geçerli bir sayı girin';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: criticalLevelCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Kritik Seviye',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (v!.isEmpty) return 'Bu alan boş bırakılamaz';
-                      if (int.tryParse(v) == null) {
-                        return 'Lütfen geçerli bir sayı girin';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (formKey.currentState!.validate()) {
-                        // Parça düzenleme henüz desteklenmiyor, bu nedenle sadece uyarı gösteriyoruz
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Parça düzenleme henüz desteklenmiyor.')),
-                        );
-                        Navigator.pop(context);
-                      }
-                    },
-                    child: const Text('Kaydet'),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final Color primaryBlue = const Color(0xFF23408E);
-    final Color background = const Color(0xFFF7F9FC);
-    final Color cardColor = Colors.white;
-    final Color textColor = const Color(0xFF232946);
-    // final Color subtitleColor = const Color(0xFF4A4A4A);
-    final Color criticalRed = const Color(0xFFE53935);
-    final Color warningAmber = const Color(0xFFFFC107);
-    // final double cardRadius = 18;
-    final isWide = MediaQuery.of(context).size.width > 600;
-    final isAdmin = ref.watch(isAdminProvider);
-
-    return Scaffold(
-      backgroundColor: background,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: AppBar(
-          backgroundColor: primaryBlue,
-          elevation: 0,
-          centerTitle: true,
-          leading: IconButton(
-            icon: Icon(
-              Icons.arrow_back_ios_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: Text(
-            'Stok Takibi',
-            style: GoogleFonts.montserrat(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-            ),
-          ),
-          actions: [
+        ),
+        body: Column(
+          children: [
             Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: IconButton(
-                icon: Icon(
-                  Icons.add_circle_rounded,
-                  color: Colors.white,
-                  size: 32,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              child: TextField(
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: selectedIndex == 0
+                      ? 'Cihaz model / seri no ara'
+                      : 'Parça adı / kodu ara',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                tooltip: _tabController.index == 0
-                    ? 'Yeni Cihaz Ekle'
-                    : 'Yeni Parça Ekle',
-                onPressed: () {
-                  // using isAdmin from ref
-                  if (!isAdmin) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Ekleme yetkisi sadece admin kullanıcılar içindir.'),
-                      ),
-                    );
-                    return;
-                  }
-                  if (_tabController.index == 0) {
-                    _showAddDeviceSheet();
+                onChanged: (val) {
+                  if (selectedIndex == 0) {
+                    ref.read(inventoryProvider.notifier).setDeviceSearch(val);
                   } else {
-                    _showAddPartSheet();
+                    ref.read(inventoryProvider.notifier).setPartSearch(val);
                   }
                 },
               ),
             ),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.grey.withAlpha(20),
-                width: 1,
-              ),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                color: primaryBlue,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryBlue.withAlpha(64),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
-              labelColor: Colors.white,
-              unselectedLabelColor: textColor.withAlpha(179),
-              labelStyle: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
-              ),
-              unselectedLabelStyle: GoogleFonts.montserrat(
-                fontWeight: FontWeight.w500,
-                fontSize: 15,
-              ),
-              tabs: const [
-                Tab(text: 'Cihazlar'),
-                Tab(text: 'Yedek Parça'),
-              ],
-            ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Cihazlar Sekmesi
-                Center(
-                  child: Container(
-                    constraints: BoxConstraints(
-                      maxWidth: isWide ? 600 : double.infinity,
-                    ),
-                    child: Builder(
-                      builder: (context) {
-                        final devicesAsync = ref.watch(devicesListProvider);
-                        return devicesAsync.when(
-                          loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (e, __) => Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text('Cihazlar yüklenemedi: $e'),
-                          ),
-                          data: (allDevices) {
-                            final uniqueKeys = <String>{};
-                            final uniqueDevices = <Device>[];
-                            for (final device in allDevices) {
-                              final key = '${device.modelName}_${device.serialNumber}';
-                              if (!uniqueKeys.contains(key)) {
-                                uniqueKeys.add(key);
-                                uniqueDevices.add(device);
-                              }
-                            }
-                            uniqueDevices.sort((a, b) => a.modelName.compareTo(b.modelName));
-                            final filtered = deviceSearch.isEmpty
-                                ? uniqueDevices
-                                : uniqueDevices
-                                    .where((d) => d.modelName.toLowerCase().contains(deviceSearch.toLowerCase()))
-                                    .toList();
-                            return Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                children: [
-                                  TextField(
-                                    decoration: InputDecoration(
-                                      hintText: 'Model ile ara...',
-                                      prefixIcon: const Icon(Icons.search),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                    ),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        deviceSearch = value;
-                                      });
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  if (filtered.isEmpty)
-                                    const Text(
-                                      'Envanterde cihaz bulunamadı.',
-                                      style: TextStyle(color: Colors.black54),
-                                    )
-                                  else
-                                    Expanded(
-                                      child: ListView.builder(
-                                        itemCount: filtered.length,
-                                        itemBuilder: (context, index) {
-                                          final device = filtered[index];
-                                          return DeviceTile(
-                                            device: device,
-                                            onTap: () {},
-                                            onEdit: () {
-                                              if (!isAdmin) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Düzenleme yetkisi sadece admin kullanıcılar içindir.'),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-                                              _showEditDeviceSheet(device);
-                                            },
-                                            onDeleteConfirm: () async {
-                                              if (!isAdmin) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('Silme yetkisi sadece admin kullanıcılar içindir.'),
-                                                  ),
-                                                );
-                                                return false;
-                                              }
-                                              final confirmed = await showDialog<bool>(
-                                                context: context,
-                                                builder: (ctx) => const ConfirmationDialog(
-                                                  title: 'Cihazı Sil',
-                                                  message: 'Bu cihazı silmek istediğinize emin misiniz?',
-                                                ),
-                                              );
-                                              if (confirmed == true) {
-                                                try {
-                                                  await ref.read(deleteDeviceUseCaseProvider)(device.id);
-                                                  ref.invalidate(devicesListProvider);
-                                                  return true;
-                                                } catch (_) {
-                                                  if (context.mounted) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(content: Text('Cihaz silinemedi')),
-                                                    );
-                                                  }
-                                                  return false;
-                                                }
-                                              }
-                                              return false;
-                                            },
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                // Yedek Parça Sekmesi
-                Center(
-                  child: Container(
-                    constraints: BoxConstraints(
-                      maxWidth: isWide ? 600 : double.infinity,
-                    ),
-                    child: Builder(
-                      builder: (context) {
-                        final asyncParts = ref.watch(stockPartsProvider);
-                        return asyncParts.when(
-                          loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (e, __) => Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text('Parçalar yüklenemedi: $e'),
-                          ),
-                          data: (parts) {
-                            final criticalParts = parts.where((p) => p.stokAdedi <= p.criticalLevel).toList();
-                            final sortedParts = [
-                              ...parts.where((p) => p.stokAdedi == 0),
-                              ...parts.where((p) => p.stokAdedi > 0),
-                            ];
-                            final filteredParts = partSearch.isEmpty
-                                ? sortedParts
-                                : sortedParts
-                                    .where((p) => p.parcaAdi.toLowerCase().contains(partSearch.toLowerCase()) || p.parcaKodu.toLowerCase().contains(partSearch.toLowerCase()))
-                                    .toList();
-                            final partsToShow = showOnlyCritical ? criticalParts : filteredParts;
-
-                            return Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: TextField(
-                                    decoration: InputDecoration(
-                                      hintText: 'Parça adı veya kodu ile ara...',
-                                      prefixIcon: const Icon(Icons.search),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                    ),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        partSearch = value;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                Expanded(
-                                  child: ListView(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 18,
-                                      vertical: 18,
-                                    ),
-                                    children: [
-                                      if (criticalParts.isNotEmpty && showBanner)
-                                        GestureDetector(
-                                          onTap: () {
-                                            setState(() {
-                                              showOnlyCritical = !showOnlyCritical;
-                                            });
-                                          },
-                                          child: AnimatedContainer(
-                                            duration: const Duration(milliseconds: 350),
-                                            curve: Curves.easeInOut,
-                                            margin: const EdgeInsets.only(bottom: 16),
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                            decoration: BoxDecoration(
-                                              color: criticalRed.withAlpha(33),
-                                              borderRadius: BorderRadius.circular(14),
-                                              border: Border.all(color: criticalRed.withAlpha(77), width: 1.2),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: criticalRed.withAlpha(26),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Row(
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              children: [
-                                                Icon(Icons.warning_amber_rounded, color: criticalRed, size: 22),
-                                                const SizedBox(width: 10),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Row(
-                                                        children: [
-                                                          Text('Kritik Seviye Uyarısı', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 15, color: criticalRed)),
-                                                          const SizedBox(width: 8),
-                                                          Container(
-                                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                            decoration: BoxDecoration(
-                                                              color: warningAmber.withAlpha(46),
-                                                              borderRadius: BorderRadius.circular(8),
-                                                            ),
-                                                            child: Text('${criticalParts.length}', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: warningAmber)),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      Text(
-                                                        showOnlyCritical ? 'Kritik seviyedekiler gösteriliyor' : 'Stokta kritik seviyeye düşen parçalarınız var!',
-                                                        style: GoogleFonts.montserrat(fontSize: 13, color: criticalRed),
-                                                      ),
-                                                      Padding(
-                                                        padding: const EdgeInsets.only(top: 6.0),
-                                                        child: Text(
-                                                          showOnlyCritical ? 'Tüm parçaları göster' : 'Kritik seviyeleri gör',
-                                                          style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, color: criticalRed),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      showBanner = false;
-                                                    });
-                                                  },
-                                                  child: const Padding(
-                                                    padding: EdgeInsets.only(left: 8.0),
-                                                    child: Icon(Icons.close, color: Colors.red, size: 20),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        'Tüm Parçalar',
-                                        style: GoogleFonts.montserrat(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: textColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      ...partsToShow.map(
-                                        (p) => StockPartTile(
-                                          part: p,
-                                          onTap: () {},
-                                          onEdit: () {
-                                            if (!isAdmin) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('Düzenleme yetkisi sadece admin kullanıcılar içindir.'),
-                                                ),
-                                              );
-                                              return;
-                                            }
-                                            _showEditPartSheet(p);
-                                          },
-                                          onDeleteConfirm: () async {
-                                            if (!isAdmin) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('Silme yetkisi sadece admin kullanıcılar içindir.'),
-                                                ),
-                                              );
-                                              return false;
-                                            }
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Parça silme henüz desteklenmiyor.')),
-                                            );
-                                            return false;
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-}
-
-// Parça detay modalı (güncellenmiş)
-void showStockPartDetailModal(
-  BuildContext context,
-  StockPart part,
-) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-    ),
-    builder: (ctx) => _StockPartDetailModal(
-      part: part,
-    ),
-  );
-}
-
-class _StockPartDetailModal extends r.ConsumerWidget {
-  final StockPart part;
-  const _StockPartDetailModal({
-    required this.part,
-  });
-
-  @override
-  Widget build(BuildContext context, r.WidgetRef ref) {
-    final asyncList = ref.watch(serviceHistoryListProvider);
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Parça Detayı', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            Text(
-              'Adı: ${part.parcaAdi}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text('Kod: ${part.parcaKodu}'),
-            Text('Stok: ${part.stokAdedi}'),
-            const SizedBox(height: 18),
-            Text(
-              'Kullanıldığı Servisler:',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            asyncList.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const Text('Servis geçmişi yüklenirken bir hata oluştu.'),
-              data: (histories) {
-                if (histories.isEmpty) {
-                  return const Text('Bu parça hiçbir serviste kullanılmamış.');
-                }
-                final relevant = histories
-                    .where(
-                      (h) => h.kullanilanParcalar.any(
-                        (p) => p.parcaKodu == part.parcaKodu,
-                      ),
-                    )
-                    .toList();
-                if (relevant.isEmpty) {
-                  return const Text('Bu parça hiçbir serviste kullanılmamış.');
-                }
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: relevant.length,
-                  itemBuilder: (context, index) {
-                    final h = relevant[index];
-                    return ListTile(
-                      leading: const Icon(Icons.build_circle_outlined),
-                      title: Text(
-                        'Servis: ${h.id}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text('Tarih: ${h.date} | Durum: ${h.status}'),
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class YedekParcaListesi extends StatefulWidget {
-  final List<StockPart> parcaListesi;
-  final Function(StockPart) onTap;
-  const YedekParcaListesi({
-    super.key,
-    required this.parcaListesi,
-    required this.onTap,
-  });
-
-  @override
-  State<YedekParcaListesi> createState() => _YedekParcaListesiState();
-}
-
-class _YedekParcaListesiState extends State<YedekParcaListesi> {
-  final TextEditingController _searchController = TextEditingController();
-  String search = '';
-  late List<StockPart> _allParts;
-
-  @override
-  void initState() {
-    super.initState();
-    _allParts = widget.parcaListesi;
-  }
-
-  List<StockPart> get filteredParts {
-    List<StockPart> parts = List.from(_allParts);
-    if (search.isNotEmpty) {
-      parts = parts
-          .where(
-            (p) =>
-                p.parcaAdi.toLowerCase().contains(search.toLowerCase()) ||
-                p.parcaKodu.toLowerCase().contains(search.toLowerCase()),
-          )
-          .toList();
-    }
-    return parts;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_allParts.isEmpty) {
-      return const Center(child: Text('Stokta parça bulunamadı.'));
-    }
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Parça adı veya kodu ile ara...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-            onChanged: (value) => setState(() => search = value),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredParts.length,
-              itemBuilder: (context, index) {
-                final part = filteredParts[index];
-                return _PartCard(
-                  part: part,
-                  primaryBlue: const Color(0xFF23408E),
-                  textColor: const Color(0xFF232946),
-                  subtitleColor: const Color(0xFF4A4A4A),
-                  cardRadius: 12,
-                  onCriticalLevelEdit: () {},
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class DeviceList extends StatefulWidget {
-  final List<Device> deviceList;
-  const DeviceList({super.key, required this.deviceList});
-
-  @override
-  State<DeviceList> createState() => _DeviceListState();
-}
-
-class _DeviceListState extends State<DeviceList> {
-  final TextEditingController _searchController = TextEditingController();
-  String search = '';
-  late List<Device> _allDevices;
-
-  @override
-  void initState() {
-    super.initState();
-    _allDevices = widget.deviceList;
-  }
-
-  List<Device> get filteredDevices {
-    List<Device> devices = List.from(_allDevices);
-    if (search.isNotEmpty) {
-      devices = devices
-          .where(
-            (d) =>
-                d.modelName.toLowerCase().contains(search.toLowerCase()) ||
-                d.serialNumber.toLowerCase().contains(search.toLowerCase()),
-          )
-          .toList();
-    }
-    return devices;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_allDevices.isEmpty) {
-      return const Center(child: Text('Sistemde kayıtlı cihaz bulunamadı.'));
-    }
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Model, seri no veya müşteri ile ara...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-            onChanged: (value) => setState(() => search = value),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredDevices.length,
-              itemBuilder: (context, index) {
-                final device = filteredDevices[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.devices_other,
-                      color: Color(0xFF23408E),
-                    ),
-                    title: Text(
-                      device.modelName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text('Seri No: ${device.serialNumber}'),
-                    isThreeLine: true,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Eski kritik kart kaldırıldı (kullanılmıyor)
-
-class _PartCard extends StatelessWidget {
-  final StockPart part;
-  final Color primaryBlue;
-  final Color textColor;
-  final Color subtitleColor;
-  final double cardRadius;
-  final VoidCallback onCriticalLevelEdit;
-  const _PartCard({
-    required this.part,
-    required this.primaryBlue,
-    required this.textColor,
-    required this.subtitleColor,
-    required this.cardRadius,
-    required this.onCriticalLevelEdit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Removed StockProvider usage; actions are disabled (repo lacks mutation APIs)
-    final bool isOutOfStock = part.stokAdedi == 0;
-    final bool isCritical = !isOutOfStock && part.stokAdedi <= part.criticalLevel;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(cardRadius),
-        border: Border.all(
-          color: isOutOfStock
-              ? const Color(0xFFD32F2F)
-              : isCritical
-                  ? Colors.red.withAlpha(89)
-                  : primaryBlue.withAlpha(26),
-          width: isOutOfStock
-              ? 1.5
-              : isCritical
-                  ? 2
-                  : 1,
-        ),
-        boxShadow: [
-          if (isOutOfStock)
-            BoxShadow(
-              color: Colors.red.withAlpha(46),
-              blurRadius: 14,
-              offset: const Offset(0, 2),
-            )
-          else if (isCritical)
-            BoxShadow(
-              color: Colors.red.withAlpha(26),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            )
-          else
-            BoxShadow(
-              color: primaryBlue.withAlpha(15),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 10,
-        ),
-        leading: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: isOutOfStock
-                ? Colors.red.shade300
-                : isCritical
-                    ? Colors.red.withAlpha(46)
-                    : primaryBlue.withAlpha(26),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            isOutOfStock
-                ? Icons.block
-                : isCritical
-                    ? Icons.warning_amber_rounded
-                    : Icons.memory,
-            color: isOutOfStock
-                ? Colors.red
-                : isCritical
-                    ? Colors.red
-                    : primaryBlue,
-            size: 22,
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                part.parcaAdi,
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
-                  color: isOutOfStock ? Colors.red.shade900 : textColor,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-            if (isOutOfStock)
-              Text(
-                'Stok tükendi',
-                style: GoogleFonts.montserrat(
-                  color: const Color(0xFFD32F2F),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              )
-            else if (isCritical)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD32F2F).withAlpha(26),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Stok kritik',
-                  style: GoogleFonts.montserrat(
-                    color: const Color(0xFFD32F2F),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        subtitle: Text(
-          'Kod: ${part.parcaKodu}  |  Stok: ${part.stokAdedi}',
-          style: GoogleFonts.montserrat(
-            color: isOutOfStock ? Colors.red.shade900 : subtitleColor,
-            fontWeight: isOutOfStock ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-        ),
-        trailing: isOutOfStock
-            ? null
-            : Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isCritical ? Colors.red.withAlpha(46) : primaryBlue.withAlpha(26),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            if (selectedIndex == 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      color: isCritical ? Colors.red : primaryBlue,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      'Kritik:',
-                      style: GoogleFonts.montserrat(
-                        fontWeight: FontWeight.w500,
-                        color: isCritical ? Colors.red : primaryBlue,
-                        fontSize: 11,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.remove, size: 16),
-                      color: isCritical ? Colors.red : primaryBlue,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Kritik seviye güncelleme henüz desteklenmiyor.')),
-                        );
-                      },
-                    ),
-                    Text(
-                      '${part.criticalLevel}',
-                      style: GoogleFonts.montserrat(
-                        fontWeight: FontWeight.bold,
-                        color: isCritical ? Colors.red : primaryBlue,
-                        fontSize: 12,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add, size: 16),
-                      color: isCritical ? Colors.red : primaryBlue,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Kritik seviye güncelleme henüz desteklenmiyor.')),
-                        );
-                      },
+                    const Text('Sadece kritik parçalar'),
+                    Switch.adaptive(
+                      value: showOnlyCritical,
+                      onChanged: (_) => ref
+                          .read(inventoryProvider.notifier)
+                          .toggleShowOnlyCritical(),
                     ),
                   ],
                 ),
               ),
+            const Divider(height: 1),
+            Expanded(
+              child: TabBarView(
+                physics: const BouncingScrollPhysics(),
+                children: const [
+                  _DeviceListView(),
+                  _PartListView(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// Eski kritik banner kaldırıldı (kullanılmıyor)
-
-class _CriticalLevelDialog extends StatefulWidget {
-  final int initialLevel;
-  const _CriticalLevelDialog({required this.initialLevel});
+class _DeviceListView extends ConsumerWidget {
+  const _DeviceListView({Key? key}) : super(key: key);
 
   @override
-  State<_CriticalLevelDialog> createState() => _CriticalLevelDialogState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final devicesAsync = ref.watch(filteredDevicesProvider);
+    return devicesAsync.when(
+      data: (devices) {
+        if (devices.isEmpty) {
+          return const Center(child: Text('Kayıtlı cihaz bulunamadı'));
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.all(12),
+          itemCount: devices.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final d = devices[index];
+            return Card(
+              child: ListTile(
+                leading: const Icon(Icons.devices_other),
+                title: Text(d.modelName),
+                subtitle: Text('#${d.serialNumber} — ${d.customer}'),
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, st) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('Cihazlar yüklenirken hata oluştu: $e'),
+        ),
+      ),
+    );
+  }
 }
 
-class _CriticalLevelDialogState extends State<_CriticalLevelDialog> {
-  late int _level;
+class _PartListView extends ConsumerWidget {
+  const _PartListView({Key? key}) : super(key: key);
 
   @override
-  void initState() {
-    super.initState();
-    _level = widget.initialLevel;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Kritik Seviye Ayarla'),
-      content: Row(
-        children: [
-          Expanded(
-            child: Slider(
-              value: _level.toDouble(),
-              min: 1,
-              max: 20,
-              divisions: 19,
-              label: '$_level',
-              onChanged: (val) => setState(() => _level = val.round()),
-            ),
-          ),
-          Text('$_level'),
-        ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final partsAsync = ref.watch(filteredPartsProvider);
+    return partsAsync.when(
+      data: (parts) {
+        if (parts.isEmpty) {
+          return const Center(child: Text('Parça bulunamadı'));
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.all(12),
+          itemCount: parts.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final p = parts[index];
+            final isCritical = p.stokAdedi <= p.criticalLevel;
+            return Card(
+              child: ListTile(
+                leading: Icon(
+                  Icons.inventory_2_outlined,
+                  color: isCritical ? Colors.redAccent : null,
+                ),
+                title: Text(p.parcaAdi),
+                subtitle: Text('${p.parcaKodu} • Stok: ${p.stokAdedi}'),
+                trailing: isCritical
+                    ? const Chip(
+                        label: Text('Kritik'),
+                        backgroundColor: Color(0xFFFFE5E5),
+                        labelStyle: TextStyle(color: Colors.redAccent),
+                      )
+                    : null,
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, st) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text('Parçalar yüklenirken hata oluştu: $e'),
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('İptal'),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(_level),
-          child: const Text('Kaydet'),
-        ),
-      ],
     );
   }
 }
