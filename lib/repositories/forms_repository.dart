@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/device.dart';
 import '../services/firestore_paths.dart';
 
-/// Firebase'deki 'forms' koleksiyonundaki cihaz kayıtlarını sorgulamak için basit repository
+/// Firebase'deki 'formlar' koleksiyonundaki cihaz kayıtlarını sorgulamak için basit repository
 class FormsRepository {
   final FirebaseFirestore _firestore;
 
@@ -28,7 +28,7 @@ class FormsRepository {
         for (final d in s.docs) {
           seen[d.id] = d.data();
         }
-      } catch (_) {
+      } catch (e) {
         // yoksay
       }
     }

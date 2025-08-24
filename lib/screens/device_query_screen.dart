@@ -37,6 +37,8 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
   final FormsRepository _formsRepository = FormsRepository();
   List<Device> _formSearchResults = [];
   Timer? _debounce;
+  bool _isLoading = false;
+  
   int _autocompleteKeyCounter = 0;
 
   @override
@@ -78,22 +80,39 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
   void _onSearchTextChanged() {
     final q = _searchController?.text.trim() ?? '';
     _debounce?.cancel();
+    // En az 2 karakter şartı
+    if (q.length < 2) {
+      setState(() {
+        _isLoading = false;
+        _formSearchResults = [];
+      });
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+    });
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       if (!mounted) return;
-      if (q.isEmpty) {
+      final latest = _searchController?.text.trim() ?? '';
+      if (latest.length < 2) {
         setState(() {
+          _isLoading = false;
           _formSearchResults = [];
         });
         return;
       }
       try {
-        final results = await _formsRepository.searchDevices(q);
+        final results = await _formsRepository.searchDevices(latest);
         if (!mounted) return;
         setState(() {
           _formSearchResults = results;
+          _isLoading = false;
         });
       } catch (_) {
-        // Hata durumunda sessizce geç
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
       }
     });
   }
@@ -284,7 +303,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                     focusNode: focusNode,
                     style: GoogleFonts.montserrat(fontSize: 16),
                     decoration: InputDecoration(
-                      hintText: 'Model veya seri numarası ile ara...',
+                      hintText: 'Model veya seri numarası ile ara... (en az 2 karakter)',
                       hintStyle: GoogleFonts.montserrat(
                         color: Colors.grey.shade500,
                         fontSize: 16,
@@ -320,87 +339,121 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                     ),
                   );
                 },
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  final q = textEditingValue.text.trim();
-                  if (q.isEmpty) {
-                    return const Iterable<Device>.empty();
-                  }
-                  final lower = q.toLowerCase();
-                  // Sunucudan gelen sonuçları client-side filtrele
-                  return _formSearchResults.where((d) =>
-                      d.modelName.toLowerCase().contains(lower) ||
-                      d.serialNumber.toLowerCase().contains(lower));
-                },
+                // Overlay yerine altta liste göstereceğiz; Autocomplete seçeneklerini boş bırakıyoruz
+                optionsBuilder: (TextEditingValue textEditingValue) => const Iterable<Device>.empty(),
                 displayStringForOption: (Device device) => '${device.modelName} - ${device.serialNumber}',
                 onSelected: _showDeviceDetails,
                 optionsViewBuilder: (context, onSelected, options) {
-                  return Material(
-                    elevation: 8,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8),
-                        itemCount: options.length,
-                        itemBuilder: (context, index) {
-                          final device = options.elementAt(index);
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 4),
-                            child: ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF23408E).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.devices_other_rounded,
-                                  color: Color(0xFF23408E),
-                                  size: 20,
-                                ),
-                              ),
-                              title: Text(
-                                device.modelName,
-                                style: GoogleFonts.montserrat(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    device.serialNumber,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    device.customer,
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.grey.shade500,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              onTap: () => onSelected(device),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  );
+                  // Overlay kullanılmıyor
+                  return const SizedBox.shrink();
                 },
               ),
             ),
+            const SizedBox(height: 8),
+            // Yükleniyor / Sonuçlar Paneli
+            Builder(builder: (context) {
+              final q = _searchController?.text.trim() ?? '';
+              if (_isLoading && q.length >= 2) {
+                return Container(
+                  margin: const EdgeInsets.only(top: 4, bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Yükleniyor... Lütfen bekleyin',
+                        style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              if (q.length >= 2) {
+                if (_formSearchResults.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6, bottom: 8),
+                    child: Text(
+                      'Sonuç bulunamadı',
+                      style: GoogleFonts.montserrat(color: Colors.grey.shade600, fontSize: 13),
+                    ),
+                  );
+                }
+                return Container(
+                  margin: const EdgeInsets.only(top: 4, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemCount: _formSearchResults.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final device = _formSearchResults[index];
+                      return ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF23408E).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.devices_other_rounded,
+                            color: Color(0xFF23408E),
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          device.modelName,
+                          style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              device.serialNumber,
+                              style: GoogleFonts.montserrat(color: Colors.grey.shade600, fontSize: 12),
+                            ),
+                            if (device.customer.isNotEmpty)
+                              Text(
+                                device.customer,
+                                style: GoogleFonts.montserrat(color: Colors.grey.shade500, fontSize: 11),
+                              ),
+                          ],
+                        ),
+                        onTap: () => _showDeviceDetails(device),
+                      );
+                    },
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
             const SizedBox(height: 16),
 
             // Kamerayla Tara Butonu
