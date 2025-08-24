@@ -6,8 +6,7 @@ import 'package:cence_app/features/stock_tracking/presentation/providers/filtere
 import 'package:cence_app/features/stock_tracking/presentation/providers/filtered_parts_provider.dart';
 
 class StokTakibiScreen extends ConsumerWidget {
-  const StokTakibiScreen({super.key})
-      : super();
+  const StokTakibiScreen({super.key}) : super();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -73,10 +72,7 @@ class StokTakibiScreen extends ConsumerWidget {
             Expanded(
               child: TabBarView(
                 physics: const BouncingScrollPhysics(),
-                children: const [
-                  _DeviceListView(),
-                  _PartListView(),
-                ],
+                children: const [_DeviceListView(), _PartListView()],
               ),
             ),
           ],

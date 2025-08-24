@@ -17,7 +17,13 @@ class ModelDetailsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalDevices = devices.length;
-    final activeWarranty = devices.where((d) => d.warrantyEndDate != null && d.calculatedWarrantyStatus == 'Devam Ediyor').length;
+    final activeWarranty = devices
+        .where(
+          (d) =>
+              d.warrantyEndDate != null &&
+              d.calculatedWarrantyStatus == 'Devam Ediyor',
+        )
+        .length;
     final expiredWarranty = totalDevices - activeWarranty;
 
     return Container(
@@ -148,69 +154,77 @@ class ModelDetailsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          ...devices.map((device) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+          ...devices.map(
+            (device) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: device.warrantyEndDate != null
-                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: device.warrantyEndDate != null
+                        ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
                               ? const Color(0xFF43A047).withAlpha(26)
                               : Colors.red.withAlpha(26))
-                          : Colors.grey.withAlpha(26),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      device.warrantyEndDate != null
-                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                        : Colors.grey.withAlpha(26),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    device.warrantyEndDate != null
+                        ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
                               ? Icons.verified_rounded
                               : Icons.warning_rounded)
-                          : Icons.help_outline_rounded,
-                      color: device.warrantyEndDate != null
-                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                        : Icons.help_outline_rounded,
+                    color: device.warrantyEndDate != null
+                        ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
                               ? const Color(0xFF43A047)
                               : Colors.red)
-                          : Colors.grey,
-                      size: 20,
-                    ),
+                        : Colors.grey,
+                    size: 20,
                   ),
-                  title: Text(
-                    device.customer,
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Seri No: ${device.serialNumber}',
-                        style: GoogleFonts.montserrat(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                      ),
-                      Text(
-                        'Kurulum: ${device.installDate}',
-                        style: GoogleFonts.montserrat(
-                          color: Colors.grey.shade500,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                  trailing: _buildWarrantyChip(device.calculatedWarrantyStatus, device.daysUntilWarrantyExpiry),
-                  onTap: () => onDeviceTap(device),
                 ),
-              )),
+                title: Text(
+                  device.customer,
+                  style: GoogleFonts.montserrat(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Seri No: ${device.serialNumber}',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      'Kurulum: ${device.installDate}',
+                      style: GoogleFonts.montserrat(
+                        color: Colors.grey.shade500,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: _buildWarrantyChip(
+                  device.calculatedWarrantyStatus,
+                  device.daysUntilWarrantyExpiry,
+                ),
+                onTap: () => onDeviceTap(device),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -15,7 +15,9 @@ final addDeviceUseCaseProvider = Provider<Future<void> Function(Device)>((ref) {
 });
 
 /// Cihaz güncelleme use-case'i
-final updateDeviceUseCaseProvider = Provider<Future<void> Function(Device)>((ref) {
+final updateDeviceUseCaseProvider = Provider<Future<void> Function(Device)>((
+  ref,
+) {
   final repo = ref.watch(deviceRepositoryProvider);
   return (device) async {
     final r = await repo.update(device);
@@ -27,7 +29,9 @@ final updateDeviceUseCaseProvider = Provider<Future<void> Function(Device)>((ref
 });
 
 /// Cihaz silme use-case'i
-final deleteDeviceUseCaseProvider = Provider<Future<void> Function(String)>((ref) {
+final deleteDeviceUseCaseProvider = Provider<Future<void> Function(String)>((
+  ref,
+) {
   final repo = ref.watch(deviceRepositoryProvider);
   return (id) async {
     final r = await repo.delete(id);
@@ -39,13 +43,15 @@ final deleteDeviceUseCaseProvider = Provider<Future<void> Function(String)>((ref
 });
 
 /// ID ile cihaz bulma use-case'i
-final findDeviceByIdUseCaseProvider = Provider<Future<Device> Function(String)>((ref) {
-  final repo = ref.watch(deviceRepositoryProvider);
-  return (id) async {
-    final r = await repo.findById(id);
-    return r.fold(
-      onSuccess: (d) => d,
-      onFailure: (e) => throw Exception(e.message),
-    );
-  };
-});
+final findDeviceByIdUseCaseProvider = Provider<Future<Device> Function(String)>(
+  (ref) {
+    final repo = ref.watch(deviceRepositoryProvider);
+    return (id) async {
+      final r = await repo.findById(id);
+      return r.fold(
+        onSuccess: (d) => d,
+        onFailure: (e) => throw Exception(e.message),
+      );
+    };
+  },
+);

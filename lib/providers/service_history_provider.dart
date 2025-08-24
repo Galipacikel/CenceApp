@@ -6,7 +6,8 @@ import 'base_provider.dart';
 class ServiceHistoryProvider extends BaseProvider<ServiceHistory> {
   final ServiceHistoryRepositoryV2 _repository;
 
-  ServiceHistoryProvider({required ServiceHistoryRepositoryV2 repository}) : _repository = repository;
+  ServiceHistoryProvider({required ServiceHistoryRepositoryV2 repository})
+    : _repository = repository;
 
   List<ServiceHistory> get all => items;
 

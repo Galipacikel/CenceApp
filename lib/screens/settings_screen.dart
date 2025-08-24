@@ -42,9 +42,14 @@ class SettingsScreen extends ConsumerWidget {
             Expanded(
               child: Center(
                 child: Container(
-                  constraints: BoxConstraints(maxWidth: isWide ? 500 : double.infinity),
+                  constraints: BoxConstraints(
+                    maxWidth: isWide ? 500 : double.infinity,
+                  ),
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 24,
+                    ),
                     children: [
                       // Kullanıcı Kartı
                       Container(
@@ -65,19 +70,28 @@ class SettingsScreen extends ConsumerWidget {
                             final fullName = (u?.fullName ?? '').trim();
                             final parts = fullName.split(RegExp(r"\s+"));
                             final name = parts.isNotEmpty ? parts.first : '';
-                            final surname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-                            final title = (u?.isAdmin ?? false) ? 'Admin' : 'Teknisyen';
+                            final surname = parts.length > 1
+                                ? parts.sublist(1).join(' ')
+                                : '';
+                            final title = (u?.isAdmin ?? false)
+                                ? 'Admin'
+                                : 'Teknisyen';
                             return Row(
                               children: [
                                 FutureBuilder<String?>(
                                   future: _loadProfileImagePath(),
                                   builder: (context, snapshot) {
                                     final path = snapshot.data;
-                                    final hasImage = path != null && path.isNotEmpty && File(path).existsSync();
+                                    final hasImage =
+                                        path != null &&
+                                        path.isNotEmpty &&
+                                        File(path).existsSync();
                                     return CircleAvatar(
                                       radius: 32,
                                       backgroundColor: primaryBlue,
-                                      backgroundImage: hasImage ? FileImage(File(path)) : null,
+                                      backgroundImage: hasImage
+                                          ? FileImage(File(path))
+                                          : null,
                                       child: !hasImage
                                           ? Icon(
                                               Icons.person,
@@ -91,10 +105,13 @@ class SettingsScreen extends ConsumerWidget {
                                 const SizedBox(width: 18),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        (name.isEmpty && surname.isEmpty) ? 'Kullanıcı' : '$name $surname'.trim(),
+                                        (name.isEmpty && surname.isEmpty)
+                                            ? 'Kullanıcı'
+                                            : '$name $surname'.trim(),
                                         style: GoogleFonts.montserrat(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 18,
@@ -117,7 +134,8 @@ class SettingsScreen extends ConsumerWidget {
                                   onPressed: () {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (_) => const ProfileEditScreen(),
+                                        builder: (_) =>
+                                            const ProfileEditScreen(),
                                       ),
                                     );
                                   },
@@ -127,13 +145,18 @@ class SettingsScreen extends ConsumerWidget {
                               ],
                             );
                           },
-                          loading: () => const Center(child: CircularProgressIndicator()),
+                          loading: () =>
+                              const Center(child: CircularProgressIndicator()),
                           error: (_, __) => Row(
                             children: [
                               CircleAvatar(
                                 radius: 32,
                                 backgroundColor: primaryBlue,
-                                child: const Icon(Icons.person, color: Colors.white, size: 32),
+                                child: const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 32,
+                                ),
                               ),
                               const SizedBox(width: 18),
                               Expanded(
@@ -194,7 +217,9 @@ class SettingsScreen extends ConsumerWidget {
                         icon: Icons.palette_outlined,
                         title: 'Tema ve Görünüm',
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const ThemeSettingsScreen(),
+                          ),
                         ),
                         iconColor: primaryBlue,
                         cardColor: cardColor,
@@ -204,9 +229,11 @@ class SettingsScreen extends ConsumerWidget {
                       _SettingsCard(
                         icon: Icons.help_outline,
                         title: 'Yardım Merkezi',
-                        onTap: () => Navigator.of(
-                          context,
-                        ).push(MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const HelpCenterScreen(),
+                          ),
+                        ),
                         iconColor: primaryBlue,
                         cardColor: cardColor,
                         cardRadius: cardRadius,
@@ -216,7 +243,9 @@ class SettingsScreen extends ConsumerWidget {
                         icon: Icons.support_agent_outlined,
                         title: 'Destek Talebi',
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const SupportRequestScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const SupportRequestScreen(),
+                          ),
                         ),
                         iconColor: primaryBlue,
                         cardColor: cardColor,
@@ -227,7 +256,9 @@ class SettingsScreen extends ConsumerWidget {
                         icon: Icons.privacy_tip_outlined,
                         title: 'Gizlilik ve Koşullar',
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const PrivacyPolicyScreen(),
+                          ),
                         ),
                         iconColor: primaryBlue,
                         cardColor: cardColor,

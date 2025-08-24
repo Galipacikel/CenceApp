@@ -16,23 +16,28 @@ class HelpCenterScreen extends StatelessWidget {
     final faqs = [
       {
         'question': 'Cence uygulamasına nasıl giriş yapabilirim?',
-        'answer': 'Kullanıcı adınız ve şifrenizle giriş yapabilirsiniz. Şifrenizi unuttuysanız yöneticinizle iletişime geçin.'
+        'answer':
+            'Kullanıcı adınız ve şifrenizle giriş yapabilirsiniz. Şifrenizi unuttuysanız yöneticinizle iletişime geçin.',
       },
       {
         'question': 'Offline mod nedir?',
-        'answer': 'İnternet bağlantınız olmadığında da uygulamayı kullanabilir, verileriniz tekrar bağlantı sağlandığında otomatik olarak senkronize edilir.'
+        'answer':
+            'İnternet bağlantınız olmadığında da uygulamayı kullanabilir, verileriniz tekrar bağlantı sağlandığında otomatik olarak senkronize edilir.',
       },
       {
         'question': 'Bildirimleri nasıl açıp kapatabilirim?',
-        'answer': 'Ayarlar > Bildirimler menüsünden istediğiniz bildirim türünü açıp kapatabilirsiniz.'
+        'answer':
+            'Ayarlar > Bildirimler menüsünden istediğiniz bildirim türünü açıp kapatabilirsiniz.',
       },
       {
         'question': 'Profil bilgilerimi nasıl güncellerim?',
-        'answer': 'Ayarlar > Profili Görüntüle/Düzenle menüsünden profil bilgilerinizi güncelleyebilirsiniz.'
+        'answer':
+            'Ayarlar > Profili Görüntüle/Düzenle menüsünden profil bilgilerinizi güncelleyebilirsiniz.',
       },
       {
         'question': 'Destek talebi nasıl oluşturabilirim?',
-        'answer': 'Ayarlar > Destek Talebi / İletişim menüsünden yeni bir destek talebi oluşturabilirsiniz.'
+        'answer':
+            'Ayarlar > Destek Talebi / İletişim menüsünden yeni bir destek talebi oluşturabilirsiniz.',
       },
     ];
     return Scaffold(
@@ -49,16 +54,9 @@ class HelpCenterScreen extends StatelessWidget {
             fontSize: 22,
           ),
         ),
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-          size: 28,
-        ),
+        iconTheme: const IconThemeData(color: Colors.white, size: 28),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
-            size: 28,
-          ),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -79,18 +77,29 @@ class HelpCenterScreen extends StatelessWidget {
                   onTap: () {},
                   splashColor: primaryBlue.withAlpha(20),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 18,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.help_outline, color: primaryBlue, size: 26),
+                            Icon(
+                              Icons.help_outline,
+                              color: primaryBlue,
+                              size: 26,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 faq['question']!,
-                                style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 16, color: textColor),
+                                style: GoogleFonts.montserrat(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: textColor,
+                                ),
                               ),
                             ),
                           ],
@@ -98,7 +107,10 @@ class HelpCenterScreen extends StatelessWidget {
                         const SizedBox(height: 10),
                         Text(
                           faq['answer']!,
-                          style: GoogleFonts.montserrat(fontSize: 15, color: subtitleColor),
+                          style: GoogleFonts.montserrat(
+                            fontSize: 15,
+                            color: subtitleColor,
+                          ),
                         ),
                       ],
                     ),

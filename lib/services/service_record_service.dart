@@ -9,7 +9,10 @@ class ServiceRecordService {
   ServiceRecordService({FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
-  Future<void> archiveAndDelete({required String deviceId, required String recordId}) async {
+  Future<void> archiveAndDelete({
+    required String deviceId,
+    required String recordId,
+  }) async {
     final recordRef = _firestore
         .collection(FirestorePaths.deviceServiceRecords(deviceId))
         .doc(recordId);

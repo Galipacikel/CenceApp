@@ -12,7 +12,8 @@ import 'package:intl/date_symbol_data_local.dart';
 // removed: import 'providers/service_history_provider.dart';
 // removed: import 'providers/device_provider.dart';
 import 'firebase_options.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'core/theme/app_theme.dart';
@@ -37,7 +38,10 @@ import 'screens/home_page.dart';
 // removed: import 'models/service_history.dart';
 // removed: import 'models/stock_part.dart';
 
-const bool kUseEmulators = bool.fromEnvironment('USE_EMULATORS', defaultValue: false);
+const bool kUseEmulators = bool.fromEnvironment(
+  'USE_EMULATORS',
+  defaultValue: false,
+);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +56,9 @@ Future<void> main() async {
   }
 
   if (kUseEmulators) {
-    final host = defaultTargetPlatform == TargetPlatform.android ? '10.0.2.2' : 'localhost';
+    final host = defaultTargetPlatform == TargetPlatform.android
+        ? '10.0.2.2'
+        : 'localhost';
     FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
     FirebaseAuth.instance.useAuthEmulator(host, 9099);
     FirebaseStorage.instance.useStorageEmulator(host, 9199);
@@ -77,19 +83,20 @@ class MyApp extends rp.ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('tr', 'TR'),
-      ],
+      supportedLocales: const [Locale('tr', 'TR')],
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: ref.watch(appSettingsProvider).themeMode,
-      home: ref.watch(authUserChangesProvider).when(
-        data: (user) => user != null ? const HomePage() : const LoginScreen(),
-        loading: () => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
-        error: (_, __) => const LoginScreen(),
-      ),
+      home: ref
+          .watch(authUserChangesProvider)
+          .when(
+            data: (user) =>
+                user != null ? const HomePage() : const LoginScreen(),
+            loading: () => const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            ),
+            error: (_, __) => const LoginScreen(),
+          ),
     );
   }
 }

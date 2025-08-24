@@ -9,7 +9,7 @@ class FormsRepositoryV2Impl implements FormsRepositoryV2 {
   final FirebaseFirestore _firestore;
 
   FormsRepositoryV2Impl({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
   Future<Result<List<Device>, app.Failure>> searchDevices(String text) async {
@@ -24,7 +24,9 @@ class FormsRepositoryV2Impl implements FormsRepositoryV2 {
 
       final seen = <String, Map<String, dynamic>>{};
 
-      Future<void> tryQuery(Future<QuerySnapshot<Map<String, dynamic>>> f) async {
+      Future<void> tryQuery(
+        Future<QuerySnapshot<Map<String, dynamic>>> f,
+      ) async {
         try {
           final s = await f;
           for (final d in s.docs) {
@@ -33,9 +35,30 @@ class FormsRepositoryV2Impl implements FormsRepositoryV2 {
         } catch (_) {}
       }
 
-      await tryQuery(col.orderBy('MODEL').startAt([qUpper]).endAt(['$qUpper\uf8ff']).limit(20).get());
-      await tryQuery(col.orderBy('MODEL').startAt([qExact]).endAt(['$qExact\uf8ff']).limit(20).get());
-      await tryQuery(col.orderBy('SERİ NO').startAt([qExact]).endAt(['$qExact\uf8ff']).limit(20).get());
+      await tryQuery(
+        col
+            .orderBy('MODEL')
+            .startAt([qUpper])
+            .endAt(['$qUpper\uf8ff'])
+            .limit(20)
+            .get(),
+      );
+      await tryQuery(
+        col
+            .orderBy('MODEL')
+            .startAt([qExact])
+            .endAt(['$qExact\uf8ff'])
+            .limit(20)
+            .get(),
+      );
+      await tryQuery(
+        col
+            .orderBy('SERİ NO')
+            .startAt([qExact])
+            .endAt(['$qExact\uf8ff'])
+            .limit(20)
+            .get(),
+      );
 
       if (seen.isEmpty) {
         await tryQuery(col.where('SERİ NO', isEqualTo: qExact).limit(20).get());
@@ -43,7 +66,9 @@ class FormsRepositoryV2Impl implements FormsRepositoryV2 {
         await tryQuery(col.where('MODEL', isEqualTo: qUpper).limit(20).get());
       }
 
-      final list = seen.entries.map((e) => _mapFormToDevice(e.key, e.value)).toList();
+      final list = seen.entries
+          .map((e) => _mapFormToDevice(e.key, e.value))
+          .toList();
       return Result.ok(list);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -59,11 +84,16 @@ class FormsRepositoryV2Impl implements FormsRepositoryV2 {
     final cihazAdi = (data['CİHAZ ADI'] ?? '').toString();
     final firma = (data['FİRMA'] ?? '').toString();
 
-    final modelName = [if (marka.isNotEmpty) marka, if (model.isNotEmpty) model].join(' ').trim();
+    final modelName = [
+      if (marka.isNotEmpty) marka,
+      if (model.isNotEmpty) model,
+    ].join(' ').trim();
 
     return Device(
       id: id,
-      modelName: modelName.isNotEmpty ? modelName : (cihazAdi.isNotEmpty ? cihazAdi : model),
+      modelName: modelName.isNotEmpty
+          ? modelName
+          : (cihazAdi.isNotEmpty ? cihazAdi : model),
       serialNumber: serial,
       customer: firma,
       installDate: '',

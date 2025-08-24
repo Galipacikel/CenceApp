@@ -6,7 +6,7 @@ class StorageService {
   final FirebaseStorage _storage;
 
   StorageService({FirebaseStorage? storage})
-      : _storage = storage ?? FirebaseStorage.instance;
+    : _storage = storage ?? FirebaseStorage.instance;
 
   Future<String> uploadFile({
     required XFile file,

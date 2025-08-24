@@ -30,16 +30,9 @@ class ThemeSettingsScreen extends ConsumerWidget {
             fontSize: 22,
           ),
         ),
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-          size: 28,
-        ),
+        iconTheme: const IconThemeData(color: Colors.white, size: 28),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
-            size: 28,
-          ),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -78,7 +71,9 @@ class ThemeSettingsScreen extends ConsumerWidget {
                       label: 'Açık Tema',
                       icon: Icons.light_mode,
                       selected: themeMode == ThemeMode.light,
-                      onTap: () => ref.read(appSettingsProvider.notifier).setThemeMode(ThemeMode.light),
+                      onTap: () => ref
+                          .read(appSettingsProvider.notifier)
+                          .setThemeMode(ThemeMode.light),
                       primaryBlue: primaryBlue,
                     ),
                     const SizedBox(height: 12),
@@ -86,7 +81,9 @@ class ThemeSettingsScreen extends ConsumerWidget {
                       label: 'Koyu Tema',
                       icon: Icons.dark_mode,
                       selected: themeMode == ThemeMode.dark,
-                      onTap: () => ref.read(appSettingsProvider.notifier).setThemeMode(ThemeMode.dark),
+                      onTap: () => ref
+                          .read(appSettingsProvider.notifier)
+                          .setThemeMode(ThemeMode.dark),
                       primaryBlue: primaryBlue,
                     ),
                     const SizedBox(height: 12),
@@ -94,7 +91,9 @@ class ThemeSettingsScreen extends ConsumerWidget {
                       label: 'Sistem Varsayılanı',
                       icon: Icons.phone_android,
                       selected: themeMode == ThemeMode.system,
-                      onTap: () => ref.read(appSettingsProvider.notifier).setThemeMode(ThemeMode.system),
+                      onTap: () => ref
+                          .read(appSettingsProvider.notifier)
+                          .setThemeMode(ThemeMode.system),
                       primaryBlue: primaryBlue,
                     ),
                   ],
@@ -121,7 +120,7 @@ class ThemeSettingsScreen extends ConsumerWidget {
                         backgroundColor: Color(0xFF424242),
                       ),
                     );
-                    
+
                     Navigator.pop(context);
                   },
                   child: Text(

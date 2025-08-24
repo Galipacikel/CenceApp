@@ -21,17 +21,22 @@ final devicesListProvider = FutureProvider<List<Device>>((ref) async {
 });
 
 /// Arama için yardımcı provider (query -> filtreli liste)
-final devicesSearchProvider = Provider.family<List<Device>, String>((ref, query) {
+final devicesSearchProvider = Provider.family<List<Device>, String>((
+  ref,
+  query,
+) {
   final asyncDevices = ref.watch(devicesListProvider);
   return asyncDevices.maybeWhen(
     data: (devices) {
       if (query.isEmpty) return devices;
       final q = query.toLowerCase();
       return devices
-          .where((d) =>
-              d.modelName.toLowerCase().contains(q) ||
-              d.serialNumber.toLowerCase().contains(q) ||
-              d.customer.toLowerCase().contains(q))
+          .where(
+            (d) =>
+                d.modelName.toLowerCase().contains(q) ||
+                d.serialNumber.toLowerCase().contains(q) ||
+                d.customer.toLowerCase().contains(q),
+          )
           .toList();
     },
     orElse: () => const <Device>[],

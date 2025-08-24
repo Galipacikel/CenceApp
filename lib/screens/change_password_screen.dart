@@ -60,16 +60,28 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Mevcut Şifre', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      Text(
+                        'Mevcut Şifre',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: textColor,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       TextFormField(
                         obscureText: true,
                         decoration: InputDecoration(
                           hintText: 'Mevcut şifrenizi girin',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
+                          hintStyle: GoogleFonts.montserrat(
+                            color: subtitleColor.withAlpha(179),
+                          ),
                           filled: true,
                           fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -77,23 +89,37 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text('Yeni Şifre', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      Text(
+                        'Yeni Şifre',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: textColor,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       TextFormField(
                         obscureText: !_showNewPassword,
                         decoration: InputDecoration(
                           hintText: 'Yeni şifrenizi girin',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
+                          hintStyle: GoogleFonts.montserrat(
+                            color: subtitleColor.withAlpha(179),
+                          ),
                           filled: true,
                           fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _showNewPassword ? Icons.visibility_off : Icons.visibility,
+                              _showNewPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               color: subtitleColor,
                             ),
                             onPressed: () {
@@ -105,23 +131,37 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text('Yeni Şifre (Tekrar)', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      Text(
+                        'Yeni Şifre (Tekrar)',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: textColor,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       TextFormField(
                         obscureText: !_showConfirmPassword,
                         decoration: InputDecoration(
                           hintText: 'Yeni şifrenizi tekrar girin',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
+                          hintStyle: GoogleFonts.montserrat(
+                            color: subtitleColor.withAlpha(179),
+                          ),
                           filled: true,
                           fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _showConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                              _showConfirmPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                               color: subtitleColor,
                             ),
                             onPressed: () {
@@ -139,14 +179,22 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryBlue,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                           onPressed: () {
                             // Şifre değiştirme işlemi
                           },
-                          child: Text('Şifreyi Değiştir', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
+                          child: Text(
+                            'Şifreyi Değiştir',
+                            style: GoogleFonts.montserrat(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ),
                     ],

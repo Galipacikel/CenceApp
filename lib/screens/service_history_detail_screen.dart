@@ -53,7 +53,7 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd MMMM yyyy', 'tr_TR');
     final isWide = MediaQuery.of(context).size.width > 600;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: PreferredSize(
@@ -79,7 +79,11 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
               const SizedBox(width: 12),
@@ -94,7 +98,11 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.share_rounded, color: Colors.white, size: 24),
+                icon: const Icon(
+                  Icons.share_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -107,7 +115,9 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                       ),
                       backgroundColor: const Color(0xFF23408E),
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   );
                 },
@@ -153,7 +163,10 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: getStatusBgColor(serviceHistory.status),
                           borderRadius: BorderRadius.circular(8),
@@ -170,7 +183,9 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                             Text(
                               getStatusLabel(serviceHistory.status),
                               style: TextStyle(
-                                color: getStatusTextColor(serviceHistory.status),
+                                color: getStatusTextColor(
+                                  serviceHistory.status,
+                                ),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -181,7 +196,7 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Tarih
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -191,7 +206,11 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today, color: const Color(0xFF23408E), size: 20),
+                        Icon(
+                          Icons.calendar_today,
+                          color: const Color(0xFF23408E),
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           dateFormat.format(serviceHistory.date),
@@ -205,7 +224,7 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Müşteri bilgisi
                   if (serviceHistory.musteri.isNotEmpty) ...[
                     _buildInfoRow(
@@ -216,7 +235,7 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  
+
                   // Teknisyen bilgisi
                   _buildInfoRow(
                     icon: Icons.person,
@@ -225,7 +244,7 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                     color: const Color(0xFF23408E),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Açıklama
                   if (serviceHistory.description.isNotEmpty) ...[
                     const Text(
@@ -255,7 +274,7 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                   ],
-                  
+
                   // Kullanılan parçalar
                   if (serviceHistory.kullanilanParcalar.isNotEmpty) ...[
                     const Text(
@@ -267,73 +286,85 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ...serviceHistory.kullanilanParcalar.map((part) => Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF23408E).withAlpha(51)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF23408E).withAlpha(26),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Icon(Icons.memory, size: 16, color: Color(0xFF23408E)),
+                    ...serviceHistory.kullanilanParcalar.map(
+                      (part) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFF23408E).withAlpha(51),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  part.parcaAdi,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: Color(0xFF1C1C1C),
-                                  ),
-                                ),
-                                Text(
-                                  'Kod: ${part.parcaKodu}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF23408E).withAlpha(26),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${part.stokAdedi} adet',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF23408E).withAlpha(26),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.memory,
+                                size: 16,
                                 color: Color(0xFF23408E),
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    part.parcaAdi,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: Color(0xFF1C1C1C),
+                                    ),
+                                  ),
+                                  Text(
+                                    'Kod: ${part.parcaKodu}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF23408E).withAlpha(26),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '${part.stokAdedi} adet',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF23408E),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    )),
+                    ),
                     const SizedBox(height: 20),
                   ],
                 ],
               ),
             ),
-            
+
             // Fotoğraflar bölümü
-            if (serviceHistory.photos != null && serviceHistory.photos!.isNotEmpty) ...[
+            if (serviceHistory.photos != null &&
+                serviceHistory.photos!.isNotEmpty) ...[
               const SizedBox(height: 20),
               Container(
                 decoration: BoxDecoration(
@@ -370,25 +401,33 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                             margin: const EdgeInsets.only(right: 12),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: serviceHistory.photos![index].startsWith('http')
-                                ? Image.network(
-                                    serviceHistory.photos![index],
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        width: 120,
-                                        height: 120,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade300,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Icon(Icons.error, color: Colors.grey),
-                                      );
-                                    },
+                              child:
+                                  serviceHistory.photos![index].startsWith(
+                                    'http',
                                   )
-                                : const SizedBox.shrink(),
+                                  ? Image.network(
+                                      serviceHistory.photos![index],
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              width: 120,
+                                              height: 120,
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade300,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(
+                                                Icons.error,
+                                                color: Colors.grey,
+                                              ),
+                                            );
+                                          },
+                                    )
+                                  : const SizedBox.shrink(),
                             ),
                           );
                         },

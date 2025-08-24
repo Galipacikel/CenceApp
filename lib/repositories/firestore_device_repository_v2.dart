@@ -10,13 +10,17 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
   final FirebaseFirestore _firestore;
 
   FirestoreDeviceRepositoryV2({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
   Future<Result<List<Device>, app.Failure>> getAll() async {
     try {
-      final snapshot = await _firestore.collection(FirestorePaths.devices).get();
-      final list = snapshot.docs.map((d) => _fromFirestore(d.id, d.data())).toList();
+      final snapshot = await _firestore
+          .collection(FirestorePaths.devices)
+          .get();
+      final list = snapshot.docs
+          .map((d) => _fromFirestore(d.id, d.data()))
+          .toList();
       return Result.ok(list);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -68,9 +72,14 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
   @override
   Future<Result<Device, app.Failure>> findById(String id) async {
     try {
-      final doc = await _firestore.collection(FirestorePaths.devices).doc(id).get();
+      final doc = await _firestore
+          .collection(FirestorePaths.devices)
+          .doc(id)
+          .get();
       if (!doc.exists) {
-        return Result.err(app.NotFoundFailure('Cihaz bulunamadı', code: 'not-found'));
+        return Result.err(
+          app.NotFoundFailure('Cihaz bulunamadı', code: 'not-found'),
+        );
       }
       final device = _fromFirestore(doc.id, doc.data() ?? {});
       return Result.ok(device);
@@ -110,7 +119,8 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
       serialNumber: (data['serial_number'] ?? '') as String,
       customer: (data['institution_name'] ?? '') as String,
       installDate: (data['installation_date']?.toString() ?? ''),
-      warrantyStatus: warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
+      warrantyStatus:
+          warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
           ? 'Devam Ediyor'
           : 'Bitti',
       lastMaintenance: '',

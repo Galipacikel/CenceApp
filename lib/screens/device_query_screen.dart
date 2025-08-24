@@ -20,7 +20,7 @@ class CihazSorgulaScreen extends ConsumerStatefulWidget {
 }
 
 class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
-     with TickerProviderStateMixin {
+    with TickerProviderStateMixin {
   TextEditingController? _searchController;
   Device? _selectedDevice;
   List<Device> _recentSearches = [];
@@ -29,7 +29,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   static const String _recentSearchesKey = 'recent_device_searches';
-  
+
   // Yeni state değişkenleri
   String? _selectedModelName;
   List<Device> _devicesByModel = [];
@@ -40,7 +40,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
   List<Device> _formSearchResults = [];
   Timer? _debounce;
   bool _isLoading = false;
-  
+
   // int _autocompleteKeyCounter = 0; // removed unused
 
   @override
@@ -61,7 +61,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
-    
+
     // Kalıcı verileri yükle
     _loadRecentSearches();
 
@@ -128,10 +128,14 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
     try {
       final box = await Hive.openBox('device_searches');
       final savedData = box.get(_recentSearchesKey, defaultValue: <Map>[]);
-      
+
       if (savedData.isNotEmpty) {
         setState(() {
-          _recentSearches = savedData.map<Device>((data) => Device.fromJson(Map<String, dynamic>.from(data))).toList();
+          _recentSearches = savedData
+              .map<Device>(
+                (data) => Device.fromJson(Map<String, dynamic>.from(data)),
+              )
+              .toList();
         });
       }
     } catch (e) {
@@ -144,7 +148,9 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
   Future<void> _saveRecentSearches() async {
     try {
       final box = await Hive.openBox('device_searches');
-      final dataToSave = _recentSearches.map((device) => device.toJson()).toList();
+      final dataToSave = _recentSearches
+          .map((device) => device.toJson())
+          .toList();
       await box.put(_recentSearchesKey, dataToSave);
     } catch (e) {
       // Hata durumunda sessizce devam et
@@ -197,7 +203,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
     final devicesByModel = devices
         .where((d) => d.modelName.toLowerCase() == modelName.toLowerCase())
         .toList();
-    
+
     setState(() {
       _selectedModelName = modelName;
       _devicesByModel = devicesByModel;
@@ -232,7 +238,11 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
         backgroundColor: const Color(0xFF23408E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -246,7 +256,11 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.qr_code_scanner_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
             onPressed: () async {
               final navigator = Navigator.of(context);
               final messenger = ScaffoldMessenger.of(context);
@@ -269,11 +283,17 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
             },
           ),
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Cihaz arama konusunda yardım için destek ekibimizle iletişime geçin.'),
+                  content: Text(
+                    'Cihaz arama konusunda yardım için destek ekibimizle iletişime geçin.',
+                  ),
                   duration: Duration(seconds: 3),
                 ),
               );
@@ -300,58 +320,76 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
               ),
               child: Autocomplete<Device>(
                 // key: ValueKey('forms-ac-$_autocompleteKeyCounter'), // KALDIRILDI: input'u sıfırlıyordu
-                fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                  // Autocomplete her yeniden oluşturulduğunda controller değişebiliyor.
-                  // Bu nedenle referansı ve listener’ı daima senkron tutuyoruz.
-                  if (_searchController != textEditingController) {
-                    _searchController?.removeListener(_onSearchTextChanged);
-                    _searchController = textEditingController;
-                    _searchController?.addListener(_onSearchTextChanged);
-                  }
-                  return TextField(
-                    controller: textEditingController,
-                    focusNode: focusNode,
-                    style: GoogleFonts.montserrat(fontSize: 16),
-                    decoration: InputDecoration(
-                      hintText: 'Model veya seri numarası ile ara... (en az 2 karakter)',
-                      hintStyle: GoogleFonts.montserrat(
-                        color: Colors.grey.shade500,
-                        fontSize: 16,
-                      ),
-                      prefixIcon: Container(
-                        margin: const EdgeInsets.all(12),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF23408E).withAlpha(26),
-                          borderRadius: BorderRadius.circular(8),
+                fieldViewBuilder:
+                    (
+                      context,
+                      textEditingController,
+                      focusNode,
+                      onFieldSubmitted,
+                    ) {
+                      // Autocomplete her yeniden oluşturulduğunda controller değişebiliyor.
+                      // Bu nedenle referansı ve listener’ı daima senkron tutuyoruz.
+                      if (_searchController != textEditingController) {
+                        _searchController?.removeListener(_onSearchTextChanged);
+                        _searchController = textEditingController;
+                        _searchController?.addListener(_onSearchTextChanged);
+                      }
+                      return TextField(
+                        controller: textEditingController,
+                        focusNode: focusNode,
+                        style: GoogleFonts.montserrat(fontSize: 16),
+                        decoration: InputDecoration(
+                          hintText:
+                              'Model veya seri numarası ile ara... (en az 2 karakter)',
+                          hintStyle: GoogleFonts.montserrat(
+                            color: Colors.grey.shade500,
+                            fontSize: 16,
+                          ),
+                          prefixIcon: Container(
+                            margin: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF23408E).withAlpha(26),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.search_rounded,
+                              color: Color(0xFF23408E),
+                              size: 20,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 18,
+                            horizontal: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF23408E),
+                              width: 2,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.search_rounded,
-                          color: Color(0xFF23408E),
-                          size: 20,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: const BorderSide(color: Color(0xFF23408E), width: 2),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-                      ),
-                    ),
-                  );
-                },
+                      );
+                    },
                 // Overlay yerine altta liste göstereceğiz; Autocomplete seçeneklerini boş bırakıyoruz
-                optionsBuilder: (TextEditingValue textEditingValue) => const Iterable<Device>.empty(),
-                displayStringForOption: (Device device) => '${device.modelName} - ${device.serialNumber}',
+                optionsBuilder: (TextEditingValue textEditingValue) =>
+                    const Iterable<Device>.empty(),
+                displayStringForOption: (Device device) =>
+                    '${device.modelName} - ${device.serialNumber}',
                 onSelected: _showDeviceDetails,
                 optionsViewBuilder: (context, onSelected, options) {
                   // Overlay kullanılmıyor
@@ -361,109 +399,129 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
             ),
             const SizedBox(height: 8),
             // Yükleniyor / Sonuçlar Paneli
-            Builder(builder: (context) {
-              final q = _searchController?.text.trim() ?? '';
-              if (_isLoading && q.length >= 2) {
-                return Container(
-                  margin: const EdgeInsets.only(top: 4, bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Yükleniyor... Lütfen bekleyin',
-                        style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              if (q.length >= 2) {
-                if (_formSearchResults.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6, bottom: 8),
-                    child: Text(
-                      'Sonuç bulunamadı',
-                      style: GoogleFonts.montserrat(color: Colors.grey.shade600, fontSize: 13),
+            Builder(
+              builder: (context) {
+                final q = _searchController?.text.trim() ?? '';
+                if (_isLoading && q.length >= 2) {
+                  return Container(
+                    margin: const EdgeInsets.only(top: 4, bottom: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Yükleniyor... Lütfen bekleyin',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }
-                return Container(
-                  margin: const EdgeInsets.only(top: 4, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
+                if (q.length >= 2) {
+                  if (_formSearchResults.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 6, bottom: 8),
+                      child: Text(
+                        'Sonuç bulunamadı',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
                       ),
-                    ],
-                  ),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    itemCount: _formSearchResults.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final device = _formSearchResults[index];
-                      return ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF23408E).withAlpha(26),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.devices_other_rounded,
-                            color: Color(0xFF23408E),
-                            size: 20,
-                          ),
+                    );
+                  }
+                  return Container(
+                    margin: const EdgeInsets.only(top: 4, bottom: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
-                        title: Text(
-                          device.modelName,
-                          style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 14),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              device.serialNumber,
-                              style: GoogleFonts.montserrat(color: Colors.grey.shade600, fontSize: 12),
+                      ],
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      itemCount: _formSearchResults.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final device = _formSearchResults[index];
+                        return ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF23408E).withAlpha(26),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            if (device.customer.isNotEmpty)
+                            child: const Icon(
+                              Icons.devices_other_rounded,
+                              color: Color(0xFF23408E),
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(
+                            device.modelName,
+                            style: GoogleFonts.montserrat(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                device.customer,
-                                style: GoogleFonts.montserrat(color: Colors.grey.shade500, fontSize: 11),
+                                device.serialNumber,
+                                style: GoogleFonts.montserrat(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
                               ),
-                          ],
-                        ),
-                        onTap: () => _showDeviceDetails(device),
-                      );
-                    },
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
+                              if (device.customer.isNotEmpty)
+                                Text(
+                                  device.customer,
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          onTap: () => _showDeviceDetails(device),
+                        );
+                      },
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             const SizedBox(height: 16),
 
             // Kamerayla Tara Butonu
@@ -495,7 +553,9 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                   if (!context.mounted) return;
                   if (status.isGranted) {
                     final code = await navigator.push<String>(
-                      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const BarcodeScannerScreen(),
+                      ),
                     );
                     if (!context.mounted) return;
                     if (code != null && code.isNotEmpty) {
@@ -512,10 +572,14 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                   } else {
                     messenger.showSnackBar(
                       SnackBar(
-                        content: const Text('Kamerayı kullanabilmek için izin vermelisiniz.'),
+                        content: const Text(
+                          'Kamerayı kullanabilmek için izin vermelisiniz.',
+                        ),
                         backgroundColor: Colors.red.shade600,
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         margin: const EdgeInsets.all(16),
                       ),
                     );
@@ -537,7 +601,11 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
             if (_recentSearches.isNotEmpty) ...[
               Row(
                 children: [
-                  Icon(Icons.history_rounded, color: Colors.grey.shade600, size: 20),
+                  Icon(
+                    Icons.history_rounded,
+                    color: Colors.grey.shade600,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Son Sorgulananlar',
@@ -560,7 +628,10 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                     ),
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.grey.shade600,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                     ),
                   ),
                 ],
@@ -599,7 +670,9 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                                   Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF23408E).withAlpha(26),
+                                      color: const Color(
+                                        0xFF23408E,
+                                      ).withAlpha(26),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
@@ -632,12 +705,18 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                               ),
                               const SizedBox(height: 4),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: device.warrantyEndDate != null
-                                      ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                          ? const Color(0xFF43A047).withAlpha(26)
-                                          : Colors.red.withAlpha(26))
+                                      ? (device.calculatedWarrantyStatus ==
+                                                'Devam Ediyor'
+                                            ? const Color(
+                                                0xFF43A047,
+                                              ).withAlpha(26)
+                                            : Colors.red.withAlpha(26))
                                       : Colors.grey.withAlpha(26),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -647,9 +726,10 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                                       : 'Henüz belirlenmemiş',
                                   style: GoogleFonts.montserrat(
                                     color: device.warrantyEndDate != null
-                                        ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                            ? const Color(0xFF43A047)
-                                            : Colors.red)
+                                        ? (device.calculatedWarrantyStatus ==
+                                                  'Devam Ediyor'
+                                              ? const Color(0xFF43A047)
+                                              : Colors.red)
                                         : Colors.grey,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
@@ -779,12 +859,15 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: device.warrantyEndDate != null
                         ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                            ? const Color(0xFF43A047).withAlpha(26)
-                            : Colors.red.withAlpha(26))
+                              ? const Color(0xFF43A047).withAlpha(26)
+                              : Colors.red.withAlpha(26))
                         : Colors.grey.withAlpha(26),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -794,13 +877,13 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                       Icon(
                         device.warrantyEndDate != null
                             ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                ? Icons.verified_rounded
-                                : Icons.warning_rounded)
+                                  ? Icons.verified_rounded
+                                  : Icons.warning_rounded)
                             : Icons.help_outline_rounded,
                         color: device.warrantyEndDate != null
                             ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                ? const Color(0xFF43A047)
-                                : Colors.red)
+                                  ? const Color(0xFF43A047)
+                                  : Colors.red)
                             : Colors.grey,
                         size: 16,
                       ),
@@ -809,9 +892,10 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                         device.calculatedWarrantyStatus,
                         style: GoogleFonts.montserrat(
                           color: device.warrantyEndDate != null
-                              ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                  ? const Color(0xFF43A047)
-                                  : Colors.red)
+                              ? (device.calculatedWarrantyStatus ==
+                                        'Devam Ediyor'
+                                    ? const Color(0xFF43A047)
+                                    : Colors.red)
                               : Colors.grey,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
@@ -890,7 +974,10 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF23408E),
                     borderRadius: BorderRadius.circular(6),
@@ -911,7 +998,8 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
           DetailRow(
             label: 'Seri Numarası',
             value: device.serialNumber,
-            onCopy: () => _copyToClipboard(device.serialNumber, 'Seri numarası'),
+            onCopy: () =>
+                _copyToClipboard(device.serialNumber, 'Seri numarası'),
           ),
           DetailRow(
             label: 'Model Adı',
@@ -921,16 +1009,12 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
           DetailRow(
             label: 'Müşteri/Kurum',
             value: device.customer,
-            onCopy: device.customer.isNotEmpty ? () => _copyToClipboard(device.customer, 'Müşteri bilgisi') : null,
+            onCopy: device.customer.isNotEmpty
+                ? () => _copyToClipboard(device.customer, 'Müşteri bilgisi')
+                : null,
           ),
-          DetailRow(
-            label: 'Kurulum Tarihi',
-            value: device.installDate,
-          ),
-          DetailRow(
-            label: 'Son Bakım Tarihi',
-            value: device.lastMaintenance,
-          ),
+          DetailRow(label: 'Kurulum Tarihi', value: device.installDate),
+          DetailRow(label: 'Son Bakım Tarihi', value: device.lastMaintenance),
           DetailRow(
             label: 'Garanti Bitiş Tarihi',
             value: device.warrantyEndDateString,
@@ -942,10 +1026,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                 value: '${device.daysUntilWarrantyExpiry} gün',
               ),
             ] else if (device.daysUntilWarrantyExpiry == 0) ...[
-              DetailRow(
-                label: 'Garanti Durumu',
-                value: 'Bugün sona eriyor!',
-              ),
+              DetailRow(label: 'Garanti Durumu', value: 'Bugün sona eriyor!'),
             ] else if (device.daysUntilWarrantyExpiry < 0) ...[
               DetailRow(
                 label: 'Garanti Durumu',
@@ -953,10 +1034,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
               ),
             ],
           ] else ...[
-            DetailRow(
-              label: 'Garanti Durumu',
-              value: 'Henüz belirlenmemiş',
-            ),
+            DetailRow(label: 'Garanti Durumu', value: 'Henüz belirlenmemiş'),
           ],
           const SizedBox(height: 20),
           Row(
@@ -1000,10 +1078,14 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                     // Servis geçmişi gösterme özelliği eklenebilir
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Servis geçmişi özelliği yakında eklenecek'),
+                        content: const Text(
+                          'Servis geçmişi özelliği yakında eklenecek',
+                        ),
                         backgroundColor: Colors.orange.shade600,
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         margin: const EdgeInsets.all(16),
                       ),
                     );

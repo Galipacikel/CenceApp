@@ -11,8 +11,8 @@ class UsernameAuthService {
   final FirebaseFirestore _firestore;
 
   UsernameAuthService({FirebaseAuth? auth, FirebaseFirestore? firestore})
-      : _auth = auth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+    : _auth = auth ?? FirebaseAuth.instance,
+      _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Kullanıcı adına göre email adresini bulur
   Future<String?> findEmailByUsername(String username) async {
@@ -31,7 +31,9 @@ class UsernameAuthService {
     } on FirebaseException catch (e) {
       // Kurallar "request.auth != null" gerektiriyorsa ve kullanıcı henüz giriş yapmadıysa
       // permission-denied hatası gelir. İsteğe bağlı olarak anonim oturum açıp tekrar dene.
-      if (kEnableAnonymousLookup && e.code == 'permission-denied' && _auth.currentUser == null) {
+      if (kEnableAnonymousLookup &&
+          e.code == 'permission-denied' &&
+          _auth.currentUser == null) {
         try {
           await _auth.signInAnonymously();
           final retry = await _firestore
@@ -65,8 +67,9 @@ class UsernameAuthService {
   }) async {
     try {
       // Eğer giriş alanına email yazıldıysa direkt e-posta ile giriş dene
-      final bool inputLooksLikeEmail =
-          RegExp(r'^[\w\.-]+@([\w\-]+\.)+[A-Za-z]{2,}$').hasMatch(username);
+      final bool inputLooksLikeEmail = RegExp(
+        r'^[\w\.-]+@([\w\-]+\.)+[A-Za-z]{2,}$',
+      ).hasMatch(username);
       if (inputLooksLikeEmail) {
         if (_auth.currentUser != null && _auth.currentUser!.isAnonymous) {
           await _auth.signOut();
@@ -141,7 +144,8 @@ class UsernameAuthService {
       if (!isValidUsername(username)) {
         throw FirebaseAuthException(
           code: 'invalid-username',
-          message: 'Kullanıcı adı 3-20 karakter olmalı ve sadece harf, rakam, alt çizgi içerebilir.',
+          message:
+              'Kullanıcı adı 3-20 karakter olmalı ve sadece harf, rakam, alt çizgi içerebilir.',
         );
       }
 

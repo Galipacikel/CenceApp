@@ -12,10 +12,12 @@ class AllServiceHistoryScreen extends ConsumerStatefulWidget {
   const AllServiceHistoryScreen({super.key});
 
   @override
-  ConsumerState<AllServiceHistoryScreen> createState() => _AllServiceHistoryScreenState();
+  ConsumerState<AllServiceHistoryScreen> createState() =>
+      _AllServiceHistoryScreenState();
 }
 
-class _AllServiceHistoryScreenState extends ConsumerState<AllServiceHistoryScreen> {
+class _AllServiceHistoryScreenState
+    extends ConsumerState<AllServiceHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatus = 'Tümü';
@@ -376,11 +378,7 @@ class _AllServiceHistoryScreenState extends ConsumerState<AllServiceHistoryScree
                 ),
               if (_isSelectionMode) ...[
                 IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
                   onPressed: _toggleSelectionMode,
                   tooltip: 'Seçimi İptal Et',
                 ),
@@ -433,10 +431,16 @@ class _AllServiceHistoryScreenState extends ConsumerState<AllServiceHistoryScree
                       decoration: InputDecoration(
                         hintText: 'Cihaz ara...',
                         border: InputBorder.none,
-                        icon: const Icon(Icons.search, color: Color(0xFF23408E)),
+                        icon: const Icon(
+                          Icons.search,
+                          color: Color(0xFF23408E),
+                        ),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.clear, color: Colors.grey),
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Colors.grey,
+                                ),
                                 onPressed: () {
                                   _searchController.clear();
                                   _onSearchChanged('');
@@ -592,11 +596,15 @@ class _AllServiceHistoryScreenState extends ConsumerState<AllServiceHistoryScree
                               await ref.read(serviceHistoryListProvider.future);
                             },
                             child: ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               itemCount: filteredItems.length,
                               itemBuilder: (context, index) {
                                 final item = filteredItems[index];
-                                final isSelected = _selectedItems.contains(item.id);
+                                final isSelected = _selectedItems.contains(
+                                  item.id,
+                                );
 
                                 return ServiceHistorySelectableCard(
                                   item: item,
@@ -612,17 +620,18 @@ class _AllServiceHistoryScreenState extends ConsumerState<AllServiceHistoryScree
                                               ServiceHistoryDetailScreen(
                                                 serviceHistory: item,
                                               ),
-                                          transitionsBuilder: (
-                                            context,
-                                            animation,
-                                            secondaryAnimation,
-                                            child,
-                                          ) {
-                                            return FadeTransition(
-                                              opacity: animation,
-                                              child: child,
-                                            );
-                                          },
+                                          transitionsBuilder:
+                                              (
+                                                context,
+                                                animation,
+                                                secondaryAnimation,
+                                                child,
+                                              ) {
+                                                return FadeTransition(
+                                                  opacity: animation,
+                                                  child: child,
+                                                );
+                                              },
                                         ),
                                       );
                                     }

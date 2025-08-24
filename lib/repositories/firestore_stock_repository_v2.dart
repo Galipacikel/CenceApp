@@ -10,13 +10,17 @@ class FirestoreStockRepositoryV2 implements StockPartRepositoryV2 {
   final FirebaseFirestore _firestore;
 
   FirestoreStockRepositoryV2({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
   Future<Result<List<StockPart>, app.Failure>> getAll() async {
     try {
-      final snapshot = await _firestore.collection(FirestorePaths.spareParts).get();
-      final list = snapshot.docs.map((d) => _fromFirestore(d.id, d.data())).toList();
+      final snapshot = await _firestore
+          .collection(FirestorePaths.spareParts)
+          .get();
+      final list = snapshot.docs
+          .map((d) => _fromFirestore(d.id, d.data()))
+          .toList();
       return Result.ok(list);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -26,9 +30,14 @@ class FirestoreStockRepositoryV2 implements StockPartRepositoryV2 {
   }
 
   @override
-  Future<Result<Unit, app.Failure>> decreaseQuantity(String partCode, int amount) async {
+  Future<Result<Unit, app.Failure>> decreaseQuantity(
+    String partCode,
+    int amount,
+  ) async {
     try {
-      final docRef = _firestore.collection(FirestorePaths.spareParts).doc(partCode);
+      final docRef = _firestore
+          .collection(FirestorePaths.spareParts)
+          .doc(partCode);
       await docRef.update({
         'stock_quantity': FieldValue.increment(-1 * amount),
         'updated_at': FieldValue.serverTimestamp(),

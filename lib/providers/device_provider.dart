@@ -7,7 +7,8 @@ class DeviceProvider extends ChangeNotifier {
   final DeviceRepositoryV2 _repository;
   String? _error;
 
-  DeviceProvider({required DeviceRepositoryV2 repository}) : _repository = repository;
+  DeviceProvider({required DeviceRepositoryV2 repository})
+    : _repository = repository;
 
   List<Device> get devices => List.unmodifiable(_devices);
   String? get error => _error;

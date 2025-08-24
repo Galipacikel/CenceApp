@@ -11,7 +11,8 @@ final criticalPartsProvider = FutureProvider<List<StockPart>>((ref) async {
 final filteredPartsProvider = FutureProvider<List<StockPart>>((ref) async {
   final parts = await ref.watch(stockPartsProvider.future);
   final query = ref.watch(inventoryProvider).value?.partSearch ?? '';
-  final showOnlyCritical = ref.watch(inventoryProvider).value?.showOnlyCritical ?? false;
+  final showOnlyCritical =
+      ref.watch(inventoryProvider).value?.showOnlyCritical ?? false;
 
   final sortedParts = [
     ...parts.where((p) => p.stokAdedi == 0),
@@ -21,9 +22,12 @@ final filteredPartsProvider = FutureProvider<List<StockPart>>((ref) async {
   final filtered = query.isEmpty
       ? sortedParts
       : sortedParts
-          .where((p) => p.parcaAdi.toLowerCase().contains(query.toLowerCase()) ||
-              p.parcaKodu.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+            .where(
+              (p) =>
+                  p.parcaAdi.toLowerCase().contains(query.toLowerCase()) ||
+                  p.parcaKodu.toLowerCase().contains(query.toLowerCase()),
+            )
+            .toList();
 
   if (!showOnlyCritical) return filtered;
 

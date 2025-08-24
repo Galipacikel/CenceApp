@@ -19,7 +19,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         backgroundColor: const Color(0xFF23408E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -33,7 +37,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.flash_on_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -44,11 +52,17 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Barkod/QR kod tarama konusunda yardım için destek ekibimizle iletişime geçin.'),
+                  content: Text(
+                    'Barkod/QR kod tarama konusunda yardım için destek ekibimizle iletişime geçin.',
+                  ),
                   duration: Duration(seconds: 3),
                 ),
               );
@@ -84,4 +98,4 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       ),
     );
   }
-} 
+}

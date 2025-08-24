@@ -22,7 +22,8 @@ class NewServiceFormScreen extends rp.ConsumerStatefulWidget {
   const NewServiceFormScreen({super.key});
 
   @override
-  rp.ConsumerState<NewServiceFormScreen> createState() => _NewServiceFormScreenState();
+  rp.ConsumerState<NewServiceFormScreen> createState() =>
+      _NewServiceFormScreenState();
 }
 
 class SelectedPart {
@@ -31,7 +32,8 @@ class SelectedPart {
   SelectedPart({required this.part, this.adet = 1});
 }
 
-class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> {
+class _NewServiceFormScreenState
+    extends rp.ConsumerState<NewServiceFormScreen> {
   int _formTipi = 0; // 0: Kurulum, 1: Bakım, 2: Arıza
   final TextEditingController _deviceController = TextEditingController();
   final TextEditingController _technicianController = TextEditingController();
@@ -144,7 +146,6 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
     _otherPartQuantityController.dispose();
     super.dispose();
   }
-
 
   void _filterParts(String query) {
     setState(() {
@@ -490,42 +491,42 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
     );
 
     // UI listesine de ekleyelim
-     await service.createWithStockDecreaseWithId(recordId, history);
-     if (!mounted) return;
-     
-     // Riverpod servis geçmişi provider'ları repository güncellemesini yansıtacaktır.
-     
-     Navigator.of(context).pop({
-         'formTipi': _formTipi,
-         'date': _date!,
-         'deviceId': _selectedDevice!.id,
-         'customer': _customerController.text,
-         'technician': technicianUid,
-         'description': _descriptionController.text,
-         'warrantyDuration': warrantyDuration,
-         'warrantyStartDate': _date,
-         'warrantyEndDate': warrantyEndDate,
-         'usedParts': _selectedParts
-             .map(
-               (sp) => {
-                 'partCode': sp.part.parcaKodu,
-                 'partName': sp.part.parcaAdi,
-                 'quantity': sp.adet,
-               },
-             )
-             .toList(),
-       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kayıt başarıyla eklendi!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
- 
-     // Flag'i sıfırla
-     _isSaving = false;
-   }
+    await service.createWithStockDecreaseWithId(recordId, history);
+    if (!mounted) return;
+
+    // Riverpod servis geçmişi provider'ları repository güncellemesini yansıtacaktır.
+
+    Navigator.of(context).pop({
+      'formTipi': _formTipi,
+      'date': _date!,
+      'deviceId': _selectedDevice!.id,
+      'customer': _customerController.text,
+      'technician': technicianUid,
+      'description': _descriptionController.text,
+      'warrantyDuration': warrantyDuration,
+      'warrantyStartDate': _date,
+      'warrantyEndDate': warrantyEndDate,
+      'usedParts': _selectedParts
+          .map(
+            (sp) => {
+              'partCode': sp.part.parcaKodu,
+              'partName': sp.part.parcaAdi,
+              'quantity': sp.adet,
+            },
+          )
+          .toList(),
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Kayıt başarıyla eklendi!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // Flag'i sıfırla
+    _isSaving = false;
+  }
 
   String _calculateWarrantyEndDate() {
     if (_date == null || _warrantyDurationController.text.isEmpty) {
@@ -701,7 +702,8 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
                             width: 70,
                             height: 70,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stack) => const SizedBox(width: 70, height: 70),
+                            errorBuilder: (context, error, stack) =>
+                                const SizedBox(width: 70, height: 70),
                           )
                         : const SizedBox(width: 70, height: 70),
                   ),

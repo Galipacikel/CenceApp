@@ -28,4 +28,4 @@ class BottomNavBar extends StatelessWidget {
       ],
     );
   }
-} 
+}

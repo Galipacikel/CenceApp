@@ -7,7 +7,6 @@ import '../services/username_auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 
-
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -53,7 +52,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     super.dispose();
   }
 
-
   Future<void> _login() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
@@ -83,8 +81,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       final uid = credential?.user?.uid;
       if (uid != null) {
         try {
-          final usersRef =
-              ref.read(firebaseFirestoreProvider).collection(FirestorePaths.users);
+          final usersRef = ref
+              .read(firebaseFirestoreProvider)
+              .collection(FirestorePaths.users);
           final userRef = usersRef.doc(uid);
           final userDoc = await userRef.get();
 
@@ -121,8 +120,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 const HomePage(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
+                  return FadeTransition(opacity: animation, child: child);
+                },
             transitionDuration: const Duration(milliseconds: 500),
           ),
         );
@@ -138,13 +137,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           message = 'Şifre hatalı';
           break;
         case 'user-disabled':
-          message = 'Hesabınız devre dışı. Lütfen yöneticinizle iletişime geçin.';
+          message =
+              'Hesabınız devre dışı. Lütfen yöneticinizle iletişime geçin.';
           break;
         case 'too-many-requests':
-          message = 'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
+          message =
+              'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
           break;
         case 'network-request-failed':
-          message = 'Ağ hatası. İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
+          message =
+              'Ağ hatası. İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
           break;
         case 'invalid-credential':
           message = 'Geçersiz kimlik bilgileri. Bilgilerinizi kontrol edin.';
@@ -155,9 +157,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         default:
           message = e.message ?? message;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() {
@@ -236,7 +238,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha(20), // 0.08 * 255 ≈ 20
+                                color: Colors.black.withAlpha(
+                                  20,
+                                ), // 0.08 * 255 ≈ 20
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -401,7 +405,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         const SizedBox(height: 16),
 
         // Mock giriş kaldırıldı
-        ],
+      ],
     );
   }
 

@@ -5,13 +5,17 @@ import 'package:cence_app/repositories/firestore_service_history_repository_v2.d
 import 'package:cence_app/models/service_history.dart';
 
 /// Repository provider
-final serviceHistoryRepositoryProvider = Provider<ServiceHistoryRepositoryV2>((ref) {
+final serviceHistoryRepositoryProvider = Provider<ServiceHistoryRepositoryV2>((
+  ref,
+) {
   final firestore = ref.watch(firebaseFirestoreProvider);
   return FirestoreServiceHistoryRepositoryV2(firestore: firestore);
 });
 
 /// Tüm servis kayıtları
-final serviceHistoryListProvider = FutureProvider<List<ServiceHistory>>((ref) async {
+final serviceHistoryListProvider = FutureProvider<List<ServiceHistory>>((
+  ref,
+) async {
   final repo = ref.watch(serviceHistoryRepositoryProvider);
   final result = await repo.getAll();
   return result.fold(
@@ -21,11 +25,12 @@ final serviceHistoryListProvider = FutureProvider<List<ServiceHistory>>((ref) as
 });
 
 /// Son N kayıt
-final recentServiceHistoryProvider = FutureProvider.family<List<ServiceHistory>, int>((ref, count) async {
-  final repo = ref.watch(serviceHistoryRepositoryProvider);
-  final result = await repo.getRecent(count: count);
-  return result.fold(
-    onSuccess: (list) => list,
-    onFailure: (e) => throw Exception(e.message),
-  );
-});
+final recentServiceHistoryProvider =
+    FutureProvider.family<List<ServiceHistory>, int>((ref, count) async {
+      final repo = ref.watch(serviceHistoryRepositoryProvider);
+      final result = await repo.getRecent(count: count);
+      return result.fold(
+        onSuccess: (list) => list,
+        onFailure: (e) => throw Exception(e.message),
+      );
+    });
