@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../widgets/common/bottom_nav_bar.dart';
 import '../widgets/common/cards/quick_access_card.dart';
@@ -12,19 +13,20 @@ import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
 
-import 'package:provider/provider.dart';
-import '../providers/service_history_provider.dart';
+import 'package:provider/provider.dart' as p;
+// removed: import '../providers/service_history_provider.dart';
+import 'package:cence_app/features/service_history/providers.dart';
 import '../providers/stock_provider.dart';
 import '../providers/device_provider.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   int _currentIndex = 0;
 
   @override
@@ -32,18 +34,13 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     // Firestore'dan ilk verileri yükle
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final deviceProvider = Provider.of<DeviceProvider>(
+      final deviceProvider = p.Provider.of<DeviceProvider>(
         context,
         listen: false,
       );
-      final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
-        context,
-        listen: false,
-      );
-      final stockProvider = Provider.of<StockProvider>(context, listen: false);
+      final stockProvider = p.Provider.of<StockProvider>(context, listen: false);
       await Future.wait([
         deviceProvider.fetchAll(),
-        serviceHistoryProvider.fetchAll(),
         stockProvider.fetchAll(),
       ]);
     });
@@ -168,7 +165,7 @@ class _HomePageState extends State<HomePage> {
         : 2;
     final gridSpacing = isWide ? 24.0 : 12.0;
     final iconColor = const Color(0xFF23408E);
-    final serviceHistoryList = Provider.of<ServiceHistoryProvider>(context).all;
+    final asyncRecent = ref.watch(recentServiceHistoryProvider(3));
     return Container(
       color: const Color(0xFFF5F6FA),
       child: SingleChildScrollView(
@@ -332,15 +329,20 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 18),
-            if (serviceHistoryList.isEmpty)
-              const EmptyServiceCard()
-            else
-              Column(
-                children: serviceHistoryList
-                    .take(3)
-                    .map((item) => ModernServiceCard(item: item))
-                    .toList(),
-              ),
+            asyncRecent.when(
+              data: (serviceHistoryList) {
+                if (serviceHistoryList.isEmpty) {
+                  return const EmptyServiceCard();
+                }
+                return Column(
+                  children: serviceHistoryList
+                      .map((item) => ModernServiceCard(item: item))
+                      .toList(),
+                );
+              },
+              loading: () => const EmptyServiceCard(),
+              error: (_, __) => const EmptyServiceCard(),
+            ),
 
             const SizedBox(height: 24),
             // Footer

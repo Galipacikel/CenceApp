@@ -11,7 +11,8 @@ import '../providers/device_provider.dart';
 // import '../repositories/firestore_service_history_repository.dart';
 // import '../repositories/firestore_stock_repository.dart';
 import '../providers/app_state_provider.dart';
-import '../providers/service_history_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as r;
+import 'package:cence_app/features/service_history/providers.dart';
 import '../widgets/common/device_tile.dart';
 import '../widgets/common/stock_part_tile.dart';
 import '../widgets/common/confirmation_dialog.dart';
@@ -944,27 +945,15 @@ void showStockPartDetailModal(
   );
 }
 
-class _StockPartDetailModal extends StatefulWidget {
+class _StockPartDetailModal extends r.ConsumerWidget {
   final StockPart part;
   const _StockPartDetailModal({
     required this.part,
   });
 
   @override
-  State<_StockPartDetailModal> createState() => _StockPartDetailModalState();
-}
-
-class _StockPartDetailModalState extends State<_StockPartDetailModal> {
-  late Future<void> _futureLoad;
-
-  @override
-  void initState() {
-    super.initState();
-    _futureLoad = Provider.of<ServiceHistoryProvider>(context, listen: false).fetchAll();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, r.WidgetRef ref) {
+    final asyncList = ref.watch(serviceHistoryListProvider);
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -980,34 +969,31 @@ class _StockPartDetailModalState extends State<_StockPartDetailModal> {
             Text('Parça Detayı', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             Text(
-              'Adı: ${widget.part.parcaAdi}',
+              'Adı: ${part.parcaAdi}',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text('Kod: ${widget.part.parcaKodu}'),
-            Text('Stok: ${widget.part.stokAdedi}'),
+            Text('Kod: ${part.parcaKodu}'),
+            Text('Stok: ${part.stokAdedi}'),
             const SizedBox(height: 18),
             Text(
               'Kullanıldığı Servisler:',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            FutureBuilder<void>(
-              future: _futureLoad,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final histories = Provider.of<ServiceHistoryProvider>(context).all;
+            asyncList.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, __) => const Text('Servis geçmişi yüklenirken bir hata oluştu.'),
+              data: (histories) {
                 if (histories.isEmpty) {
                   return const Text('Bu parça hiçbir serviste kullanılmamış.');
                 }
                 final relevant = histories
-                     .where(
-                       (h) => h.kullanilanParcalar.any(
-                         (p) => p.parcaKodu == widget.part.parcaKodu,
-                       ),
-                     )
-                     .toList();
+                    .where(
+                      (h) => h.kullanilanParcalar.any(
+                        (p) => p.parcaKodu == part.parcaKodu,
+                      ),
+                    )
+                    .toList();
                 if (relevant.isEmpty) {
                   return const Text('Bu parça hiçbir serviste kullanılmamış.');
                 }

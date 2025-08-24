@@ -10,19 +10,19 @@ import '../services/service_record_service.dart';
 import '../models/stock_part.dart';
 import '../models/device.dart';
 import '../models/service_history.dart';
-import 'package:provider/provider.dart';
-import '../providers/stock_provider.dart';
-import '../providers/service_history_provider.dart';
-import '../providers/device_provider.dart';
-import '../providers/app_state_provider.dart';
+
 import '../widgets/service/form_sections/device_selection_section.dart';
 import '../widgets/service/form_widgets/form_type_chip.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
+import 'package:cence_app/features/stock/providers.dart';
+import 'package:cence_app/features/devices/providers.dart';
+import 'package:cence_app/features/devices/use_cases.dart';
 
-class NewServiceFormScreen extends StatefulWidget {
+class NewServiceFormScreen extends rp.ConsumerStatefulWidget {
   const NewServiceFormScreen({super.key});
 
   @override
-  State<NewServiceFormScreen> createState() => _NewServiceFormScreenState();
+  rp.ConsumerState<NewServiceFormScreen> createState() => _NewServiceFormScreenState();
 }
 
 class SelectedPart {
@@ -31,7 +31,7 @@ class SelectedPart {
   SelectedPart({required this.part, this.adet = 1});
 }
 
-class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
+class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> {
   int _formTipi = 0; // 0: Kurulum, 1: Bakım, 2: Arıza
   final TextEditingController _deviceController = TextEditingController();
   final TextEditingController _technicianController = TextEditingController();
@@ -74,8 +74,56 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     super.initState();
     _dateController = TextEditingController();
     _warrantyDurationController.text = '24';
-    _loadParts();
-    _loadDevices();
+    // Async değerleri mevcutsa seed et
+    final partsAsync = ref.read(stockPartsProvider);
+    partsAsync.when(
+      data: (parts) {
+        setState(() {
+          _allParts = parts;
+          _filteredParts = parts;
+        });
+      },
+      loading: () {},
+      error: (e, st) {},
+    );
+    final devicesAsync = ref.read(devicesListProvider);
+    devicesAsync.when(
+      data: (devices) {
+        setState(() {
+          _allDevices = devices;
+          _filteredDevices = devices;
+        });
+      },
+      loading: () {},
+      error: (e, st) {},
+    );
+    // Değişimleri dinle
+    ref.listen(stockPartsProvider, (prev, next) {
+      next.when(
+        data: (parts) {
+          if (!mounted) return;
+          setState(() {
+            _allParts = parts;
+            _filteredParts = parts;
+          });
+        },
+        loading: () {},
+        error: (e, st) {},
+      );
+    });
+    ref.listen(devicesListProvider, (prev, next) {
+      next.when(
+        data: (devices) {
+          if (!mounted) return;
+          setState(() {
+            _allDevices = devices;
+            _filteredDevices = devices;
+          });
+        },
+        loading: () {},
+        error: (e, st) {},
+      );
+    });
 
     // Teknisyen adını otomatik doldur
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -97,26 +145,6 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
     super.dispose();
   }
 
-  Future<void> _loadParts() async {
-    // StockProvider'dan parçaları al
-    final stockProvider = Provider.of<StockProvider>(context, listen: false);
-    setState(() {
-      _allParts = stockProvider.parts;
-      _filteredParts = stockProvider.parts;
-    });
-  }
-
-  Future<void> _loadDevices() async {
-    final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-    if (deviceProvider.devices.isEmpty) {
-      await deviceProvider.fetchAll();
-    }
-    final devices = deviceProvider.devices;
-    setState(() {
-      _allDevices = devices;
-      _filteredDevices = devices;
-    });
-  }
 
   void _filterParts(String query) {
     setState(() {
@@ -176,12 +204,18 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
 
   // Kullanıcı profilinden teknisyen adını al
   String _getTechnicianName() {
-    final appStateProvider = Provider.of<AppStateProvider>(
-      context,
-      listen: false,
-    );
-    final userProfile = appStateProvider.userProfile;
-    return userProfile?.fullName ?? 'Teknisyen';
+    final user = FirebaseAuth.instance.currentUser;
+    // displayName yoksa email'in @ öncesini kullan, hiçbiri yoksa "Teknisyen"
+    if (user != null) {
+      if ((user.displayName ?? '').trim().isNotEmpty) {
+        return user.displayName!.trim();
+      }
+      final email = user.email ?? '';
+      if (email.contains('@')) {
+        return email.split('@').first;
+      }
+    }
+    return 'Teknisyen';
   }
 
   void _updateDateController() {
@@ -396,8 +430,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       );
     }
 
-    // Cihaz bilgilerini güncelle (DeviceProvider ile)
-    final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
+    // Cihaz bilgilerini güncelle (Riverpod use-case ile)
     final updatedDevice = Device(
       id: _selectedDevice!.id,
       modelName: _selectedDevice!.modelName,
@@ -411,7 +444,8 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       lastMaintenance: _dateController.text,
       warrantyEndDate: warrantyEndDate,
     );
-    deviceProvider.updateDevice(updatedDevice);
+    final updateDevice = ref.read(updateDeviceUseCaseProvider);
+    await updateDevice(updatedDevice);
 
     // Fotoğrafı Storage'a yükle ve URL'leri hazırla
     final List<String> photoUrls = [];
@@ -459,7 +493,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
      await service.createWithStockDecreaseWithId(recordId, history);
      if (!mounted) return;
      
-     Provider.of<ServiceHistoryProvider>(context, listen: false).addServiceHistory(history);
+     // Riverpod servis geçmişi provider'ları repository güncellemesini yansıtacaktır.
      
      Navigator.of(context).pop({
          'formTipi': _formTipi,

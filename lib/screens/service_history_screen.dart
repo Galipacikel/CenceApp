@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/service_history.dart';
-import 'package:provider/provider.dart';
-import '../providers/service_history_provider.dart';
+import 'package:provider/provider.dart' as p;
+// removed: import '../providers/service_history_provider.dart';
 import 'service_history_detail_screen.dart';
 import '../providers/app_state_provider.dart'
     ;
+// Add Riverpod service history providers
+import 'package:cence_app/features/service_history/providers.dart';
+import 'package:cence_app/features/service_history/use_cases.dart';
 
-class ServisGecmisiScreen extends StatefulWidget {
+class ServisGecmisiScreen extends ConsumerStatefulWidget {
   const ServisGecmisiScreen({super.key});
 
   @override
-  State<ServisGecmisiScreen> createState() => _ServisGecmisiScreenState();
+  ConsumerState<ServisGecmisiScreen> createState() => _ServisGecmisiScreenState();
 }
 
-class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
+class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatus = 'Tümü';
@@ -37,10 +41,9 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
     super.initState();
   }
 
-  List<ServiceHistory> get filteredHistory {
-    List<ServiceHistory> list = List.from(
-      Provider.of<ServiceHistoryProvider>(context).all,
-    );
+  // Apply filters and sorting to given list
+  List<ServiceHistory> _applyFilters(List<ServiceHistory> source) {
+    List<ServiceHistory> list = List.from(source);
 
     // Durum filtresi
     if (_selectedStatus != 'Tümü') {
@@ -126,11 +129,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
   // removed unused _deselectAllItems
 
   void _deleteSelectedItems() {
-    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
-      context,
-      listen: false,
-    );
-    final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
+    final isAdmin = p.Provider.of<AppStateProvider>(context, listen: false)
             .currentUser
             ?.isAdmin ??
         false;
@@ -198,42 +197,59 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
             child: const Text('İptal'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final selectedCount = _selectedItems.length;
+              try {
+                final delete = ref.read(deleteServiceHistoryUseCaseProvider);
+                for (final id in _selectedItems) {
+                  await delete(id);
+                }
+                // Refresh list
+                ref.invalidate(serviceHistoryListProvider);
 
-              // Seçili kayıtları listeden çıkar
-              final currentList = serviceHistoryProvider.all;
-              final updatedList = currentList
-                  .where((item) => !_selectedItems.contains(item.id))
-                  .toList();
+                // BuildContext guard after async work
+                if (!context.mounted) return;
 
-              // Provider'ı güncelle
-              serviceHistoryProvider.setAll(updatedList);
+                // Seçim modunu kapat
+                if (mounted) {
+                  setState(() {
+                    _selectedItems.clear();
+                    _isSelectionMode = false;
+                  });
+                }
 
-              // Seçim modunu kapat
-              setState(() {
-                _selectedItems.clear();
-                _isSelectionMode = false;
-              });
-
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white),
-                      const SizedBox(width: 8),
-                      Text('$selectedCount kayıt silindi'),
-                    ],
-                  ),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              );
+                if (mounted) Navigator.of(context).pop();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text('$selectedCount kayıt silindi'),
+                        ],
+                      ),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (!context.mounted) return;
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Silme işlemi sırasında hata: $e'),
+                      backgroundColor: Colors.red.shade600,
+                    ),
+                  );
+                }
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
@@ -258,92 +274,88 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
-    final filteredHistory = this.filteredHistory;
+    final asyncList = ref.watch(serviceHistoryListProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(isWide ? 90 : 70),
-        child: Consumer<ServiceHistoryProvider>(
-          builder: (context, serviceHistoryProvider, child) {
-            return Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF23408E),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF23408E).withAlpha(51), // 0.2 * 255 ≈ 51
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF23408E),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF23408E).withAlpha(51), // 0.2 * 255 ≈ 51
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + (isWide ? 10 : 6),
+            left: isWide ? 32 : 18,
+            right: isWide ? 32 : 18,
+            bottom: isWide ? 12 : 8,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _isSelectionMode
+                      ? '${_selectedItems.length} seçili'
+                      : 'Servis Geçmişi',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isWide ? 22 : 20,
                   ),
-                ],
+                ),
               ),
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + (isWide ? 10 : 6),
-                left: isWide ? 32 : 18,
-                right: isWide ? 32 : 18,
-                bottom: isWide ? 12 : 8,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+              if (!_isSelectionMode)
+                IconButton(
+                  icon: const Icon(
+                    Icons.select_all,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  onPressed: _toggleSelectionMode,
+                  tooltip: 'Toplu Seçim',
+                ),
+              if (_isSelectionMode) ...[
+                IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  onPressed: _toggleSelectionMode,
+                  tooltip: 'Seçimi İptal Et',
+                ),
+                if (_selectedItems.isNotEmpty &&
+                    (p.Provider.of<AppStateProvider>(context).currentUser?.isAdmin ?? false)) ...[
                   IconButton(
                     icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
+                      Icons.delete,
                       color: Colors.white,
                       size: 24,
                     ),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _deleteSelectedItems,
+                    tooltip: 'Seçili Kayıtları Sil',
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _isSelectionMode
-                          ? '${_selectedItems.length} seçili'
-                          : 'Servis Geçmişi',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: isWide ? 22 : 20,
-                      ),
-                    ),
-                  ),
-                  if (!_isSelectionMode)
-                    IconButton(
-                      icon: const Icon(
-                        Icons.select_all,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      onPressed: _toggleSelectionMode,
-                      tooltip: 'Toplu Seçim',
-                    ),
-                  if (_isSelectionMode) ...[
-                    IconButton(
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      onPressed: _toggleSelectionMode,
-                      tooltip: 'Seçimi İptal Et',
-                    ),
-                    if (_selectedItems.isNotEmpty &&
-                        (Provider.of<AppStateProvider>(context).currentUser?.isAdmin ?? false)) ...[
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        onPressed: _deleteSelectedItems,
-                        tooltip: 'Seçili Kayıtları Sil',
-                      ),
-                    ],
-                  ],
                 ],
-              ),
-            );
-          },
+              ],
+            ],
+          ),
         ),
       ),
       body: Column(
@@ -462,7 +474,14 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                       ),
                     ),
                     child: InkWell(
-                      onTap: () => _selectAllItems(filteredHistory),
+                      onTap: () {
+                        final list = ref.read(serviceHistoryListProvider).maybeWhen(
+                              data: (l) => l,
+                              orElse: () => <ServiceHistory>[],
+                            );
+                        final filtered = _applyFilters(list);
+                        _selectAllItems(filtered);
+                      },
                       borderRadius: BorderRadius.circular(8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -492,78 +511,88 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
           const SizedBox(height: 16),
           // Servis geçmişi listesi
           Expanded(
-            child: filteredHistory.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.history,
-                          size: 64,
-                          color: Colors.grey.shade400,
+            child: asyncList.when(
+              data: (list) {
+                final filteredHistory = _applyFilters(list);
+                return filteredHistory.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.history,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Servis geçmişi bulunamadı',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Filtreleri temizleyip tekrar deneyin',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Servis geçmişi bulunamadı',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Filtreleri temizleyip tekrar deneyin',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : RefreshIndicator(
-                    onRefresh: () async {
-                      await Future.delayed(const Duration(seconds: 1));
-                      setState(() {});
-                    },
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: filteredHistory.length,
-                      itemBuilder: (context, index) {
-                        final kayit = filteredHistory[index];
-                        final isSelected = _selectedItems.contains(kayit.id);
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(serviceHistoryListProvider);
+                          await ref.read(serviceHistoryListProvider.future);
+                          if (mounted) setState(() {});
+                        },
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredHistory.length,
+                          itemBuilder: (context, index) {
+                            final kayit = filteredHistory[index];
+                            final isSelected = _selectedItems.contains(kayit.id);
 
-                        return _ServisKaydiCard(
-                          kayit: kayit,
-                          isSelected: isSelected,
-                          isSelectionMode: _isSelectionMode,
-                          onTap: () {
-                            if (_isSelectionMode) {
-                              _toggleItemSelection(kayit.id);
-                            } else {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => ServiceHistoryDetailScreen(
-                                    serviceHistory: kayit,
-                                  ),
-                                ),
-                              );
-                            }
+                            return _ServisKaydiCard(
+                              kayit: kayit,
+                              isSelected: isSelected,
+                              isSelectionMode: _isSelectionMode,
+                              onTap: () {
+                                if (_isSelectionMode) {
+                                  _toggleItemSelection(kayit.id);
+                                } else {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ServiceHistoryDetailScreen(
+                                        serviceHistory: kayit,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              onLongPress: () {
+                                if (!_isSelectionMode) {
+                                  _toggleSelectionMode();
+                                  _toggleItemSelection(kayit.id);
+                                }
+                              },
+                              onSelectionChanged: (value) {
+                                _toggleItemSelection(kayit.id);
+                              },
+                            );
                           },
-                          onLongPress: () {
-                            if (!_isSelectionMode) {
-                              _toggleSelectionMode();
-                              _toggleItemSelection(kayit.id);
-                            }
-                          },
-                          onSelectionChanged: (value) {
-                            _toggleItemSelection(kayit.id);
-                          },
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                      );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) => Center(
+                child: Text('Veriler yüklenirken hata: $e'),
+              ),
+            ),
           ),
         ],
       ),

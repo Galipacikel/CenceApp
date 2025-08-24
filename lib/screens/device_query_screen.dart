@@ -3,22 +3,22 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'barcode_scanner_screen.dart';
-import 'package:provider/provider.dart';
-import '../providers/device_provider.dart';
-import '../models/device.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
-import 'package:cence_app/domain/repositories/forms_repository.dart';
+import 'package:cence_app/features/forms/use_cases.dart';
+import 'package:cence_app/features/devices/providers.dart';
+import '../models/device.dart';
+import 'barcode_scanner_screen.dart';
 
-class CihazSorgulaScreen extends StatefulWidget {
+class CihazSorgulaScreen extends ConsumerStatefulWidget {
   const CihazSorgulaScreen({super.key});
 
   @override
-  State<CihazSorgulaScreen> createState() => _CihazSorgulaScreenState();
+  ConsumerState<CihazSorgulaScreen> createState() => _CihazSorgulaScreenState();
 }
 
-class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
-    with TickerProviderStateMixin {
+class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
+     with TickerProviderStateMixin {
   TextEditingController? _searchController;
   Device? _selectedDevice;
   List<Device> _recentSearches = [];
@@ -34,7 +34,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
   bool _showModelDetails = false;
 
   // Forms arama için
-  late FormsRepositoryV2 _formsRepository;
+  // late FormsRepositoryV2 _formsRepository;
   List<Device> _formSearchResults = [];
   Timer? _debounce;
   bool _isLoading = false;
@@ -64,7 +64,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
     _loadRecentSearches();
 
     // DI: Forms repository'yi al (V2)
-    _formsRepository = Provider.of<FormsRepositoryV2>(context, listen: false);
+    // _formsRepository = Provider.of<FormsRepositoryV2>(context, listen: false);
 
     // Arama kutusu listener'ı fieldViewBuilder içinde controller sağlandığında eklenecek
   }
@@ -104,21 +104,20 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
         });
         return;
       }
-      final result = await _formsRepository.searchDevices(latest);
-      if (!mounted) return;
-      result.fold(
-        onSuccess: (results) {
-          setState(() {
-            _formSearchResults = results;
-            _isLoading = false;
-          });
-        },
-        onFailure: (_) {
-          setState(() {
-            _isLoading = false;
-          });
-        },
-      );
+      try {
+        final search = ref.read(formsSearchUseCaseProvider);
+        final results = await search(latest);
+        if (!mounted) return;
+        setState(() {
+          _formSearchResults = results;
+          _isLoading = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+      }
     });
   }
 
@@ -188,8 +187,14 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
   }
 
   void _showModelDetailsView(String modelName) {
-    final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-    final devicesByModel = deviceProvider.getDevicesByModelName(modelName);
+    final asyncDevices = ref.read(devicesListProvider);
+    final devices = asyncDevices.maybeWhen(
+      data: (d) => d,
+      orElse: () => const <Device>[],
+    );
+    final devicesByModel = devices
+        .where((d) => d.modelName.toLowerCase() == modelName.toLowerCase())
+        .toList();
     
     setState(() {
       _selectedModelName = modelName;
@@ -493,16 +498,14 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                     if (!context.mounted) return;
                     if (code != null && code.isNotEmpty) {
                       _searchController?.text = code;
-                      final r = await _formsRepository.searchDevices(code);
-                      if (!context.mounted) return;
-                      r.fold(
-                        onSuccess: (foundDevices) {
-                          if (foundDevices.isNotEmpty) {
-                            _showDeviceDetails(foundDevices.first);
-                          }
-                        },
-                        onFailure: (_) {},
-                      );
+                      try {
+                        final search = ref.read(formsSearchUseCaseProvider);
+                        final foundDevices = await search(code);
+                        if (!context.mounted) return;
+                        if (foundDevices.isNotEmpty) {
+                          _showDeviceDetails(foundDevices.first);
+                        }
+                      } catch (_) {}
                     }
                   } else {
                     messenger.showSnackBar(

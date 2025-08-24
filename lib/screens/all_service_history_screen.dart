@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as p;
 import '../models/service_history.dart';
-import '../providers/service_history_provider.dart';
+// removed: import '../providers/service_history_provider.dart';
 import 'service_history_detail_screen.dart';
-import '../providers/app_state_provider.dart'
-    ;
+import '../providers/app_state_provider.dart';
+// Add Riverpod service history providers
+import 'package:cence_app/features/service_history/providers.dart';
+import 'package:cence_app/features/service_history/use_cases.dart';
 
-class AllServiceHistoryScreen extends StatefulWidget {
+class AllServiceHistoryScreen extends ConsumerStatefulWidget {
   const AllServiceHistoryScreen({super.key});
 
   @override
-  State<AllServiceHistoryScreen> createState() =>
-      _AllServiceHistoryScreenState();
+  ConsumerState<AllServiceHistoryScreen> createState() => _AllServiceHistoryScreenState();
 }
 
-class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
+class _AllServiceHistoryScreenState extends ConsumerState<AllServiceHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatus = 'Tümü';
@@ -178,11 +180,7 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
   // removed unused _deselectAllItems
 
   void _deleteSelectedItems() {
-    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
-      context,
-      listen: false,
-    );
-    final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
+    final isAdmin = p.Provider.of<AppStateProvider>(context, listen: false)
             .currentUser
             ?.isAdmin ??
         false;
@@ -250,42 +248,57 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
             child: const Text('İptal'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final selectedCount = _selectedItems.length;
+              final delete = ref.read(deleteServiceHistoryUseCaseProvider);
+              int failed = 0;
+              for (final id in _selectedItems) {
+                try {
+                  await delete(id);
+                } catch (e) {
+                  failed += 1;
+                }
+              }
 
-              // Seçili kayıtları listeden çıkar
-              final currentList = serviceHistoryProvider.all;
-              final updatedList = currentList
-                  .where((item) => !_selectedItems.contains(item.id))
-                  .toList();
+              // Listeyi yenile
+              ref.invalidate(serviceHistoryListProvider);
+              await ref.read(serviceHistoryListProvider.future);
 
-              // Provider'ı güncelle
-              serviceHistoryProvider.setAll(updatedList);
+              if (!context.mounted) return;
 
               // Seçim modunu kapat
-              setState(() {
-                _selectedItems.clear();
-                _isSelectionMode = false;
-              });
+              if (mounted) {
+                setState(() {
+                  _selectedItems.clear();
+                  _isSelectionMode = false;
+                });
+              }
 
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white),
-                      const SizedBox(width: 8),
-                      Text('$selectedCount kayıt silindi'),
-                    ],
+              if (mounted) Navigator.of(context).pop();
+
+              if (mounted) {
+                final success = selectedCount - failed;
+                final msg = failed == 0
+                    ? '$success kayıt silindi'
+                    : '$success kayıt silindi, $failed başarısız';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(msg),
+                      ],
+                    ),
+                    backgroundColor: failed == 0 ? Colors.green : Colors.orange,
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              );
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,
@@ -314,299 +327,296 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(isWide ? 90 : 70),
-        child: Consumer<ServiceHistoryProvider>(
-          builder: (context, serviceHistoryProvider, child) {
-            return Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF23408E),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF23408E).withAlpha(51),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF23408E),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF23408E).withAlpha(51),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + (isWide ? 10 : 6),
+            left: isWide ? 32 : 18,
+            right: isWide ? 32 : 18,
+            bottom: isWide ? 12 : 8,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _isSelectionMode
+                      ? '${_selectedItems.length} seçili'
+                      : 'Tüm Servis İşlemleri',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isWide ? 22 : 20,
                   ),
-                ],
+                ),
               ),
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + (isWide ? 10 : 6),
-                left: isWide ? 32 : 18,
-                right: isWide ? 32 : 18,
-                bottom: isWide ? 12 : 8,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+              if (!_isSelectionMode)
+                IconButton(
+                  icon: const Icon(
+                    Icons.select_all,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  onPressed: _toggleSelectionMode,
+                  tooltip: 'Toplu Seçim',
+                ),
+              if (_isSelectionMode) ...[
+                IconButton(
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  onPressed: _toggleSelectionMode,
+                  tooltip: 'Seçimi İptal Et',
+                ),
+                if (_selectedItems.isNotEmpty &&
+                    (p.Provider.of<AppStateProvider>(context).currentUser?.isAdmin ?? false)) ...[
                   IconButton(
                     icon: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
+                      Icons.delete,
                       color: Colors.white,
                       size: 24,
                     ),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: _deleteSelectedItems,
+                    tooltip: 'Seçili Kayıtları Sil',
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _isSelectionMode
-                          ? '${_selectedItems.length} seçili'
-                          : 'Tüm Servis İşlemleri',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: isWide ? 22 : 20,
-                      ),
-                    ),
-                  ),
-                  if (!_isSelectionMode)
-                    IconButton(
-                      icon: const Icon(
-                        Icons.select_all,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      onPressed: _toggleSelectionMode,
-                      tooltip: 'Toplu Seçim',
-                    ),
-                  if (_isSelectionMode) ...[
-                    IconButton(
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      onPressed: _toggleSelectionMode,
-                      tooltip: 'Seçimi İptal Et',
-                    ),
-                    if (_selectedItems.isNotEmpty &&
-                        (Provider.of<AppStateProvider>(context).currentUser?.isAdmin ?? false)) ...[
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        onPressed: _deleteSelectedItems,
-                        tooltip: 'Seçili Kayıtları Sil',
-                      ),
-                    ],
-                  ],
                 ],
-              ),
-            );
-          },
+              ],
+            ],
+          ),
         ),
       ),
-      body: Consumer<ServiceHistoryProvider>(
-        builder: (context, serviceHistoryProvider, child) {
-          final allItems = serviceHistoryProvider.all;
-          final filteredItems = _filterAndSearchItems(allItems);
-          return Column(
-            children: [
-              // Arama çubuğu
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(13),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+      body: Builder(
+        builder: (context) {
+          final asyncItems = ref.watch(serviceHistoryListProvider);
+          return asyncItems.when(
+            data: (allItems) {
+              final filteredItems = _filterAndSearchItems(allItems);
+              return Column(
+                children: [
+                  // Arama çubuğu
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: 'Cihaz ara...',
-                    border: InputBorder.none,
-                    icon: const Icon(Icons.search, color: Color(0xFF23408E)),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.grey),
-                            onPressed: () {
-                              _searchController.clear();
-                              _onSearchChanged('');
-                            },
-                          )
-                        : null,
-                  ),
-                ),
-              ),
-              // Filtreler
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedStatus,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                            ),
-                            items: _statusOptions
-                                .map(
-                                  (status) => DropdownMenuItem(
-                                    value: status,
-                                    child: Text(status),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: _onStatusFilterChanged,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedSortBy,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                            ),
-                            items: _sortOptions
-                                .map(
-                                  (sort) => DropdownMenuItem(
-                                    value: sort,
-                                    child: Text(sort),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: _onSortByChanged,
-                          ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(13),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    // Seçim modunda "Tümünü Seç" bildirim çubuğu
-                    if (_isSelectionMode) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF23408E).withAlpha(26),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFF23408E).withAlpha(77),
-                            width: 1,
-                          ),
-                        ),
-                        child: InkWell(
-                          onTap: () => _selectAllItems(filteredItems),
-                          borderRadius: BorderRadius.circular(8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.select_all,
-                                color: const Color(0xFF23408E),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Tümünü Seç',
-                                style: TextStyle(
-                                  color: const Color(0xFF23408E),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      decoration: InputDecoration(
+                        hintText: 'Cihaz ara...',
+                        border: InputBorder.none,
+                        icon: const Icon(Icons.search, color: Color(0xFF23408E)),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, color: Colors.grey),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _onSearchChanged('');
+                                },
+                              )
+                            : null,
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Liste
-              Expanded(
-                child: filteredItems.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                    ),
+                  ),
+                  // Filtreler
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      children: [
+                        Row(
                           children: [
-                            Icon(
-                              Icons.history,
-                              size: 64,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Servis geçmişi bulunamadı',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w500,
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                value: _selectedStatus,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                items: _statusOptions
+                                    .map(
+                                      (status) => DropdownMenuItem(
+                                        value: status,
+                                        child: Text(status),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: _onStatusFilterChanged,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Filtreleri temizleyip tekrar deneyin',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade500,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                value: _selectedSortBy,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                items: _sortOptions
+                                    .map(
+                                      (sort) => DropdownMenuItem(
+                                        value: sort,
+                                        child: Text(sort),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: _onSortByChanged,
                               ),
                             ),
                           ],
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () async {
-                          await Future.delayed(const Duration(seconds: 1));
-                          setState(() {});
-                        },
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: filteredItems.length,
-                          itemBuilder: (context, index) {
-                            final item = filteredItems[index];
-                            final isSelected = _selectedItems.contains(item.id);
+                        // Seçim modunda "Tümünü Seç" bildirim çubuğu
+                        if (_isSelectionMode) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF23408E).withAlpha(26),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFF23408E).withAlpha(77),
+                                width: 1,
+                              ),
+                            ),
+                            child: InkWell(
+                              onTap: () => _selectAllItems(filteredItems),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.select_all,
+                                    color: const Color(0xFF23408E),
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Tümünü Seç',
+                                    style: TextStyle(
+                                      color: const Color(0xFF23408E),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Liste
+                  Expanded(
+                    child: filteredItems.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.history,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Servis geçmişi bulunamadı',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Filtreleri temizleyip tekrar deneyin',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () async {
+                              ref.invalidate(serviceHistoryListProvider);
+                              await ref.read(serviceHistoryListProvider.future);
+                            },
+                            child: ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: filteredItems.length,
+                              itemBuilder: (context, index) {
+                                final item = filteredItems[index];
+                                final isSelected = _selectedItems.contains(item.id);
 
-                            return _ServiceHistoryCard(
-                              item: item,
-                              isSelected: isSelected,
-                              isSelectionMode: _isSelectionMode,
-                              onTap: () {
-                                if (_isSelectionMode) {
-                                  _toggleItemSelection(item.id);
-                                } else {
-                                  Navigator.of(context).push(
-                                    PageRouteBuilder(
-                                      pageBuilder: (_, __, ___) =>
-                                          ServiceHistoryDetailScreen(
-                                            serviceHistory: item,
-                                          ),
-                                      transitionsBuilder:
-                                          (
+                                return _ServiceHistoryCard(
+                                  item: item,
+                                  isSelected: isSelected,
+                                  isSelectionMode: _isSelectionMode,
+                                  onTap: () {
+                                    if (_isSelectionMode) {
+                                      _toggleItemSelection(item.id);
+                                    } else {
+                                      Navigator.of(context).push(
+                                        PageRouteBuilder(
+                                          pageBuilder: (_, __, ___) =>
+                                              ServiceHistoryDetailScreen(
+                                                serviceHistory: item,
+                                              ),
+                                          transitionsBuilder: (
                                             context,
                                             animation,
                                             secondaryAnimation,
@@ -617,25 +627,43 @@ class _AllServiceHistoryScreenState extends State<AllServiceHistoryScreen> {
                                               child: child,
                                             );
                                           },
-                                    ),
-                                  );
-                                }
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  onLongPress: () {
+                                    if (!_isSelectionMode) {
+                                      _toggleSelectionMode();
+                                      _toggleItemSelection(item.id);
+                                    }
+                                  },
+                                  onSelectionChanged: (value) {
+                                    _toggleItemSelection(item.id);
+                                  },
+                                );
                               },
-                              onLongPress: () {
-                                if (!_isSelectionMode) {
-                                  _toggleSelectionMode();
-                                  _toggleItemSelection(item.id);
-                                }
-                              },
-                              onSelectionChanged: (value) {
-                                _toggleItemSelection(item.id);
-                              },
-                            );
-                          },
-                        ),
-                      ),
+                            ),
+                          ),
+                  ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, st) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Veriler yüklenirken bir hata oluştu'),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      ref.invalidate(serviceHistoryListProvider);
+                    },
+                    child: const Text('Tekrar Dene'),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),
