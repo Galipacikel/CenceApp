@@ -9,6 +9,8 @@ import 'package:cence_app/features/forms/use_cases.dart';
 import 'package:cence_app/features/devices/providers.dart';
 import '../models/device.dart';
 import 'barcode_scanner_screen.dart';
+import '../widgets/common/cards/model_details_card.dart';
+import '../widgets/common/detail_row.dart';
 
 class CihazSorgulaScreen extends ConsumerStatefulWidget {
   const CihazSorgulaScreen({super.key});
@@ -671,7 +673,11 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                 position: _slideAnimation,
                 child: FadeTransition(
                   opacity: _fadeAnimation,
-                  child: _buildModelDetailsCard(_selectedModelName!, _devicesByModel),
+                  child: ModelDetailsCard(
+                    modelName: _selectedModelName!,
+                    devices: _devicesByModel,
+                    onDeviceTap: _showDeviceDetails,
+                  ),
                 ),
               ),
 
@@ -711,212 +717,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
     );
   }
 
-  Widget _buildModelDetailsCard(String modelName, List<Device> devices) {
-    final totalDevices = devices.length;
-    final activeWarranty = devices.where((d) => d.warrantyEndDate != null && d.calculatedWarrantyStatus == 'Devam Ediyor').length;
-    final expiredWarranty = totalDevices - activeWarranty;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(26),
-            blurRadius: 25,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Model Başlığı ve İstatistikler
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF23408E).withAlpha(26),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.devices_other_rounded,
-                  color: Color(0xFF23408E),
-                  size: 32,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      modelName,
-                      style: GoogleFonts.montserrat(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$totalDevices cihaz satılmış',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.grey.shade600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // İstatistik Kartları
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF43A047).withAlpha(26),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '$activeWarranty',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                          color: const Color(0xFF43A047),
-                        ),
-                      ),
-                      Text(
-                        'Aktif Garanti',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 12,
-                          color: const Color(0xFF43A047),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withAlpha(26),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '$expiredWarranty',
-                        style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                          color: Colors.red,
-                        ),
-                      ),
-                      Text(
-                        'Garanti Bitti',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 12,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Müşteri Listesi
-          Text(
-            'Satılan Müşteriler',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...devices.map((device) => Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: device.warrantyEndDate != null
-                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                              ? const Color(0xFF43A047).withAlpha(26)
-                              : Colors.red.withAlpha(26))
-                          : Colors.grey.withAlpha(26),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      device.warrantyEndDate != null
-                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                              ? Icons.verified_rounded
-                              : Icons.warning_rounded)
-                          : Icons.help_outline_rounded,
-                      color: device.warrantyEndDate != null
-                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                              ? const Color(0xFF43A047)
-                              : Colors.red)
-                          : Colors.grey,
-                      size: 20,
-                    ),
-                  ),
-                  title: Text(
-                    device.customer,
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Seri No: ${device.serialNumber}',
-                        style: GoogleFonts.montserrat(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                      ),
-                      Text(
-                        'Kurulum: ${device.installDate}',
-                        style: GoogleFonts.montserrat(
-                          color: Colors.grey.shade500,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                  trailing: buildWarrantyChip(device.calculatedWarrantyStatus, device.daysUntilWarrantyExpiry),
-                  onTap: () => _showDeviceDetails(device),
-                ),
-              )),
-        ],
-      ),
-    );
-  }
-
+// Moved to widgets/common/cards/model_details_card.dart
   Widget _buildDeviceCard(Device device) {
     return Container(
       decoration: BoxDecoration(
@@ -1108,52 +909,52 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
             ),
           ),
           const SizedBox(height: 20),
-          _DetailRow(
+          DetailRow(
             label: 'Seri Numarası',
             value: device.serialNumber,
             onCopy: () => _copyToClipboard(device.serialNumber, 'Seri numarası'),
           ),
-          _DetailRow(
+          DetailRow(
             label: 'Model Adı',
             value: device.modelName,
             onCopy: () => _copyToClipboard(device.modelName, 'Model adı'),
           ),
-          _DetailRow(
+          DetailRow(
             label: 'Müşteri/Kurum',
             value: device.customer,
             onCopy: device.customer.isNotEmpty ? () => _copyToClipboard(device.customer, 'Müşteri bilgisi') : null,
           ),
-          _DetailRow(
+          DetailRow(
             label: 'Kurulum Tarihi',
             value: device.installDate,
           ),
-          _DetailRow(
+          DetailRow(
             label: 'Son Bakım Tarihi',
             value: device.lastMaintenance,
           ),
-          _DetailRow(
+          DetailRow(
             label: 'Garanti Bitiş Tarihi',
             value: device.warrantyEndDateString,
           ),
           if (device.warrantyEndDate != null) ...[
             if (device.daysUntilWarrantyExpiry > 0) ...[
-              _DetailRow(
+              DetailRow(
                 label: 'Garantiye Kalan Süre',
                 value: '${device.daysUntilWarrantyExpiry} gün',
               ),
             ] else if (device.daysUntilWarrantyExpiry == 0) ...[
-              _DetailRow(
+              DetailRow(
                 label: 'Garanti Durumu',
                 value: 'Bugün sona eriyor!',
               ),
             ] else if (device.daysUntilWarrantyExpiry < 0) ...[
-              _DetailRow(
+              DetailRow(
                 label: 'Garanti Durumu',
                 value: '${device.daysUntilWarrantyExpiry.abs()} gün önce bitti',
               ),
             ],
           ] else ...[
-            _DetailRow(
+            DetailRow(
               label: 'Garanti Durumu',
               value: 'Henüz belirlenmemiş',
             ),
@@ -1226,115 +1027,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final VoidCallback? onCopy;
-
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.onCopy,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    IconData? icon;
-    switch (label) {
-      case 'Seri Numarası':
-        icon = Icons.qr_code_2_rounded;
-        break;
-      case 'Model Adı':
-        icon = Icons.devices_rounded;
-        break;
-      case 'Müşteri/Kurum':
-        icon = Icons.business_rounded;
-        break;
-      case 'Kurulum Tarihi':
-        icon = Icons.event_rounded;
-        break;
-      case 'Son Bakım Tarihi':
-        icon = Icons.build_rounded;
-        break;
-      case 'Garanti Bitiş Tarihi':
-        icon = Icons.verified_user_rounded;
-        break;
-      case 'Garantiye Kalan Süre':
-        icon = Icons.timer_rounded;
-        break;
-      case 'Garanti Durumu':
-        icon = Icons.verified_rounded;
-        break;
-      default:
-        icon = Icons.info_outline_rounded;
-    }
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF23408E).withAlpha(26),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: const Color(0xFF23408E), size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (onCopy != null)
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF23408E).withAlpha(26),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: IconButton(
-                onPressed: onCopy,
-                icon: const Icon(
-                  Icons.copy_rounded,
-                  color: Color(0xFF23408E),
-                  size: 18,
-                ),
-                tooltip: 'Kopyala',
-                padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
+// Moved to widgets/common/detail_row.dart
 Widget buildWarrantyChip(String status, int? daysLeft) {
   Color color;
   String label = status;
