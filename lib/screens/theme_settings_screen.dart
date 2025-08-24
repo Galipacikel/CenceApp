@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
-class ThemeSettingsScreen extends StatelessWidget {
+class ThemeSettingsScreen extends ConsumerWidget {
   const ThemeSettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final appState = Provider.of<AppStateProvider>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appSettings = ref.watch(appSettingsProvider);
     final Color primaryBlue = const Color(0xFF23408E);
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
     final Color textColor = const Color(0xFF232946);
-    // final Color subtitleColor = const Color(0xFF4A4A4A);
     final double cardRadius = 18;
     final isWide = MediaQuery.of(context).size.width > 600;
-    final themeMode = appState.appSettings.themeMode;
+    final themeMode = appSettings.themeMode;
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
@@ -79,7 +78,7 @@ class ThemeSettingsScreen extends StatelessWidget {
                       label: 'Açık Tema',
                       icon: Icons.light_mode,
                       selected: themeMode == ThemeMode.light,
-                      onTap: () => appState.setThemeMode(ThemeMode.light),
+                      onTap: () => ref.read(appSettingsProvider.notifier).setThemeMode(ThemeMode.light),
                       primaryBlue: primaryBlue,
                     ),
                     const SizedBox(height: 12),
@@ -87,7 +86,7 @@ class ThemeSettingsScreen extends StatelessWidget {
                       label: 'Koyu Tema',
                       icon: Icons.dark_mode,
                       selected: themeMode == ThemeMode.dark,
-                      onTap: () => appState.setThemeMode(ThemeMode.dark),
+                      onTap: () => ref.read(appSettingsProvider.notifier).setThemeMode(ThemeMode.dark),
                       primaryBlue: primaryBlue,
                     ),
                     const SizedBox(height: 12),
@@ -95,7 +94,7 @@ class ThemeSettingsScreen extends StatelessWidget {
                       label: 'Sistem Varsayılanı',
                       icon: Icons.phone_android,
                       selected: themeMode == ThemeMode.system,
-                      onTap: () => appState.setThemeMode(ThemeMode.system),
+                      onTap: () => ref.read(appSettingsProvider.notifier).setThemeMode(ThemeMode.system),
                       primaryBlue: primaryBlue,
                     ),
                   ],
@@ -115,7 +114,7 @@ class ThemeSettingsScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   onPressed: () {
-                    // Tema ayarlarını kaydet
+                    // Tema ayarlarını kaydet (değişiklikler zaten saklanıyor)
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tema ayarları başarıyla kaydedildi!'),

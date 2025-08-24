@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/service_history.dart';
-import 'package:provider/provider.dart' as p;
-// removed: import '../providers/service_history_provider.dart';
 import 'service_history_detail_screen.dart';
-import '../providers/app_state_provider.dart'
-    ;
 // Add Riverpod service history providers
 import 'package:cence_app/features/service_history/providers.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
 class ServisGecmisiScreen extends ConsumerStatefulWidget {
   const ServisGecmisiScreen({super.key});
@@ -129,10 +126,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
   // removed unused _deselectAllItems
 
   void _deleteSelectedItems() {
-    final isAdmin = p.Provider.of<AppStateProvider>(context, listen: false)
-            .currentUser
-            ?.isAdmin ??
-        false;
+    final isAdmin = ref.read(isAdminProvider);
     if (!isAdmin) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -342,7 +336,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                   tooltip: 'Seçimi İptal Et',
                 ),
                 if (_selectedItems.isNotEmpty &&
-                    (p.Provider.of<AppStateProvider>(context).currentUser?.isAdmin ?? false)) ...[
+                    (ref.watch(isAdminProvider))) ...[
                   IconButton(
                     icon: const Icon(
                       Icons.delete,

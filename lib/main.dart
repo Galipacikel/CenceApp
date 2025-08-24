@@ -18,6 +18,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
+import 'core/providers/firebase_providers.dart';
+import 'screens/home_page.dart';
 
 import 'repositories/forms_repository.dart';
 // V2 domain repository arayüzleri
@@ -72,13 +74,13 @@ Future<void> main() async {
   runApp(rp.ProviderScope(child: const MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends rp.ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, rp.WidgetRef ref) {
     return provider.MultiProvider(
-      providers: [
+       providers: [
         // V1 UI -> V2 repository bridge via adapters
         provider.Provider<DeviceRepository>(
           create: (_) => DeviceRepositoryAdapter(FirestoreDeviceRepositoryV2()),
@@ -121,8 +123,14 @@ class MyApp extends StatelessWidget {
         ],
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.system,
-        home: const LoginScreen(),
+        themeMode: ref.watch(appSettingsProvider).themeMode,
+        home: ref.watch(authUserChangesProvider).when(
+          data: (user) => user != null ? const HomePage() : const LoginScreen(),
+          loading: () => const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          ),
+          error: (_, __) => const LoginScreen(),
+        ),
       ),
     );
   }

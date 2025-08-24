@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
-class NotificationSettingsScreen extends StatefulWidget {
+class NotificationSettingsScreen extends ConsumerStatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  ConsumerState<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState extends ConsumerState<NotificationSettingsScreen> {
   bool _faultNotification = true;
   bool _maintenanceNotification = false;
   bool _stockNotification = true;
@@ -20,11 +20,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     super.initState();
     // Mevcut ayarları yükle
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      final settings = ref.read(appSettingsProvider);
       setState(() {
-        _faultNotification = appState.appSettings.faultNotification;
-        _maintenanceNotification = appState.appSettings.maintenanceNotification;
-        _stockNotification = appState.appSettings.stockNotification;
+        _faultNotification = settings.faultNotification;
+        _maintenanceNotification = settings.maintenanceNotification;
+        _stockNotification = settings.stockNotification;
       });
     });
   }
@@ -132,13 +132,14 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              onPressed: () {
+              onPressed: () async {
                 // Ayarları kaydet
-                final appState = Provider.of<AppStateProvider>(context, listen: false);
-                appState.setFaultNotification(_faultNotification);
-                appState.setMaintenanceNotification(_maintenanceNotification);
-                appState.setStockNotification(_stockNotification);
+                final notifier = ref.read(appSettingsProvider.notifier);
+                await notifier.setFaultNotification(_faultNotification);
+                await notifier.setMaintenanceNotification(_maintenanceNotification);
+                await notifier.setStockNotification(_stockNotification);
                 
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Bildirim ayarları başarıyla kaydedildi!'),
@@ -146,6 +147,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   ),
                 );
                 
+                if (!context.mounted) return;
                 Navigator.pop(context);
               },
               child: Text(

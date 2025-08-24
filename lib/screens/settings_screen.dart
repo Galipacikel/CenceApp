@@ -5,27 +5,35 @@ import 'theme_settings_screen.dart';
 import 'help_center_screen.dart';
 import 'support_request_screen.dart';
 import 'privacy_policy_screen.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state_provider.dart';
-import 'login_screen.dart';
-// import '../models/app_settings.dart';
-// import 'dart:io';
+// removed: import 'package:provider/provider.dart';
+// removed: ../providers/app_state_provider.dart
+// removed: import 'login_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  Future<String?> _loadProfileImagePath() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('profile_image_path');
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final Color primaryBlue = const Color(0xFF23408E);
-    // final Color lightBlue = const Color(0xFF64B5F6);
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
     final Color textColor = const Color(0xFF232946);
     final Color subtitleColor = const Color(0xFF4A4A4A);
     final double cardRadius = 18;
     final isWide = MediaQuery.of(context).size.width > 600;
+
+    final asyncUser = ref.watch(appUserProvider);
+
     return Scaffold(
       backgroundColor: background,
       body: SafeArea(
@@ -52,24 +60,33 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: Consumer<AppStateProvider>(
-                          builder: (context, appState, _) {
-                            final user = appState.userProfile;
+                        child: asyncUser.when(
+                          data: (u) {
+                            final fullName = (u?.fullName ?? '').trim();
+                            final parts = fullName.split(RegExp(r"\s+"));
+                            final name = parts.isNotEmpty ? parts.first : '';
+                            final surname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+                            final title = (u?.isAdmin ?? false) ? 'Admin' : 'Teknisyen';
                             return Row(
                               children: [
-                                CircleAvatar(
-                                  radius: 32,
-                                  backgroundColor: primaryBlue,
-                                  backgroundImage: user?.profileImagePath != null 
-                                      ? FileImage(File(user!.profileImagePath!))
-                                      : null,
-                                  child: user?.profileImagePath == null
-                                      ? Icon(
-                                          Icons.person,
-                                          color: Colors.white,
-                                          size: 32,
-                                        )
-                                      : null,
+                                FutureBuilder<String?>(
+                                  future: _loadProfileImagePath(),
+                                  builder: (context, snapshot) {
+                                    final path = snapshot.data;
+                                    final hasImage = path != null && path.isNotEmpty && File(path).existsSync();
+                                    return CircleAvatar(
+                                      radius: 32,
+                                      backgroundColor: primaryBlue,
+                                      backgroundImage: hasImage ? FileImage(File(path)) : null,
+                                      child: !hasImage
+                                          ? Icon(
+                                              Icons.person,
+                                              color: Colors.white,
+                                              size: 32,
+                                            )
+                                          : null,
+                                    );
+                                  },
                                 ),
                                 const SizedBox(width: 18),
                                 Expanded(
@@ -77,9 +94,7 @@ class SettingsScreen extends StatelessWidget {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        ((user?.name ?? '').isEmpty && (user?.surname ?? '').isEmpty)
-                                            ? 'Kullanıcı'
-                                            : '${user?.name ?? ''} ${user?.surname ?? ''}'.trim(),
+                                        (name.isEmpty && surname.isEmpty) ? 'Kullanıcı' : '$name $surname'.trim(),
                                         style: GoogleFonts.montserrat(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 18,
@@ -88,7 +103,7 @@ class SettingsScreen extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        user?.title ?? 'Teknisyen',
+                                        title,
                                         style: GoogleFonts.montserrat(
                                           fontSize: 14,
                                           color: subtitleColor,
@@ -102,7 +117,7 @@ class SettingsScreen extends StatelessWidget {
                                   onPressed: () {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (_) => ProfileEditScreen(),
+                                        builder: (_) => const ProfileEditScreen(),
                                       ),
                                     );
                                   },
@@ -112,6 +127,52 @@ class SettingsScreen extends StatelessWidget {
                               ],
                             );
                           },
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (_, __) => Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 32,
+                                backgroundColor: primaryBlue,
+                                child: const Icon(Icons.person, color: Colors.white, size: 32),
+                              ),
+                              const SizedBox(width: 18),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Kullanıcı',
+                                      style: GoogleFonts.montserrat(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Teknisyen',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 14,
+                                        color: subtitleColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.edit, color: primaryBlue),
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const ProfileEditScreen(),
+                                    ),
+                                  );
+                                },
+                                splashRadius: 24,
+                                tooltip: 'Profili Düzenle',
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 28),
@@ -121,7 +182,7 @@ class SettingsScreen extends StatelessWidget {
                         title: 'Bildirim Ayarları',
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => NotificationSettingsScreen(),
+                            builder: (_) => const NotificationSettingsScreen(),
                           ),
                         ),
                         iconColor: primaryBlue,
@@ -133,7 +194,7 @@ class SettingsScreen extends StatelessWidget {
                         icon: Icons.palette_outlined,
                         title: 'Tema ve Görünüm',
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => ThemeSettingsScreen()),
+                          MaterialPageRoute(builder: (_) => const ThemeSettingsScreen()),
                         ),
                         iconColor: primaryBlue,
                         cardColor: cardColor,
@@ -145,7 +206,7 @@ class SettingsScreen extends StatelessWidget {
                         title: 'Yardım Merkezi',
                         onTap: () => Navigator.of(
                           context,
-                        ).push(MaterialPageRoute(builder: (_) => HelpCenterScreen())),
+                        ).push(MaterialPageRoute(builder: (_) => const HelpCenterScreen())),
                         iconColor: primaryBlue,
                         cardColor: cardColor,
                         cardRadius: cardRadius,
@@ -155,7 +216,7 @@ class SettingsScreen extends StatelessWidget {
                         icon: Icons.support_agent_outlined,
                         title: 'Destek Talebi',
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => SupportRequestScreen()),
+                          MaterialPageRoute(builder: (_) => const SupportRequestScreen()),
                         ),
                         iconColor: primaryBlue,
                         cardColor: cardColor,
@@ -166,7 +227,7 @@ class SettingsScreen extends StatelessWidget {
                         icon: Icons.privacy_tip_outlined,
                         title: 'Gizlilik ve Koşullar',
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => PrivacyPolicyScreen()),
+                          MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
                         ),
                         iconColor: primaryBlue,
                         cardColor: cardColor,
@@ -251,14 +312,9 @@ class SettingsScreen extends StatelessWidget {
                                   vertical: 8,
                                 ),
                               ),
-                              onPressed: () {
+                              onPressed: () async {
                                 Navigator.of(context).pop();
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                    builder: (_) => const LoginScreen(),
-                                  ),
-                                  (route) => false,
-                                );
+                                await ref.read(firebaseAuthProvider).signOut();
                               },
                               child: Text(
                                 'Çıkış Yap',
@@ -333,7 +389,7 @@ class _SettingsCard extends StatelessWidget {
                     style: GoogleFonts.montserrat(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: textColor,
+                      color: const Color(0xFF232946),
                     ),
                   ),
                 ),

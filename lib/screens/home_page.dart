@@ -13,11 +13,12 @@ import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
 
-import 'package:provider/provider.dart' as p;
-// removed: import '../providers/service_history_provider.dart';
+// removed: import 'package:provider/provider.dart' as p;
 import 'package:cence_app/features/service_history/providers.dart';
-import '../providers/stock_provider.dart';
-import '../providers/device_provider.dart';
+// removed: ../providers/stock_provider.dart
+// removed: ../providers/device_provider.dart
+import 'package:cence_app/features/devices/providers.dart';
+import 'package:cence_app/features/stock/providers.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -32,16 +33,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Firestore'dan ilk verileri yükle
+    // Firestore'dan ilk verileri yükle (Riverpod FutureProvider'ları ile ön ısıtma)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final deviceProvider = p.Provider.of<DeviceProvider>(
-        context,
-        listen: false,
-      );
-      final stockProvider = p.Provider.of<StockProvider>(context, listen: false);
       await Future.wait([
-        deviceProvider.fetchAll(),
-        stockProvider.fetchAll(),
+        ref.read(devicesListProvider.future),
+        ref.read(stockPartsProvider.future),
       ]);
     });
   }

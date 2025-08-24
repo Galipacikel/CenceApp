@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_paths.dart';
 import '../services/username_auth_service.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state_provider.dart';
-import '../services/auth_service.dart';
+// removed: import '../services/auth_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _LoginScreenState extends ConsumerState<LoginScreen>
     with TickerProviderStateMixin {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -71,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
     try {
       // Eğer anonim oturum açıldıysa (kullanıcı-adı eşlemesi için), gerçek girişten önce kapat
-      final auth = FirebaseAuth.instance;
+      final auth = ref.read(firebaseAuthProvider);
       if (auth.currentUser != null && auth.currentUser!.isAnonymous) {
         await auth.signOut();
       }
@@ -85,13 +84,13 @@ class _LoginScreenState extends State<LoginScreen>
       if (uid != null) {
         try {
           final usersRef =
-              FirebaseFirestore.instance.collection(FirestorePaths.users);
+              ref.read(firebaseFirestoreProvider).collection(FirestorePaths.users);
           final userRef = usersRef.doc(uid);
           final userDoc = await userRef.get();
 
           if (!userDoc.exists) {
             // Yetkili kullanıcılar sadece önceden tanımlanır
-            await FirebaseAuth.instance.signOut();
+            await ref.read(firebaseAuthProvider).signOut();
             throw FirebaseAuthException(
               code: 'user-not-found',
               message: 'Yetkisiz kullanıcı veya kullanıcı bulunamadı.',
@@ -100,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen>
             final data = userDoc.data() as Map<String, dynamic>;
             final bool isActive = (data['is_active'] as bool?) ?? false;
             if (!isActive) {
-              await FirebaseAuth.instance.signOut();
+              await ref.read(firebaseAuthProvider).signOut();
               throw FirebaseAuthException(
                 code: 'user-disabled',
                 message:
@@ -113,14 +112,6 @@ class _LoginScreenState extends State<LoginScreen>
         } on FirebaseException catch (e) {
           debugPrint('User doc read/create error: ${e.code} - ${e.message}');
         }
-      }
-
-      // Provider'ı güncelle: current user ve userProfile'ı yükle
-      if (mounted) {
-        final appState = Provider.of<AppStateProvider>(context, listen: false);
-        final authService = AuthService();
-        final appUser = await authService.getCurrentUserProfile();
-        appState.updateCurrentUser(appUser);
       }
 
       if (mounted) {

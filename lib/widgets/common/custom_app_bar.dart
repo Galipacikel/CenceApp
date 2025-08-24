@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/app_state_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
-class CustomAppBar extends StatelessWidget {
+class CustomAppBar extends ConsumerWidget {
   const CustomAppBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final appState = Provider.of<AppStateProvider>(context);
-    final userProfile = appState.userProfile;
-    final isAdmin = appState.currentUser?.isAdmin ?? false;
-    final displayName = (userProfile != null && userProfile.fullName.isNotEmpty)
-        ? userProfile.fullName
-        : 'Kullanıcı';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncUser = ref.watch(appUserProvider);
+    final isAdmin = ref.watch(isAdminProvider);
+    final displayName = asyncUser.maybeWhen(
+      data: (u) {
+        final name = u?.fullName ?? u?.email ?? '';
+        return name.isNotEmpty ? name : 'Kullanıcı';
+      },
+      orElse: () => 'Kullanıcı',
+    );
 
-    return Container(
+    return Container
+(
       padding: const EdgeInsets.only(top: 32, left: 16, right: 16, bottom: 12),
       decoration: const BoxDecoration(
         color: Color(0xFF23408E),

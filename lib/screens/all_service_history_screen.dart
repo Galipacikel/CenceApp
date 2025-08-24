@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:provider/provider.dart' as p;
 import '../models/service_history.dart';
-// removed: import '../providers/service_history_provider.dart';
 import 'service_history_detail_screen.dart';
-import '../providers/app_state_provider.dart';
 // Add Riverpod service history providers
 import 'package:cence_app/features/service_history/providers.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
 class AllServiceHistoryScreen extends ConsumerStatefulWidget {
   const AllServiceHistoryScreen({super.key});
@@ -180,10 +178,7 @@ class _AllServiceHistoryScreenState extends ConsumerState<AllServiceHistoryScree
   // removed unused _deselectAllItems
 
   void _deleteSelectedItems() {
-    final isAdmin = p.Provider.of<AppStateProvider>(context, listen: false)
-            .currentUser
-            ?.isAdmin ??
-        false;
+    final isAdmin = ref.read(isAdminProvider);
     if (!isAdmin) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -389,7 +384,7 @@ class _AllServiceHistoryScreenState extends ConsumerState<AllServiceHistoryScree
                   tooltip: 'Seçimi İptal Et',
                 ),
                 if (_selectedItems.isNotEmpty &&
-                    (p.Provider.of<AppStateProvider>(context).currentUser?.isAdmin ?? false)) ...[
+                    (ref.watch(isAdminProvider))) ...[
                   IconButton(
                     icon: const Icon(
                       Icons.delete,

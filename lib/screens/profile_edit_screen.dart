@@ -1,50 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state_provider.dart';
+// removed: import 'package:provider/provider.dart';
+// removed: ../providers/app_state_provider.dart
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
-class ProfileEditScreen extends StatefulWidget {
+class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
 
   @override
-  State<ProfileEditScreen> createState() => _ProfileEditScreenState();
+  ConsumerState<ProfileEditScreen> createState() => _ProfileEditScreenState();
 }
 
-class _ProfileEditScreenState extends State<ProfileEditScreen> {
+class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   XFile? _profileImage;
   Uint8List? _profileImageBytes;
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
-  late TextEditingController _surnameController;
-  late TextEditingController _titleController;
+  String? _savedProfileImagePath;
 
   @override
   void initState() {
     super.initState();
-    final user = Provider.of<AppStateProvider>(
-      context,
-      listen: false,
-    ).userProfile;
-    _nameController = TextEditingController(
-      text: capitalizeEachWord(user?.name ?? ''),
-    );
-    _surnameController = TextEditingController(
-      text: capitalizeEachWord(user?.surname ?? ''),
-    );
-    _titleController = TextEditingController(
-      text: capitalizeEachWord(user?.title ?? ''),
-    );
+    _loadSavedProfileImagePath();
+  }
+
+  Future<void> _loadSavedProfileImagePath() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _savedProfileImagePath = prefs.getString('profile_image_path');
+      });
+    }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _surnameController.dispose();
-    _titleController.dispose();
     super.dispose();
   }
 
@@ -106,9 +100,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final Color primaryBlue = const Color(0xFF23408E);
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
-    // Removed unused textColor and subtitleColor
     final double cardRadius = 18;
-    final user = Provider.of<AppStateProvider>(context, listen: false).userProfile;
+
+    final asyncUser = ref.watch(appUserProvider);
+
+    String name = '';
+    String surname = '';
+    String titleStr = '';
+
+    asyncUser.whenData((u) {
+      final fullName = u?.fullName ?? '';
+      final parts = fullName.trim().split(RegExp(r"\s+"));
+      name = parts.isNotEmpty ? capitalizeEachWord(parts.first) : '';
+      surname = parts.length > 1 ? capitalizeEachWord(parts.sublist(1).join(' ')) : '';
+      titleStr = (u?.isAdmin ?? false) ? 'Admin' : 'Teknisyen';
+    });
+
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
@@ -167,8 +174,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           backgroundColor: primaryBlue,
                           backgroundImage: _profileImageBytes != null 
                               ? null 
-                              : (user?.profileImagePath != null 
-                                  ? FileImage(File(user!.profileImagePath!))
+                              : (_savedProfileImagePath != null 
+                                  ? FileImage(File(_savedProfileImagePath!))
                                   : null),
                           child: ClipOval(
                             child: (_profileImageBytes != null)
@@ -178,7 +185,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                     height: 76,
                                     fit: BoxFit.cover,
                                   )
-                                : (user?.profileImagePath == null
+                                : (_savedProfileImagePath == null
                                     ? Icon(
                                         Icons.person,
                                         color: Colors.white,
@@ -207,17 +214,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   const SizedBox(height: 18),
                   _ProfileInfoField(
                     label: 'Ad',
-                    value: _nameController.text,
+                    value: name,
                   ),
                   const SizedBox(height: 16),
                   _ProfileInfoField(
                     label: 'Soyad',
-                    value: _surnameController.text,
+                    value: surname,
                   ),
                   const SizedBox(height: 16),
                   _ProfileInfoField(
                     label: 'Unvan',
-                    value: _titleController.text,
+                    value: titleStr,
                   ),
                   const SizedBox(height: 28),
                   if (_profileImage != null) ...[
@@ -234,34 +241,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: () async {
-                          final appState = Provider.of<AppStateProvider>(
-                            context,
-                            listen: false,
-                          );
-                          final user = appState.userProfile;
-                          if (user == null) {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Kullanıcı profili yüklenmedi. Lütfen tekrar deneyin.'),
-                              ),
-                            );
-                            return;
-                          }
-                          
-                          // Profil fotoğrafını kalıcı olarak kaydet
+                          final prefs = await SharedPreferences.getInstance();
                           if (_profileImage != null) {
-                            final prefs = await SharedPreferences.getInstance();
                             await prefs.setString('profile_image_path', _profileImage!.path);
-                            
-                            appState.updateUserProfile(
-                              user.copyWith(
-                                profileImagePath: _profileImage!.path,
-                              ),
-                            );
-
+                            if (mounted) {
+                              setState(() {
+                                _savedProfileImagePath = _profileImage!.path;
+                              });
+                            }
                             if (!context.mounted) return;
-                            
                             final messenger = ScaffoldMessenger.of(context);
                             messenger.showSnackBar(
                               const SnackBar(
