@@ -717,7 +717,6 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
     );
   }
 
-// Removed unused buildWarrantyChip (moved into ModelDetailsCard as _buildWarrantyChip)
   Widget _buildDeviceCard(Device device) {
     return Container(
       decoration: BoxDecoration(
