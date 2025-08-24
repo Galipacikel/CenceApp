@@ -7,6 +7,8 @@ import 'barcode_scanner_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
 import '../models/device.dart';
+import 'dart:async';
+import '../repositories/forms_repository.dart';
 
 class CihazSorgulaScreen extends StatefulWidget {
   const CihazSorgulaScreen({super.key});
@@ -17,7 +19,7 @@ class CihazSorgulaScreen extends StatefulWidget {
 
 class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
     with TickerProviderStateMixin {
-  final TextEditingController _searchController = TextEditingController();
+  TextEditingController? _searchController;
   Device? _selectedDevice;
   List<Device> _recentSearches = [];
   late AnimationController _fadeController;
@@ -30,6 +32,12 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
   String? _selectedModelName;
   List<Device> _devicesByModel = [];
   bool _showModelDetails = false;
+
+  // Forms arama için
+  final FormsRepository _formsRepository = FormsRepository();
+  List<Device> _formSearchResults = [];
+  Timer? _debounce;
+  int _autocompleteKeyCounter = 0;
 
   @override
   void initState() {
@@ -52,13 +60,42 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
     
     // Kalıcı verileri yükle
     _loadRecentSearches();
+
+    // Arama kutusu listener'ı fieldViewBuilder içinde controller sağlandığında eklenecek
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
+    _debounce?.cancel();
+    // Autocomplete kendi controller'ını yönetir; sadece listener'ı kaldırıyoruz
+    _searchController?..removeListener(_onSearchTextChanged);
+    // _searchController?.dispose(); // KALDIRILDI: RawAutocomplete yönetiyor
     super.dispose();
+  }
+
+  void _onSearchTextChanged() {
+    final q = _searchController?.text.trim() ?? '';
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      if (!mounted) return;
+      if (q.isEmpty) {
+        setState(() {
+          _formSearchResults = [];
+        });
+        return;
+      }
+      try {
+        final results = await _formsRepository.searchDevices(q);
+        if (!mounted) return;
+        setState(() {
+          _formSearchResults = results;
+        });
+      } catch (_) {
+        // Hata durumunda sessizce geç
+      }
+    });
   }
 
   // Kalıcı verileri yükle
@@ -233,7 +270,15 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                 ],
               ),
               child: Autocomplete<Device>(
+                // key: ValueKey('forms-ac-$_autocompleteKeyCounter'), // KALDIRILDI: input'u sıfırlıyordu
                 fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                  // Autocomplete her yeniden oluşturulduğunda controller değişebiliyor.
+                  // Bu nedenle referansı ve listener’ı daima senkron tutuyoruz.
+                  if (_searchController != textEditingController) {
+                    _searchController?..removeListener(_onSearchTextChanged);
+                    _searchController = textEditingController
+                      ..addListener(_onSearchTextChanged);
+                  }
                   return TextField(
                     controller: textEditingController,
                     focusNode: focusNode,
@@ -276,25 +321,15 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                   );
                 },
                 optionsBuilder: (TextEditingValue textEditingValue) {
-                  if (textEditingValue.text.isEmpty) {
+                  final q = textEditingValue.text.trim();
+                  if (q.isEmpty) {
                     return const Iterable<Device>.empty();
                   }
-                  final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-                  final allDevices = deviceProvider.devices;
-                  final uniqueModels = <String>{};
-                  final uniqueDevices = <Device>[];
-                  
-                  for (final device in allDevices) {
-                    if (!uniqueModels.contains(device.modelName)) {
-                      uniqueModels.add(device.modelName);
-                      uniqueDevices.add(device);
-                    }
-                  }
-                  
-                  return uniqueDevices.where((device) =>
-                    device.modelName.toLowerCase().contains(textEditingValue.text.toLowerCase()) ||
-                    device.serialNumber.toLowerCase().contains(textEditingValue.text.toLowerCase())
-                  );
+                  final lower = q.toLowerCase();
+                  // Sunucudan gelen sonuçları client-side filtrele
+                  return _formSearchResults.where((d) =>
+                      d.modelName.toLowerCase().contains(lower) ||
+                      d.serialNumber.toLowerCase().contains(lower));
                 },
                 displayStringForOption: (Device device) => '${device.modelName} - ${device.serialNumber}',
                 onSelected: _showDeviceDetails,
@@ -393,25 +428,22 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                 onPressed: () async {
                   final status = await Permission.camera.request();
                   if (status.isGranted) {
-                    if (context.mounted) {
+                    if (mounted) {
                       final result = await Navigator.of(context).push<String>(
                         MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
                       );
                       if (result != null && result.isNotEmpty) {
-                        _searchController.text = result;
-                        final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-                        final allDevices = deviceProvider.devices;
-                        final foundDevices = allDevices.where((device) =>
-                          device.modelName.toLowerCase().contains(result.toLowerCase()) ||
-                          device.serialNumber.toLowerCase().contains(result.toLowerCase())
-                        ).toList();
-                        if (foundDevices.isNotEmpty) {
-                          _showDeviceDetails(foundDevices.first);
-                        }
+                        _searchController?.text = result;
+                        try {
+                          final foundDevices = await _formsRepository.searchDevices(result);
+                          if (foundDevices.isNotEmpty) {
+                            _showDeviceDetails(foundDevices.first);
+                          }
+                        } catch (_) {}
                       }
                     }
                   } else {
-                    if (context.mounted) {
+                    if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: const Text('Kamerayı kullanabilmek için izin vermelisiniz.'),
@@ -1271,4 +1303,4 @@ Widget buildWarrantyChip(String status, int? daysLeft) {
       ],
     ),
   );
-} 
+}

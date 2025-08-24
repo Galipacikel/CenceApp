@@ -14,6 +14,11 @@ import 'providers/service_history_provider.dart';
 import 'providers/device_provider.dart';
 import 'firebase_options.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+
+// USE_EMULATORS=true ile derlendiğinde Firebase servislerini yerel emülatörlere yönlendirir
+const bool kUseEmulators = bool.fromEnvironment('USE_EMULATORS', defaultValue: false);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +33,18 @@ Future<void> main() async {
   } else {
     await Firebase.initializeApp();
   }
+
+  // Emülatör kullanımını etkinleştir
+  if (kUseEmulators) {
+    final host = defaultTargetPlatform == TargetPlatform.android ? '10.0.2.2' : 'localhost';
+    // Firestore
+    FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
+    // Auth
+    FirebaseAuth.instance.useAuthEmulator(host, 9099);
+    // Storage (kullanılıyorsa)
+    FirebaseStorage.instance.useStorageEmulator(host, 9199);
+  }
+
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );

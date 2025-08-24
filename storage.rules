@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Yerel geliştirme için serbest bırakıyoruz. Üretimde KESİNLİKLE sıkı kurallar kullanın.
+      allow read, write: if true;
+    }
+  }
+}
