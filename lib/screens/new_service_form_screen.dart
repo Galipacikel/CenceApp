@@ -19,13 +19,7 @@ import '../widgets/service/form_sections/device_selection_section.dart';
 import '../widgets/service/form_widgets/form_type_chip.dart';
 
 class NewServiceFormScreen extends StatefulWidget {
-  final StockPartRepository? stockRepository;
-  final DeviceRepository? deviceRepository;
-  const NewServiceFormScreen({
-    super.key,
-    this.stockRepository,
-    this.deviceRepository,
-  });
+  const NewServiceFormScreen({super.key});
 
   @override
   State<NewServiceFormScreen> createState() => _NewServiceFormScreenState();
@@ -461,45 +455,43 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
       photos: photoUrls.isNotEmpty ? photoUrls : null,
     );
 
-    await service.createWithStockDecreaseWithId(recordId, history);
     // UI listesine de ekleyelim
-    final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
-      context,
-      listen: false,
-    );
-    serviceHistoryProvider.addServiceHistory(history);
-
-    Navigator.pop(context, {
-      'formTipi': _formTipi,
-      'date': _date!,
-      'deviceId': _selectedDevice!.id,
-      'customer': _customerController.text,
-      'technician': technicianUid,
-      'description': _descriptionController.text,
-      'warrantyDuration': warrantyDuration,
-      'warrantyStartDate': _date,
-      'warrantyEndDate': warrantyEndDate,
-      'usedParts': _selectedParts
-          .map(
-            (sp) => {
-              'partCode': sp.part.parcaKodu,
-              'partName': sp.part.parcaAdi,
-              'quantity': sp.adet,
-            },
-          )
-          .toList(),
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Kayıt başarıyla eklendi!'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    // Flag'i sıfırla
-    _isSaving = false;
-  }
+     await service.createWithStockDecreaseWithId(recordId, history);
+     if (!mounted) return;
+     
+     Provider.of<ServiceHistoryProvider>(context, listen: false).addServiceHistory(history);
+     
+     Navigator.of(context).pop({
+         'formTipi': _formTipi,
+         'date': _date!,
+         'deviceId': _selectedDevice!.id,
+         'customer': _customerController.text,
+         'technician': technicianUid,
+         'description': _descriptionController.text,
+         'warrantyDuration': warrantyDuration,
+         'warrantyStartDate': _date,
+         'warrantyEndDate': warrantyEndDate,
+         'usedParts': _selectedParts
+             .map(
+               (sp) => {
+                 'partCode': sp.part.parcaKodu,
+                 'partName': sp.part.parcaAdi,
+                 'quantity': sp.adet,
+               },
+             )
+             .toList(),
+       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kayıt başarıyla eklendi!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+ 
+     // Flag'i sıfırla
+     _isSaving = false;
+   }
 
   String _calculateWarrantyEndDate() {
     if (_date == null || _warrantyDurationController.text.isEmpty) {
@@ -767,7 +759,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                     color: const Color(0xFFE3F6ED),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFF43A047).withOpacity(0.3),
+                      color: const Color(0xFF43A047).withAlpha(77),
                     ),
                   ),
                   child: Row(
@@ -1039,7 +1031,7 @@ class _NewServiceFormScreenState extends State<NewServiceFormScreen> {
                                         BoxShadow(
                                           color: const Color(
                                             0xFF43A047,
-                                          ).withOpacity(0.08),
+                                          ).withAlpha(20),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),

@@ -1,20 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:cence_app/domain/repositories/device_repository.dart';
 import '../models/device.dart';
-import '../repositories/firestore_device_repository.dart';
 
 class DeviceProvider extends ChangeNotifier {
   final List<Device> _devices = [];
-  final FirestoreDeviceRepository _repository = FirestoreDeviceRepository();
+  final DeviceRepositoryV2 _repository;
+  String? _error;
+
+  DeviceProvider({required DeviceRepositoryV2 repository}) : _repository = repository;
 
   List<Device> get devices => List.unmodifiable(_devices);
+  String? get error => _error;
 
   Future<void> fetchAll() async {
-    final list = await _repository.getAll();
-    _devices
-      ..clear()
-      ..addAll(list);
-    notifyListeners();
+    final result = await _repository.getAll();
+    result.fold(
+      onSuccess: (list) {
+        _devices
+          ..clear()
+          ..addAll(list);
+        _error = null;
+        notifyListeners();
+      },
+      onFailure: (failure) {
+        _error = failure.message;
+        notifyListeners();
+      },
+    );
   }
 
   void addDevice(Device device) {

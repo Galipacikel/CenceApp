@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/stock_part.dart';
 import '../models/device.dart';
-import '../models/service_history.dart';
+// Removed unused import: service_history model is not used directly in this screen
+// import '../models/service_history.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/stock_provider.dart';
 import '../providers/device_provider.dart';
 // import '../repositories/firestore_service_history_repository.dart';
-import '../repositories/firestore_stock_repository.dart';
+// import '../repositories/firestore_stock_repository.dart';
 import '../providers/app_state_provider.dart';
+import '../providers/service_history_provider.dart';
 import '../widgets/common/device_tile.dart';
 import '../widgets/common/stock_part_tile.dart';
 import '../widgets/common/confirmation_dialog.dart';
@@ -31,7 +33,6 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
   String deviceSearch = '';
   String partSearch = '';
 
-  final StockPartRepository _stockRepository = FirestoreStockRepository();
   // Servis geçmişi modalinde kullanım için Firestore repo
   // final ServiceHistoryRepository _serviceHistoryRepository = FirestoreServiceHistoryRepository();
 
@@ -46,7 +47,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
   }
 
   Future<void> _loadData() async {
-    await _stockRepository.getAll();
+    await Provider.of<StockProvider>(context, listen: false).fetchAll();
     if (mounted) {
       setState(() {
         showBanner = true;
@@ -406,7 +407,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
     final Color textColor = const Color(0xFF232946);
-    final Color subtitleColor = const Color(0xFF4A4A4A);
+    // final Color subtitleColor = const Color(0xFF4A4A4A);
     final Color criticalRed = const Color(0xFFE53935);
     final Color warningAmber = const Color(0xFFFFC107);
     // final double cardRadius = 18;
@@ -480,7 +481,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
               color: cardColor,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.grey.withOpacity(0.08),
+                color: Colors.grey.withAlpha(20),
                 width: 1,
               ),
             ),
@@ -491,7 +492,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryBlue.withOpacity(0.25),
+                    color: primaryBlue.withAlpha(64),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -499,7 +500,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               labelColor: Colors.white,
-              unselectedLabelColor: textColor.withOpacity(0.7),
+              unselectedLabelColor: textColor.withAlpha(179),
               labelStyle: GoogleFonts.montserrat(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
@@ -621,6 +622,7 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
                                                message: '"${device.modelName}" cihazını silmek istediğinize emin misiniz?',
                                              ),
                                            );
+                                          if (!context.mounted) return false;
                                            if (confirmed == true) {
                                              Provider.of<DeviceProvider>(context, listen: false).removeDevice(device.id);
                                              return true;
@@ -721,19 +723,17 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
                                           vertical: 12,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: criticalRed.withOpacity(0.13),
+                                          color: criticalRed.withAlpha(33),
                                           borderRadius: BorderRadius.circular(
                                             14,
                                           ),
                                           border: Border.all(
-                                            color: criticalRed.withOpacity(0.3),
+                                            color: criticalRed.withAlpha(77),
                                             width: 1.2,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: criticalRed.withOpacity(
-                                                0.10,
-                                              ),
+                                              color: criticalRed.withAlpha(26),
                                               blurRadius: 8,
                                               offset: const Offset(0, 2),
                                             ),
@@ -777,8 +777,8 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
                                                             ),
                                                         decoration: BoxDecoration(
                                                           color: warningAmber
-                                                              .withOpacity(
-                                                                0.18,
+                                                              .withAlpha(
+                                                                46,
                                                               ),
                                                           borderRadius:
                                                               BorderRadius.circular(
@@ -925,37 +925,12 @@ class _StokTakibiScreenState extends State<StokTakibiScreen>
     );
   }
 
-  Future<void> _confirmAndDeleteDevice(Device device) async {
-    final isAdmin = Provider.of<AppStateProvider>(context, listen: false)
-            .currentUser
-            ?.isAdmin ??
-        false;
-    if (!isAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Silme yetkisi sadece admin kullanıcılar içindir.'),
-        ),
-      );
-      return;
-    }
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => ConfirmationDialog(
-        title: 'Cihazı Sil',
-        message: '"${device.modelName}" cihazını silmek istediğinize emin misiniz?',
-      ),
-    );
-    if (confirmed == true) {
-      Provider.of<DeviceProvider>(context, listen: false).removeDevice(device.id);
-    }
-  }
 }
 
 // Parça detay modalı (güncellenmiş)
 void showStockPartDetailModal(
   BuildContext context,
   StockPart part,
-  ServiceHistoryRepository serviceHistoryRepository,
 ) {
   showModalBottomSheet(
     context: context,
@@ -965,17 +940,14 @@ void showStockPartDetailModal(
     ),
     builder: (ctx) => _StockPartDetailModal(
       part: part,
-      serviceHistoryRepository: serviceHistoryRepository,
     ),
   );
 }
 
 class _StockPartDetailModal extends StatefulWidget {
   final StockPart part;
-  final ServiceHistoryRepository serviceHistoryRepository;
   const _StockPartDetailModal({
     required this.part,
-    required this.serviceHistoryRepository,
   });
 
   @override
@@ -983,12 +955,12 @@ class _StockPartDetailModal extends StatefulWidget {
 }
 
 class _StockPartDetailModalState extends State<_StockPartDetailModal> {
-  late Future<List<ServiceHistory>> _futureHistory;
+  late Future<void> _futureLoad;
 
   @override
   void initState() {
     super.initState();
-    _futureHistory = widget.serviceHistoryRepository.getAll();
+    _futureLoad = Provider.of<ServiceHistoryProvider>(context, listen: false).fetchAll();
   }
 
   @override
@@ -1019,57 +991,39 @@ class _StockPartDetailModalState extends State<_StockPartDetailModal> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            FutureBuilder<List<ServiceHistory>>(
-              future: _futureHistory,
+            FutureBuilder<void>(
+              future: _futureLoad,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                final histories = Provider.of<ServiceHistoryProvider>(context).all;
+                if (histories.isEmpty) {
                   return const Text('Bu parça hiçbir serviste kullanılmamış.');
                 }
-                final relevant = snapshot.data!
-                    .where(
-                      (h) => h.kullanilanParcalar.any(
-                        (p) => p.parcaKodu == widget.part.parcaKodu,
-                      ),
-                    )
-                    .toList();
+                final relevant = histories
+                     .where(
+                       (h) => h.kullanilanParcalar.any(
+                         (p) => p.parcaKodu == widget.part.parcaKodu,
+                       ),
+                     )
+                     .toList();
                 if (relevant.isEmpty) {
                   return const Text('Bu parça hiçbir serviste kullanılmamış.');
                 }
-                return ListView.separated(
+                return ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: relevant.length,
-                  separatorBuilder: (_, __) => const Divider(height: 16),
-                  itemBuilder: (context, i) {
-                    final h = relevant[i];
-                    final used = h.kullanilanParcalar.firstWhere(
-                      (p) => p.parcaKodu == widget.part.parcaKodu,
-                    );
+                  itemBuilder: (context, index) {
+                    final h = relevant[index];
                     return ListTile(
-                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.build_circle_outlined),
                       title: Text(
-                        '${h.deviceId} - ${h.description}',
+                        'Servis: ${h.id}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Tarih: ${h.date.day.toString().padLeft(2, '0')}.${h.date.month.toString().padLeft(2, '0')}.${h.date.year}',
-                          ),
-                          Text('Teknisyen: ${h.technician}'),
-                        ],
-                      ),
-                      trailing: Chip(
-                        label: Text(
-                          'x${used.stokAdedi}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        backgroundColor: Colors.grey.shade200,
-                      ),
+                      subtitle: Text('Tarih: ${h.date} | Durum: ${h.status}'),
                     );
                   },
                 );
@@ -1092,7 +1046,7 @@ class YedekParcaListesi extends StatefulWidget {
   });
 
   @override
-  _YedekParcaListesiState createState() => _YedekParcaListesiState();
+  State<YedekParcaListesi> createState() => _YedekParcaListesiState();
 }
 
 class _YedekParcaListesiState extends State<YedekParcaListesi> {
@@ -1171,7 +1125,7 @@ class DeviceList extends StatefulWidget {
   const DeviceList({super.key, required this.deviceList});
 
   @override
-  _DeviceListState createState() => _DeviceListState();
+  State<DeviceList> createState() => _DeviceListState();
 }
 
 class _DeviceListState extends State<DeviceList> {
@@ -1291,8 +1245,8 @@ class _PartCard extends StatelessWidget {
           color: isOutOfStock
               ? const Color(0xFFD32F2F)
               : isCritical
-              ? Colors.red.withOpacity(0.35)
-              : primaryBlue.withOpacity(0.10),
+              ? Colors.red.withAlpha(89)
+              : primaryBlue.withAlpha(26),
           width: isOutOfStock
               ? 1.5
               : isCritical
@@ -1302,19 +1256,19 @@ class _PartCard extends StatelessWidget {
         boxShadow: [
           if (isOutOfStock)
             BoxShadow(
-              color: Colors.red.withOpacity(0.18),
+              color: Colors.red.withAlpha(46),
               blurRadius: 14,
               offset: const Offset(0, 2),
             )
           else if (isCritical)
             BoxShadow(
-              color: Colors.red.withOpacity(0.10),
+              color: Colors.red.withAlpha(26),
               blurRadius: 10,
               offset: const Offset(0, 2),
             )
           else
             BoxShadow(
-              color: primaryBlue.withOpacity(0.06),
+              color: primaryBlue.withAlpha(15),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -1334,8 +1288,8 @@ class _PartCard extends StatelessWidget {
             color: isOutOfStock
                 ? Colors.red.shade300
                 : isCritical
-                ? Colors.red.withOpacity(0.18)
-                : primaryBlue.withOpacity(0.10),
+                ? Colors.red.withAlpha(46)
+                : primaryBlue.withAlpha(26),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -1378,7 +1332,7 @@ class _PartCard extends StatelessWidget {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD32F2F).withOpacity(0.10),
+                  color: const Color(0xFFD32F2F).withAlpha(26),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -1406,8 +1360,8 @@ class _PartCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isCritical
-                      ? Colors.red.withOpacity(0.18)
-                      : primaryBlue.withOpacity(0.10),
+                      ? Colors.red.withAlpha(46)
+                      : primaryBlue.withAlpha(26),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

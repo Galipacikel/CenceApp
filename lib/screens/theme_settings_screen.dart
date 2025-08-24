@@ -57,7 +57,7 @@ class ThemeSettingsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(cardRadius),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withAlpha(15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -159,12 +159,12 @@ class _ThemeOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? primaryBlue.withOpacity(0.08) : Colors.grey.shade100,
+      color: selected ? primaryBlue.withAlpha(20) : Colors.grey.shade100,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        splashColor: primaryBlue.withOpacity(0.10),
+        splashColor: primaryBlue.withAlpha(20),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(

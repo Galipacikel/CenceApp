@@ -77,7 +77,7 @@ class HelpCenterScreen extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(cardRadius),
                   onTap: () {},
-                  splashColor: primaryBlue.withOpacity(0.08),
+                  splashColor: primaryBlue.withAlpha(20),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
                     child: Column(
@@ -111,4 +111,4 @@ class HelpCenterScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

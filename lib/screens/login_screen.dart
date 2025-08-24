@@ -108,11 +108,6 @@ class _LoginScreenState extends State<LoginScreen>
               );
             }
           }
-          // Kullanıcının girdiği değer email gibi mi?
-          final bool inputLooksLikeEmail =
-              RegExp(r'^[\w\.-]+@([\w\-]+\.)+[A-Za-z]{2,}$')
-                  .hasMatch(username);
-
           // Otomatik kullanıcı oluşturmayı kaldırdık; sadece önceden tanımlı ve aktif kullanıcılar giriş yapabilir.
           // Gerekli kontroller yukarıda yapılıyor.
         } on FirebaseException catch (e) {
@@ -196,8 +191,8 @@ class _LoginScreenState extends State<LoginScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF23408E).withOpacity(0.1),
-                  const Color(0xFF23408E).withOpacity(0.05),
+                  const Color(0xFF23408E).withAlpha(20), // 0.08 * 255 ≈ 20
+                  const Color(0xFF23408E).withAlpha(13), // 0.05 * 255 ≈ 13
                   Colors.white,
                 ],
               ),
@@ -212,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen>
               width: 200,
               height: 200,
               decoration: BoxDecoration(
-                color: const Color(0xFF23408E).withOpacity(0.1),
+                color: const Color(0xFF23408E).withAlpha(26), // 0.1 * 255 ≈ 26
                 shape: BoxShape.circle,
               ),
             ),
@@ -224,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen>
               width: 160,
               height: 160,
               decoration: BoxDecoration(
-                color: const Color(0xFF23408E).withOpacity(0.08),
+                color: Colors.black.withAlpha(20), // 0.08 * 255 ≈ 20
                 shape: BoxShape.circle,
               ),
             ),
@@ -250,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen>
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withAlpha(20), // 0.08 * 255 ≈ 20
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -262,9 +257,7 @@ class _LoginScreenState extends State<LoginScreen>
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF23408E,
-                                  ).withOpacity(0.1),
+                                  color: const Color(0xFF23408E).withAlpha(26),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(

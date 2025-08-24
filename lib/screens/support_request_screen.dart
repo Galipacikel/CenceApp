@@ -69,7 +69,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                   borderRadius: BorderRadius.circular(cardRadius),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withAlpha(15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -92,7 +92,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Konu başlığını girin',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
                           filled: true,
                           fillColor: Colors.grey.shade100,
                           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
@@ -128,7 +128,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                         maxLines: 6,
                         decoration: InputDecoration(
                           hintText: 'Sorununuzu veya talebinizi detaylıca yazın...',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
                           filled: true,
                           fillColor: Colors.grey.shade100,
                           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
@@ -189,4 +189,4 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
       ),
     );
   }
-} 
+}

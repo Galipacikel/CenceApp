@@ -1,19 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:cence_app/domain/repositories/stock_part_repository.dart';
 import '../models/stock_part.dart';
-import '../repositories/firestore_stock_repository.dart';
 
 class StockProvider extends ChangeNotifier {
   final List<StockPart> _parts = [];
-  final FirestoreStockRepository _repository = FirestoreStockRepository();
+  final StockPartRepositoryV2 _repository;
+  String? _error;
+
+  StockProvider({required StockPartRepositoryV2 repository}) : _repository = repository;
 
   List<StockPart> get parts => List.unmodifiable(_parts);
+  String? get error => _error;
 
   Future<void> fetchAll() async {
-    final list = await _repository.getAll();
-    _parts
-      ..clear()
-      ..addAll(list);
-    notifyListeners();
+    final result = await _repository.getAll();
+    result.fold(
+      onSuccess: (list) {
+        _parts
+          ..clear()
+          ..addAll(list);
+        _error = null;
+        notifyListeners();
+      },
+      onFailure: (failure) {
+        _error = failure.message;
+        notifyListeners();
+      },
+    );
   }
 
   void updateCriticalLevel(String partId, int newLevel) {

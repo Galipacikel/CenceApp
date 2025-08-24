@@ -42,7 +42,7 @@ class AppInfoScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(cardRadius),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withAlpha(15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -98,4 +98,4 @@ class AppInfoScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

@@ -46,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(cardRadius),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
+                              color: Colors.black.withAlpha(15),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -319,8 +319,8 @@ class _SettingsCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(cardRadius),
           onTap: onTap,
-          splashColor: iconColor.withOpacity(0.08),
-          highlightColor: iconColor.withOpacity(0.04),
+          splashColor: iconColor.withAlpha(20),
+          highlightColor: iconColor.withAlpha(10),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             child: Row(

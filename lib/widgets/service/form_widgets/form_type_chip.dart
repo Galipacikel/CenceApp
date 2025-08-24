@@ -31,7 +31,7 @@ class FormTypeChip extends StatelessWidget {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
+                    color: color.withAlpha(77),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
 import '../models/device.dart';
 import 'dart:async';
-import '../repositories/forms_repository.dart';
+import 'package:cence_app/domain/repositories/forms_repository.dart';
 
 class CihazSorgulaScreen extends StatefulWidget {
   const CihazSorgulaScreen({super.key});
@@ -34,12 +34,12 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
   bool _showModelDetails = false;
 
   // Forms arama için
-  final FormsRepository _formsRepository = FormsRepository();
+  late FormsRepositoryV2 _formsRepository;
   List<Device> _formSearchResults = [];
   Timer? _debounce;
   bool _isLoading = false;
   
-  int _autocompleteKeyCounter = 0;
+  // int _autocompleteKeyCounter = 0; // removed unused
 
   @override
   void initState() {
@@ -63,6 +63,9 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
     // Kalıcı verileri yükle
     _loadRecentSearches();
 
+    // DI: Forms repository'yi al (V2)
+    _formsRepository = Provider.of<FormsRepositoryV2>(context, listen: false);
+
     // Arama kutusu listener'ı fieldViewBuilder içinde controller sağlandığında eklenecek
   }
 
@@ -72,7 +75,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
     _slideController.dispose();
     _debounce?.cancel();
     // Autocomplete kendi controller'ını yönetir; sadece listener'ı kaldırıyoruz
-    _searchController?..removeListener(_onSearchTextChanged);
+    _searchController?.removeListener(_onSearchTextChanged);
     // _searchController?.dispose(); // KALDIRILDI: RawAutocomplete yönetiyor
     super.dispose();
   }
@@ -101,19 +104,21 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
         });
         return;
       }
-      try {
-        final results = await _formsRepository.searchDevices(latest);
-        if (!mounted) return;
-        setState(() {
-          _formSearchResults = results;
-          _isLoading = false;
-        });
-      } catch (_) {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      final result = await _formsRepository.searchDevices(latest);
+      if (!mounted) return;
+      result.fold(
+        onSuccess: (results) {
+          setState(() {
+            _formSearchResults = results;
+            _isLoading = false;
+          });
+        },
+        onFailure: (_) {
+          setState(() {
+            _isLoading = false;
+          });
+        },
+      );
     });
   }
 
@@ -236,25 +241,23 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
           IconButton(
             icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 24),
             onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
               final status = await Permission.camera.request();
+              if (!context.mounted) return;
               if (status.isGranted) {
-                if (mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BarcodeScannerScreen(),
-                    ),
-                  );
-                }
+                navigator.push(
+                  MaterialPageRoute(
+                    builder: (context) => const BarcodeScannerScreen(),
+                  ),
+                );
               } else {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Kamera izni gerekli'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Kamera izni gerekli'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
           ),
@@ -282,7 +285,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF23408E).withOpacity(0.1),
+                    color: const Color(0xFF23408E).withAlpha(26),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
@@ -294,9 +297,9 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                   // Autocomplete her yeniden oluşturulduğunda controller değişebiliyor.
                   // Bu nedenle referansı ve listener’ı daima senkron tutuyoruz.
                   if (_searchController != textEditingController) {
-                    _searchController?..removeListener(_onSearchTextChanged);
-                    _searchController = textEditingController
-                      ..addListener(_onSearchTextChanged);
+                    _searchController?.removeListener(_onSearchTextChanged);
+                    _searchController = textEditingController;
+                    _searchController?.addListener(_onSearchTextChanged);
                   }
                   return TextField(
                     controller: textEditingController,
@@ -312,7 +315,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                         margin: const EdgeInsets.all(12),
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF23408E).withOpacity(0.1),
+                          color: const Color(0xFF23408E).withAlpha(26),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -419,7 +422,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF23408E).withOpacity(0.1),
+                            color: const Color(0xFF23408E).withAlpha(26),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -462,7 +465,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withAlpha(13),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -479,34 +482,38 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                   ),
                 ),
                 onPressed: () async {
+                  final navigator = Navigator.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
                   final status = await Permission.camera.request();
+                  if (!context.mounted) return;
                   if (status.isGranted) {
-                    if (mounted) {
-                      final result = await Navigator.of(context).push<String>(
-                        MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
-                      );
-                      if (result != null && result.isNotEmpty) {
-                        _searchController?.text = result;
-                        try {
-                          final foundDevices = await _formsRepository.searchDevices(result);
+                    final code = await navigator.push<String>(
+                      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+                    );
+                    if (!context.mounted) return;
+                    if (code != null && code.isNotEmpty) {
+                      _searchController?.text = code;
+                      final r = await _formsRepository.searchDevices(code);
+                      if (!context.mounted) return;
+                      r.fold(
+                        onSuccess: (foundDevices) {
                           if (foundDevices.isNotEmpty) {
                             _showDeviceDetails(foundDevices.first);
                           }
-                        } catch (_) {}
-                      }
-                    }
-                  } else {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Kamerayı kullanabilmek için izin vermelisiniz.'),
-                          backgroundColor: Colors.red.shade600,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          margin: const EdgeInsets.all(16),
-                        ),
+                        },
+                        onFailure: (_) {},
                       );
                     }
+                  } else {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: const Text('Kamerayı kullanabilmek için izin vermelisiniz.'),
+                        backgroundColor: Colors.red.shade600,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        margin: const EdgeInsets.all(16),
+                      ),
+                    );
                   }
                 },
                 icon: const Icon(Icons.camera_alt_outlined, size: 20),
@@ -572,7 +579,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withAlpha(20),
                                 blurRadius: 15,
                                 offset: const Offset(0, 4),
                               ),
@@ -587,7 +594,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                                   Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF23408E).withOpacity(0.1),
+                                      color: const Color(0xFF23408E).withAlpha(26),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: const Icon(
@@ -619,31 +626,31 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                                                             Container(
-                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                 decoration: BoxDecoration(
-                                   color: device.warrantyEndDate != null
-                                       ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                           ? const Color(0xFF43A047).withOpacity(0.1)
-                                           : Colors.red.withOpacity(0.1))
-                                       : Colors.grey.withOpacity(0.1),
-                                   borderRadius: BorderRadius.circular(12),
-                                 ),
-                                 child: Text(
-                                   device.warrantyEndDate != null
-                                       ? device.calculatedWarrantyStatus
-                                       : 'Henüz belirlenmemiş',
-                                   style: GoogleFonts.montserrat(
-                                     color: device.warrantyEndDate != null
-                                         ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                                             ? const Color(0xFF43A047)
-                                             : Colors.red)
-                                         : Colors.grey,
-                                     fontSize: 10,
-                                     fontWeight: FontWeight.w600,
-                                   ),
-                                 ),
-                               ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: device.warrantyEndDate != null
+                                      ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                                          ? const Color(0xFF43A047).withAlpha(26)
+                                          : Colors.red.withAlpha(26))
+                                      : Colors.grey.withAlpha(26),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  device.warrantyEndDate != null
+                                      ? device.calculatedWarrantyStatus
+                                      : 'Henüz belirlenmemiş',
+                                  style: GoogleFonts.montserrat(
+                                    color: device.warrantyEndDate != null
+                                        ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                                            ? const Color(0xFF43A047)
+                                            : Colors.red)
+                                        : Colors.grey,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -703,7 +710,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
 
   Widget _buildModelDetailsCard(String modelName, List<Device> devices) {
     final totalDevices = devices.length;
-                    final activeWarranty = devices.where((d) => d.warrantyEndDate != null && d.calculatedWarrantyStatus == 'Devam Ediyor').length;
+    final activeWarranty = devices.where((d) => d.warrantyEndDate != null && d.calculatedWarrantyStatus == 'Devam Ediyor').length;
     final expiredWarranty = totalDevices - activeWarranty;
 
     return Container(
@@ -712,7 +719,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(26),
             blurRadius: 25,
             offset: const Offset(0, 8),
           ),
@@ -728,7 +735,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF23408E).withOpacity(0.1),
+                  color: const Color(0xFF23408E).withAlpha(26),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -772,7 +779,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF43A047).withOpacity(0.1),
+                    color: const Color(0xFF43A047).withAlpha(26),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -801,7 +808,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withAlpha(26),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -840,68 +847,68 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
           ),
           const SizedBox(height: 12),
           ...devices.map((device) => Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: Container(
-                padding: const EdgeInsets.all(8),
+                margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: device.warrantyEndDate != null
-                      ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                          ? const Color(0xFF43A047).withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1))
-                      : Colors.grey.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: Icon(
-                  device.warrantyEndDate != null
-                      ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                          ? Icons.verified_rounded
-                          : Icons.warning_rounded)
-                      : Icons.help_outline_rounded,
-                  color: device.warrantyEndDate != null
-                      ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                          ? const Color(0xFF43A047)
-                          : Colors.red)
-                      : Colors.grey,
-                  size: 20,
-                ),
-              ),
-              title: Text(
-                device.customer,
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Seri No: ${device.serialNumber}',
-                    style: GoogleFonts.montserrat(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: device.warrantyEndDate != null
+                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                              ? const Color(0xFF43A047).withAlpha(26)
+                              : Colors.red.withAlpha(26))
+                          : Colors.grey.withAlpha(26),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      device.warrantyEndDate != null
+                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                              ? Icons.verified_rounded
+                              : Icons.warning_rounded)
+                          : Icons.help_outline_rounded,
+                      color: device.warrantyEndDate != null
+                          ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
+                              ? const Color(0xFF43A047)
+                              : Colors.red)
+                          : Colors.grey,
+                      size: 20,
                     ),
                   ),
-                  Text(
-                    'Kurulum: ${device.installDate}',
+                  title: Text(
+                    device.customer,
                     style: GoogleFonts.montserrat(
-                      color: Colors.grey.shade500,
-                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
                     ),
                   ),
-                ],
-              ),
-              trailing: buildWarrantyChip(device.calculatedWarrantyStatus, device.daysUntilWarrantyExpiry),
-              onTap: () => _showDeviceDetails(device),
-            ),
-          )),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Seri No: ${device.serialNumber}',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        'Kurulum: ${device.installDate}',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.grey.shade500,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                  trailing: buildWarrantyChip(device.calculatedWarrantyStatus, device.daysUntilWarrantyExpiry),
+                  onTap: () => _showDeviceDetails(device),
+                ),
+              )),
         ],
       ),
     );
@@ -914,7 +921,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(26),
             blurRadius: 25,
             offset: const Offset(0, 8),
           ),
@@ -929,7 +936,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF23408E).withOpacity(0.1),
+                  color: const Color(0xFF23408E).withAlpha(26),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -973,9 +980,9 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
                   decoration: BoxDecoration(
                     color: device.warrantyEndDate != null
                         ? (device.calculatedWarrantyStatus == 'Devam Ediyor'
-                            ? const Color(0xFF43A047).withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1))
-                        : Colors.grey.withOpacity(0.1),
+                            ? const Color(0xFF43A047).withAlpha(26)
+                            : Colors.red.withAlpha(26))
+                        : Colors.grey.withAlpha(26),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -1025,7 +1032,7 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withAlpha(26),
             blurRadius: 25,
             offset: const Offset(0, 8),
           ),
@@ -1038,9 +1045,9 @@ class _CihazSorgulaScreenState extends State<CihazSorgulaScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF23408E).withOpacity(0.1),
+              color: const Color(0xFF23408E).withAlpha(26),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF23408E).withOpacity(0.2)),
+              border: Border.all(color: const Color(0xFF23408E).withAlpha(51)),
             ),
             child: Row(
               children: [
@@ -1231,15 +1238,32 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     IconData? icon;
     switch (label) {
-      case 'Seri Numarası': icon = Icons.qr_code_2_rounded; break;
-      case 'Model Adı': icon = Icons.devices_rounded; break;
-      case 'Müşteri/Kurum': icon = Icons.business_rounded; break;
-      case 'Kurulum Tarihi': icon = Icons.event_rounded; break;
-      case 'Son Bakım Tarihi': icon = Icons.build_rounded; break;
-      case 'Garanti Bitiş Tarihi': icon = Icons.verified_user_rounded; break;
-      case 'Garantiye Kalan Süre': icon = Icons.timer_rounded; break;
-      case 'Garanti Durumu': icon = Icons.verified_rounded; break;
-      default: icon = Icons.info_outline_rounded;
+      case 'Seri Numarası':
+        icon = Icons.qr_code_2_rounded;
+        break;
+      case 'Model Adı':
+        icon = Icons.devices_rounded;
+        break;
+      case 'Müşteri/Kurum':
+        icon = Icons.business_rounded;
+        break;
+      case 'Kurulum Tarihi':
+        icon = Icons.event_rounded;
+        break;
+      case 'Son Bakım Tarihi':
+        icon = Icons.build_rounded;
+        break;
+      case 'Garanti Bitiş Tarihi':
+        icon = Icons.verified_user_rounded;
+        break;
+      case 'Garantiye Kalan Süre':
+        icon = Icons.timer_rounded;
+        break;
+      case 'Garanti Durumu':
+        icon = Icons.verified_rounded;
+        break;
+      default:
+        icon = Icons.info_outline_rounded;
     }
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -1254,7 +1278,7 @@ class _DetailRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF23408E).withOpacity(0.1),
+              color: const Color(0xFF23408E).withAlpha(26),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: const Color(0xFF23408E), size: 18),
@@ -1287,7 +1311,7 @@ class _DetailRow extends StatelessWidget {
           if (onCopy != null)
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF23408E).withOpacity(0.1),
+                color: const Color(0xFF23408E).withAlpha(26),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: IconButton(
@@ -1306,13 +1330,13 @@ class _DetailRow extends StatelessWidget {
       ),
     );
   }
-} 
+}
 
 Widget buildWarrantyChip(String status, int? daysLeft) {
   Color color;
   String label = status;
   IconData icon = Icons.verified_rounded;
-  
+
   if (status == 'Devam Ediyor') {
     if (daysLeft != null && daysLeft <= 30 && daysLeft > 0) {
       color = Colors.orange.shade600;
@@ -1326,7 +1350,7 @@ Widget buildWarrantyChip(String status, int? daysLeft) {
     color = Colors.red.shade600;
     icon = Icons.cancel_rounded;
   }
-  
+
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
     decoration: BoxDecoration(
@@ -1334,7 +1358,7 @@ Widget buildWarrantyChip(String status, int? daysLeft) {
       borderRadius: BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: color.withOpacity(0.3),
+          color: color.withAlpha(77),
           blurRadius: 8,
           offset: const Offset(0, 2),
         ),

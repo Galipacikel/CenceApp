@@ -26,7 +26,7 @@ class CustomAppBar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withAlpha(31), // 0.12 * 255 ≈ 31
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.medical_services_rounded, color: Colors.white, size: 28),

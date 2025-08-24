@@ -106,8 +106,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final Color primaryBlue = const Color(0xFF23408E);
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
-    final Color textColor = const Color(0xFF232946);
-    final Color subtitleColor = const Color(0xFF4A4A4A);
+    // Removed unused textColor and subtitleColor
     final double cardRadius = 18;
     final user = Provider.of<AppStateProvider>(context, listen: false).userProfile;
     return Scaffold(
@@ -147,7 +146,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               borderRadius: BorderRadius.circular(cardRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withAlpha(15),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -194,7 +193,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Colors.black.withAlpha(20),
                                 blurRadius: 4,
                               ),
                             ],
@@ -241,6 +240,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           );
                           final user = appState.userProfile;
                           if (user == null) {
+                            if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Kullanıcı profili yüklenmedi. Lütfen tekrar deneyin.'),
@@ -259,8 +259,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                 profileImagePath: _profileImage!.path,
                               ),
                             );
+
+                            if (!context.mounted) return;
                             
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            final messenger = ScaffoldMessenger.of(context);
+                            messenger.showSnackBar(
                               const SnackBar(
                                 content: Text('Profil fotoğrafı başarıyla güncellendi!'),
                               ),
@@ -324,7 +327,7 @@ class _ProfileInfoField extends StatelessWidget {
             value.isEmpty ? 'Belirtilmemiş' : value,
             style: GoogleFonts.montserrat(
               fontSize: 15,
-              color: value.isEmpty ? subtitleColor.withOpacity(0.7) : textColor,
+              color: value.isEmpty ? subtitleColor.withAlpha(179) : textColor,
             ),
           ),
         ),

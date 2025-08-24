@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:cence_app/domain/repositories/service_history_repository.dart';
 import '../models/service_history.dart';
-import '../repositories/firestore_service_history_repository.dart';
 import 'base_provider.dart';
 
 class ServiceHistoryProvider extends BaseProvider<ServiceHistory> {
-  final FirestoreServiceHistoryRepository _repository =
-      FirestoreServiceHistoryRepository();
+  final ServiceHistoryRepositoryV2 _repository;
+
+  ServiceHistoryProvider({required ServiceHistoryRepositoryV2 repository}) : _repository = repository;
 
   List<ServiceHistory> get all => items;
 
@@ -27,14 +28,16 @@ class ServiceHistoryProvider extends BaseProvider<ServiceHistory> {
   Future<void> fetchAll() async {
     setLoading(true);
     try {
-      final list = await _repository.getAll();
-      setItems(list);
-      // Verileri tarihe göre sırala (en yeni en üstte)
-      final sortedList = List<ServiceHistory>.from(items);
-      sortedList.sort((a, b) => b.date.compareTo(a.date));
-      setItems(sortedList);
-    } catch (e) {
-      setError(e.toString());
+      final result = await _repository.getAll();
+      result.fold(
+        onSuccess: (list) {
+          setItems(list);
+          final sortedList = List<ServiceHistory>.from(items);
+          sortedList.sort((a, b) => b.date.compareTo(a.date));
+          setItems(sortedList);
+        },
+        onFailure: (failure) => setError(failure.message),
+      );
     } finally {
       setLoading(false);
     }
@@ -44,10 +47,11 @@ class ServiceHistoryProvider extends BaseProvider<ServiceHistory> {
   Future<void> add(ServiceHistory item) async {
     setLoading(true);
     try {
-      await _repository.add(item);
-      addServiceHistory(item);
-    } catch (e) {
-      setError(e.toString());
+      final result = await _repository.add(item);
+      result.fold(
+        onSuccess: (_) => addServiceHistory(item),
+        onFailure: (failure) => setError(failure.message),
+      );
     } finally {
       setLoading(false);
     }
@@ -57,13 +61,16 @@ class ServiceHistoryProvider extends BaseProvider<ServiceHistory> {
   Future<void> update(String id, ServiceHistory item) async {
     setLoading(true);
     try {
-      await _repository.update(id, item);
-      final index = items.indexWhere((e) => e.id == id);
-      if (index != -1) {
-        updateItem(index, item);
-      }
-    } catch (e) {
-      setError(e.toString());
+      final result = await _repository.update(id, item);
+      result.fold(
+        onSuccess: (_) {
+          final index = items.indexWhere((e) => e.id == id);
+          if (index != -1) {
+            updateItem(index, item);
+          }
+        },
+        onFailure: (failure) => setError(failure.message),
+      );
     } finally {
       setLoading(false);
     }
@@ -73,10 +80,11 @@ class ServiceHistoryProvider extends BaseProvider<ServiceHistory> {
   Future<void> delete(String id) async {
     setLoading(true);
     try {
-      await _repository.delete(id);
-      removeWhere((e) => e.id == id);
-    } catch (e) {
-      setError(e.toString());
+      final result = await _repository.delete(id);
+      result.fold(
+        onSuccess: (_) => removeWhere((e) => e.id == id),
+        onFailure: (failure) => setError(failure.message),
+      );
     } finally {
       setLoading(false);
     }

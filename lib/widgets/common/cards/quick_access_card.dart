@@ -23,7 +23,7 @@ class ModernQuickAccessCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16), // Küçük radius
         onTap: onTap,
-        splashColor: iconColor.withOpacity(0.12),
+        splashColor: iconColor.withAlpha(31), // 0.12 * 255 = 31
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOut,
@@ -32,7 +32,7 @@ class ModernQuickAccessCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16), // Küçük radius
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withAlpha(20), // 0.08 * 255 = 20
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),
@@ -48,7 +48,7 @@ class ModernQuickAccessCard extends StatelessWidget {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.07),
+                  color: iconColor.withAlpha(18), // 0.07 * 255 = 18
                   shape: BoxShape.circle,
                 ),
                 padding: const EdgeInsets.all(10), // Daha az padding

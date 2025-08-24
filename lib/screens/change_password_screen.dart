@@ -50,7 +50,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   borderRadius: BorderRadius.circular(cardRadius),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: Colors.black.withAlpha(15),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -66,7 +66,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         obscureText: true,
                         decoration: InputDecoration(
                           hintText: 'Mevcut şifrenizi girin',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
                           filled: true,
                           fillColor: Colors.grey.shade100,
                           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
@@ -83,7 +83,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         obscureText: !_showNewPassword,
                         decoration: InputDecoration(
                           hintText: 'Yeni şifrenizi girin',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
                           filled: true,
                           fillColor: Colors.grey.shade100,
                           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
@@ -111,7 +111,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         obscureText: !_showConfirmPassword,
                         decoration: InputDecoration(
                           hintText: 'Yeni şifrenizi tekrar girin',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withOpacity(0.7)),
+                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
                           filled: true,
                           fillColor: Colors.grey.shade100,
                           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
@@ -159,4 +159,4 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       ),
     );
   }
-} 
+}

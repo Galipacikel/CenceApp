@@ -11,7 +11,6 @@ import 'service_history_screen.dart';
 import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
-import '../models/service_history.dart';
 
 import 'package:provider/provider.dart';
 import '../providers/service_history_provider.dart';
@@ -68,7 +67,7 @@ class _HomePageState extends State<HomePage> {
             color: const Color(0xFF23408E),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF23408E).withOpacity(0.2),
+                color: const Color(0xFF23408E).withAlpha(51), // 0.2 * 255 ≈ 51
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -87,7 +86,7 @@ class _HomePageState extends State<HomePage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withAlpha(51), // 0.2 * 255 ≈ 51
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -122,7 +121,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                           TextSpan(
                             text: 'ce',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: Color(0xE6FFFFFF)),
                           ),
                         ],
                       ),
@@ -131,7 +130,7 @@ class _HomePageState extends State<HomePage> {
                       'Medikal Cihazlar',
                       style: TextStyle(
                         fontSize: isWide ? 14 : 12,
-                        color: Colors.white.withOpacity(0.9),
+                        color: const Color(0xE6FFFFFF),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -188,7 +187,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF23408E).withOpacity(0.08),
+                    color: const Color(0xFF23408E).withAlpha(20), // 0.08 * 255 ≈ 20
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -202,7 +201,7 @@ class _HomePageState extends State<HomePage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF23408E).withOpacity(0.1),
+                          color: const Color(0xFF23408E).withAlpha(26), // 0.1 * 255 ≈ 26
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(

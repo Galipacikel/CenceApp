@@ -4,7 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'screens/login_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as provider;
 import 'providers/app_state_provider.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
@@ -16,7 +16,28 @@ import 'firebase_options.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'core/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 
+import 'repositories/forms_repository.dart';
+// V2 domain repository arayüzleri
+import 'domain/repositories/device_repository.dart';
+import 'domain/repositories/service_history_repository.dart';
+import 'domain/repositories/stock_part_repository.dart';
+import 'domain/repositories/forms_repository.dart';
+// V2 Firestore implementasyonları
+import 'repositories/firestore_device_repository_v2.dart';
+import 'repositories/firestore_service_history_repository_v2.dart';
+import 'repositories/firestore_stock_repository_v2.dart';
+import 'repositories/forms_repository_v2.dart';
+// Adapters to bridge V1 UI to V2 repositories
+import 'repositories/adapters/device_repository_adapter.dart';
+import 'repositories/adapters/service_history_repository_adapter.dart';
+import 'repositories/adapters/stock_part_repository_adapter.dart';
+import 'repositories/adapters/forms_repository_adapter.dart';
+import 'models/device.dart';
+import 'models/service_history.dart';
+import 'models/stock_part.dart';
 // USE_EMULATORS=true ile derlendiğinde Firebase servislerini yerel emülatörlere yönlendirir
 const bool kUseEmulators = bool.fromEnvironment('USE_EMULATORS', defaultValue: false);
 
@@ -48,7 +69,7 @@ Future<void> main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
-  runApp(const MyApp());
+  runApp(rp.ProviderScope(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -56,12 +77,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return provider.MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AppStateProvider()..initAuth()),
-        ChangeNotifierProvider(create: (_) => StockProvider()),
-        ChangeNotifierProvider(create: (_) => ServiceHistoryProvider()),
-        ChangeNotifierProvider(create: (_) => DeviceProvider()),
+        // V1 UI -> V2 repository bridge via adapters
+        provider.Provider<DeviceRepository>(
+          create: (_) => DeviceRepositoryAdapter(FirestoreDeviceRepositoryV2()),
+        ),
+        provider.Provider<ServiceHistoryRepository>(
+          create: (_) => ServiceHistoryRepositoryAdapter(FirestoreServiceHistoryRepositoryV2()),
+        ),
+        provider.Provider<StockPartRepository>(
+          create: (_) => StockPartRepositoryAdapter(FirestoreStockRepositoryV2()),
+        ),
+        provider.Provider<FormsRepositoryBase>(
+          create: (_) => FormsRepositoryAdapter(FormsRepositoryV2Impl()),
+        ),
+         // V2 repository provider kayıtları
+         provider.Provider<DeviceRepositoryV2>(create: (_) => FirestoreDeviceRepositoryV2()),
+         provider.Provider<ServiceHistoryRepositoryV2>(create: (_) => FirestoreServiceHistoryRepositoryV2()),
+         provider.Provider<StockPartRepositoryV2>(create: (_) => FirestoreStockRepositoryV2()),
+         provider.Provider<FormsRepositoryV2>(create: (_) => FormsRepositoryV2Impl()),
+         provider.ChangeNotifierProvider(create: (_) => AppStateProvider()..initAuth()),
+        provider.ChangeNotifierProvider(
+          create: (ctx) => StockProvider(repository: ctx.read<StockPartRepositoryV2>()),
+        ),
+        provider.ChangeNotifierProvider(
+          create: (ctx) => ServiceHistoryProvider(repository: ctx.read<ServiceHistoryRepositoryV2>()),
+        ),
+        provider.ChangeNotifierProvider(
+          create: (ctx) => DeviceProvider(repository: ctx.read<DeviceRepositoryV2>()),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -74,9 +119,9 @@ class MyApp extends StatelessWidget {
         supportedLocales: const [
           Locale('tr', 'TR'),
         ],
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: ThemeMode.system,
         home: const LoginScreen(),
       ),
     );

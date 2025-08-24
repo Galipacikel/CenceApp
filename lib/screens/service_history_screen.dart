@@ -271,7 +271,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                 color: const Color(0xFF23408E),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF23408E).withOpacity(0.2),
+                    color: const Color(0xFF23408E).withAlpha(51), // 0.2 * 255 ≈ 51
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -357,7 +357,7 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withAlpha(13), // 0.05 * 255 ≈ 13
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -454,10 +454,10 @@ class _ServisGecmisiScreenState extends State<ServisGecmisiScreen> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF23408E).withOpacity(0.1),
+                      color: const Color(0xFF23408E).withAlpha(26),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFF23408E).withOpacity(0.3),
+                        color: const Color(0xFF23408E).withAlpha(77),
                         width: 1,
                       ),
                     ),
@@ -663,7 +663,7 @@ class _ServisKaydiCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.white, const Color(0xFF23408E).withOpacity(0.02)],
+            colors: [Colors.white, const Color(0xFF23408E).withAlpha(5)],
           ),
         ),
         child: Padding(
@@ -682,7 +682,7 @@ class _ServisKaydiCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: getStatusBgColor(kayit.status).withOpacity(0.1),
+                      color: getStatusBgColor(kayit.status).withAlpha(26),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -753,7 +753,7 @@ class _ServisKaydiCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF23408E).withOpacity(0.1),
+                      color: const Color(0xFF23408E).withAlpha(26),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
@@ -774,7 +774,7 @@ class _ServisKaydiCard extends StatelessWidget {
                   const Spacer(),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF23408E).withOpacity(0.1),
+                      color: const Color(0xFF23408E).withAlpha(26),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TextButton.icon(

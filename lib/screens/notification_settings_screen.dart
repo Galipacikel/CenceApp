@@ -34,7 +34,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     final Color primaryBlue = const Color(0xFF23408E);
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
-    final Color textColor = const Color(0xFF232946);
     final double cardRadius = 18;
     return Scaffold(
       backgroundColor: background,
@@ -73,7 +72,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               borderRadius: BorderRadius.circular(cardRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withAlpha(15),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
