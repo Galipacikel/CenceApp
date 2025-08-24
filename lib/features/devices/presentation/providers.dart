@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/domain/repositories/device_repository.dart';
-import 'package:cence_app/repositories/firestore_device_repository_v2.dart';
+import 'package:cence_app/features/devices/data/repositories/device_repository_impl.dart';
 import 'package:cence_app/models/device.dart';
 
 /// Repository provider
