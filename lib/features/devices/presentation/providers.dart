@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/domain/repositories/device_repository.dart';
 import 'package:cence_app/features/devices/data/repositories/device_repository_impl.dart';
+import 'package:cence_app/features/devices/domain/use_cases.dart';
 import 'package:cence_app/models/device.dart';
 
 /// Repository provider
@@ -41,4 +42,38 @@ final devicesSearchProvider = Provider.family<List<Device>, String>((
     },
     orElse: () => const <Device>[],
   );
+});
+
+// Use-case Providers (presentation wrappers)
+final addDeviceUseCaseProvider = Provider<Future<void> Function(Device)>((ref) {
+  final repo = ref.watch(deviceRepositoryProvider);
+  return (device) async {
+    // Using pure domain use-case
+    final usecase = AddDeviceUseCase(repo);
+    return usecase(device);
+  };
+});
+
+final updateDeviceUseCaseProvider = Provider<Future<void> Function(Device)>((ref) {
+  final repo = ref.watch(deviceRepositoryProvider);
+  return (device) async {
+    final usecase = UpdateDeviceUseCase(repo);
+    return usecase(device);
+  };
+});
+
+final deleteDeviceUseCaseProvider = Provider<Future<void> Function(String)>((ref) {
+  final repo = ref.watch(deviceRepositoryProvider);
+  return (id) async {
+    final usecase = DeleteDeviceUseCase(repo);
+    return usecase(id);
+  };
+});
+
+final findDeviceByIdUseCaseProvider = Provider<Future<Device> Function(String)>((ref) {
+  final repo = ref.watch(deviceRepositoryProvider);
+  return (id) async {
+    final usecase = FindDeviceByIdUseCase(repo);
+    return usecase(id);
+  };
 });

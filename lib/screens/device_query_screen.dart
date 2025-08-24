@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:async';
-import 'package:cence_app/features/forms/use_cases.dart';
+// import 'dart:async'; // removed unused import
 import 'package:cence_app/features/devices/providers.dart';
 import '../models/device.dart';
 import 'barcode_scanner_screen.dart';
@@ -23,28 +21,24 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
     with TickerProviderStateMixin {
   TextEditingController? _searchController;
   Device? _selectedDevice;
-  List<Device> _recentSearches = [];
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  static const String _recentSearchesKey = 'recent_device_searches';
+   late AnimationController _fadeController;
+   late AnimationController _slideController;
+   late Animation<double> _fadeAnimation;
+   late Animation<Offset> _slideAnimation;
 
-  // Yeni state değişkenleri
-  String? _selectedModelName;
-  List<Device> _devicesByModel = [];
-  bool _showModelDetails = false;
+   // Yeni state değişkenleri
+   String? _selectedModelName;
+   List<Device> _devicesByModel = [];
+   bool _showModelDetails = false;
 
-  // Forms arama için
-  // late FormsRepositoryV2 _formsRepository;
-  List<Device> _formSearchResults = [];
-  Timer? _debounce;
-  bool _isLoading = false;
+   // Forms arama için
+   // late FormsRepositoryV2 _formsRepository;
+  // yerel arama sonuçları ve loading state’i kaldırıldı; Notifier kullanılacak
 
-  // int _autocompleteKeyCounter = 0; // removed unused
+   // int _autocompleteKeyCounter = 0; // removed unused
 
-  @override
-  void initState() {
+   @override
+   void initState() {
     super.initState();
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 500),
@@ -62,8 +56,8 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
 
-    // Kalıcı verileri yükle
-    _loadRecentSearches();
+    // Kalıcı son sorguları Notifier üzerinden yükle
+    ref.read(deviceQueryNotifierProvider.notifier).init();
 
     // DI: Forms repository'yi al (V2)
     // _formsRepository = Provider.of<FormsRepositoryV2>(context, listen: false);
@@ -75,7 +69,6 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
-    _debounce?.cancel();
     // Autocomplete kendi controller'ını yönetir; sadece listener'ı kaldırıyoruz
     _searchController?.removeListener(_onSearchTextChanged);
     // _searchController?.dispose(); // KALDIRILDI: RawAutocomplete yönetiyor
@@ -84,95 +77,12 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
 
   void _onSearchTextChanged() {
     final q = _searchController?.text.trim() ?? '';
-    _debounce?.cancel();
-    // En az 2 karakter şartı
-    if (q.length < 2) {
-      setState(() {
-        _isLoading = false;
-        _formSearchResults = [];
-      });
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-    });
-    _debounce = Timer(const Duration(milliseconds: 350), () async {
-      if (!mounted) return;
-      final latest = _searchController?.text.trim() ?? '';
-      if (latest.length < 2) {
-        setState(() {
-          _isLoading = false;
-          _formSearchResults = [];
-        });
-        return;
-      }
-      try {
-        final search = ref.read(formsSearchUseCaseProvider);
-        final results = await search(latest);
-        if (!mounted) return;
-        setState(() {
-          _formSearchResults = results;
-          _isLoading = false;
-        });
-      } catch (_) {
-        if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
+    ref.read(deviceQueryNotifierProvider.notifier).onQueryChanged(q);
   }
 
-  // Kalıcı verileri yükle
-  Future<void> _loadRecentSearches() async {
-    try {
-      final box = await Hive.openBox('device_searches');
-      final savedData = box.get(_recentSearchesKey, defaultValue: <Map>[]);
-
-      if (savedData.isNotEmpty) {
-        setState(() {
-          _recentSearches = savedData
-              .map<Device>(
-                (data) => Device.fromJson(Map<String, dynamic>.from(data)),
-              )
-              .toList();
-        });
-      }
-    } catch (e) {
-      // Hata durumunda boş liste ile devam et
-      _recentSearches = [];
-    }
-  }
-
-  // Kalıcı verileri kaydet
-  Future<void> _saveRecentSearches() async {
-    try {
-      final box = await Hive.openBox('device_searches');
-      final dataToSave = _recentSearches
-          .map((device) => device.toJson())
-          .toList();
-      await box.put(_recentSearchesKey, dataToSave);
-    } catch (e) {
-      // Hata durumunda sessizce devam et
-    }
-  }
-
-  void _addToRecentSearches(Device device) {
-    if (!_recentSearches.contains(device)) {
-      setState(() {
-        _recentSearches.insert(0, device);
-        if (_recentSearches.length > 5) {
-          _recentSearches.removeLast();
-        }
-      });
-      // Kalıcı olarak kaydet
-      _saveRecentSearches();
-    }
-  }
-
-  void _copyToClipboard(String text, String label) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
+   void _copyToClipboard(String text, String label) {
+     Clipboard.setData(ClipboardData(text: text));
+     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$label panoya kopyalandı'),
         backgroundColor: const Color(0xFF23408E),
@@ -188,8 +98,8 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
       _selectedDevice = device;
       _selectedModelName = null;
       _showModelDetails = false;
-      _addToRecentSearches(device);
     });
+    ref.read(deviceQueryNotifierProvider.notifier).addToRecents(device);
     _fadeController.forward();
     _slideController.forward();
   }
@@ -214,18 +124,6 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
     _slideController.forward();
   }
 
-  // Son sorgulananları temizle
-  void _clearRecentSearches() async {
-    setState(() {
-      _recentSearches.clear();
-    });
-    try {
-      final box = await Hive.openBox('device_searches');
-      await box.delete(_recentSearchesKey);
-    } catch (e) {
-      // Hata durumunda sessizce devam et
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -402,7 +300,8 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
             Builder(
               builder: (context) {
                 final q = _searchController?.text.trim() ?? '';
-                if (_isLoading && q.length >= 2) {
+                final dqState = ref.watch(deviceQueryNotifierProvider);
+                if (dqState.isLoading && q.length >= 2) {
                   return Container(
                     margin: const EdgeInsets.only(top: 4, bottom: 8),
                     padding: const EdgeInsets.symmetric(
@@ -440,7 +339,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                   );
                 }
                 if (q.length >= 2) {
-                  if (_formSearchResults.isEmpty) {
+                  if (dqState.searchResults.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.only(top: 6, bottom: 8),
                       child: Text(
@@ -469,10 +368,10 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(vertical: 4),
-                      itemCount: _formSearchResults.length,
+                      itemCount: dqState.searchResults.length,
                       separatorBuilder: (_, __) => const Divider(height: 1),
                       itemBuilder: (context, index) {
-                        final device = _formSearchResults[index];
+                        final device = dqState.searchResults[index];
                         return ListTile(
                           leading: Container(
                             padding: const EdgeInsets.all(8),
@@ -561,8 +460,9 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                     if (code != null && code.isNotEmpty) {
                       _searchController?.text = code;
                       try {
-                        final search = ref.read(formsSearchUseCaseProvider);
-                        final foundDevices = await search(code);
+                        final foundDevices = await ref
+                            .read(deviceQueryNotifierProvider.notifier)
+                            .searchOnce(code);
                         if (!context.mounted) return;
                         if (foundDevices.isNotEmpty) {
                           _showDeviceDetails(foundDevices.first);
@@ -597,8 +497,63 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
             ),
             const SizedBox(height: 24),
 
+            // Bilgi kartları
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(10),
+                    blurRadius: 15,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: Colors.grey.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Bilgi',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Cihaz aramak için model adı veya seri numarasını yazmaya başlayın. Son sorgulanan cihazlar aşağıda listelenir.',
+                    style: GoogleFonts.montserrat(
+                      color: Colors.grey.shade700,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // Son Sorgulananlar
-            if (_recentSearches.isNotEmpty) ...[
+            Builder(
+              builder: (context) {
+                final recent = ref.watch(deviceQueryNotifierProvider).recent;
+                if (recent.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               Row(
                 children: [
                   Icon(
@@ -617,7 +572,9 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                   ),
                   const Spacer(),
                   TextButton.icon(
-                    onPressed: _clearRecentSearches,
+                    onPressed: () => ref
+                        .read(deviceQueryNotifierProvider.notifier)
+                        .clearRecents(),
                     icon: const Icon(Icons.clear_all_rounded, size: 16),
                     label: Text(
                       'Temizle',
@@ -638,12 +595,12 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 120,
+                height: isTablet ? 140 : 120,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _recentSearches.length,
+                  itemCount: recent.length,
                   itemBuilder: (context, index) {
-                    final device = _recentSearches[index];
+                    final device = recent[index];
                     return Container(
                       width: 200,
                       margin: const EdgeInsets.only(right: 12),
@@ -746,51 +703,44 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
               ),
               const SizedBox(height: 24),
             ],
+           );
+         },
+      ),
 
-            // Model Detayları (Aynı model cihazlar için)
-            if (_showModelDetails && _selectedModelName != null)
-              SlideTransition(
+          // Detay bölümleri
+          if (_selectedDevice != null) ...[
+            const SizedBox(height: 24),
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
                 position: _slideAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: ModelDetailsCard(
-                    modelName: _selectedModelName!,
-                    devices: _devicesByModel,
-                    onDeviceTap: _showDeviceDetails,
-                  ),
+                child: _buildDeviceCard(_selectedDevice!),
+              ),
+            ),
+            const SizedBox(height: 16),
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: _buildDeviceDetails(_selectedDevice!),
+              ),
+            ),
+          ],
+          if (_showModelDetails && _selectedModelName != null) ...[
+            const SizedBox(height: 24),
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: ModelDetailsCard(
+                  modelName: _selectedModelName!,
+                  devices: _devicesByModel,
+                  onDeviceTap: _showDeviceDetails,
                 ),
               ),
+            ),
+          ],
 
-            // Seçilen Cihaz Detayları
-            if (_selectedDevice != null)
-              SlideTransition(
-                position: _slideAnimation,
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: isTablet
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 1,
-                              child: _buildDeviceCard(_selectedDevice!),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              flex: 1,
-                              child: _buildDeviceDetails(_selectedDevice!),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          children: [
-                            _buildDeviceCard(_selectedDevice!),
-                            const SizedBox(height: 16),
-                            _buildDeviceDetails(_selectedDevice!),
-                          ],
-                        ),
-                ),
-              ),
           ],
         ),
       ),
