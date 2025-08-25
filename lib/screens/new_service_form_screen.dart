@@ -12,6 +12,7 @@ import '../models/device.dart';
 import '../models/service_history.dart';
 
 import '../widgets/service/form_sections/device_selection_section.dart';
+import '../widgets/service/form_sections/customer_info_section.dart';
 import '../widgets/service/form_widgets/form_type_chip.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'package:cence_app/features/stock/providers.dart';
@@ -35,10 +36,20 @@ class SelectedPart {
 class _NewServiceFormScreenState
     extends rp.ConsumerState<NewServiceFormScreen> {
   int _formTipi = 0; // 0: Kurulum, 1: Bakım, 2: Arıza
-  final TextEditingController _deviceController = TextEditingController();
   final TextEditingController _technicianController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _customerController = TextEditingController();
+  
+  // Yeni cihaz bilgileri controller'ları
+  final TextEditingController _serialNumberController = TextEditingController();
+  final TextEditingController _deviceNameController = TextEditingController();
+  final TextEditingController _brandController = TextEditingController();
+  final TextEditingController _modelController = TextEditingController();
+  
+  // Yeni müşteri bilgileri controller'ları
+  final TextEditingController _companyController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  
   DateTime? _date;
   late TextEditingController _dateController;
   XFile? _pickedImage;
@@ -108,7 +119,6 @@ class _NewServiceFormScreenState
 
   @override
   void dispose() {
-    _deviceController.dispose();
     _technicianController.dispose();
     _descriptionController.dispose();
     _dateController.dispose();
@@ -117,6 +127,15 @@ class _NewServiceFormScreenState
     _warrantyDurationController.dispose();
     _otherPartNameController.dispose();
     _otherPartQuantityController.dispose();
+    
+    // Yeni controller'ları dispose et
+    _serialNumberController.dispose();
+    _deviceNameController.dispose();
+    _brandController.dispose();
+    _modelController.dispose();
+    _companyController.dispose();
+    _locationController.dispose();
+    
     super.dispose();
   }
 
@@ -643,6 +662,10 @@ class _NewServiceFormScreenState
             const SizedBox(height: 22),
             DeviceSelectionSection(
               deviceSearchController: _deviceSearchController,
+              serialNumberController: _serialNumberController,
+              deviceNameController: _deviceNameController,
+              brandController: _brandController,
+              modelController: _modelController,
               selectedDevice: _selectedDevice,
               filteredDevices: _filteredDevices,
               showDeviceSuggestions: _showDeviceSuggestions,
@@ -662,27 +685,9 @@ class _NewServiceFormScreenState
               },
             ),
             const SizedBox(height: 22),
-            const Text(
-              'Müşteri/Kurum Bilgileri',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _customerController,
-              keyboardType: TextInputType.text,
-              decoration: InputDecoration(
-                hintText: 'Müşteri veya kurum adı girin',
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+            CustomerInfoSection(
+              companyController: _companyController,
+              locationController: _locationController,
             ),
             const SizedBox(height: 18),
 
