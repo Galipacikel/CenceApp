@@ -50,7 +50,11 @@ class _CameraScreenState extends State<CameraScreen> {
         backgroundColor: const Color(0xFF23408E),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 24),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 24,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -64,7 +68,11 @@ class _CameraScreenState extends State<CameraScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.flash_on_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -75,11 +83,17 @@ class _CameraScreenState extends State<CameraScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Colors.white, size: 24),
+            icon: const Icon(
+              Icons.help_outline_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Kamera kullanımı konusunda yardım için destek ekibimizle iletişime geçin.'),
+                  content: Text(
+                    'Kamera kullanımı konusunda yardım için destek ekibimizle iletişime geçin.',
+                  ),
                   duration: Duration(seconds: 3),
                 ),
               );
@@ -90,12 +104,17 @@ class _CameraScreenState extends State<CameraScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : _error != null
-              ? Center(
-                  child: Text(_error!, style: const TextStyle(color: Colors.white)),
-                )
-              : _controller != null && _controller!.value.isInitialized
-                  ? CameraPreview(_controller!)
-                  : const Center(child: Text('Kamera bulunamadı', style: TextStyle(color: Colors.white))),
+          ? Center(
+              child: Text(_error!, style: const TextStyle(color: Colors.white)),
+            )
+          : _controller != null && _controller!.value.isInitialized
+          ? CameraPreview(_controller!)
+          : const Center(
+              child: Text(
+                'Kamera bulunamadı',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
     );
   }
-} 
+}

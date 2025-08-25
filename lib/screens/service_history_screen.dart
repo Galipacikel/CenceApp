@@ -11,7 +11,8 @@ class ServisGecmisiScreen extends ConsumerStatefulWidget {
   const ServisGecmisiScreen({super.key});
 
   @override
-  ConsumerState<ServisGecmisiScreen> createState() => _ServisGecmisiScreenState();
+  ConsumerState<ServisGecmisiScreen> createState() =>
+      _ServisGecmisiScreenState();
 }
 
 class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
@@ -327,11 +328,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                 ),
               if (_isSelectionMode) ...[
                 IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 24),
                   onPressed: _toggleSelectionMode,
                   tooltip: 'Seçimi İptal Et',
                 ),
@@ -469,7 +466,9 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                     ),
                     child: InkWell(
                       onTap: () {
-                        final list = ref.read(serviceHistoryListProvider).maybeWhen(
+                        final list = ref
+                            .read(serviceHistoryListProvider)
+                            .maybeWhen(
                               data: (l) => l,
                               orElse: () => <ServiceHistory>[],
                             );
@@ -549,7 +548,9 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                           itemCount: filteredHistory.length,
                           itemBuilder: (context, index) {
                             final kayit = filteredHistory[index];
-                            final isSelected = _selectedItems.contains(kayit.id);
+                            final isSelected = _selectedItems.contains(
+                              kayit.id,
+                            );
 
                             return _ServisKaydiCard(
                               kayit: kayit,
@@ -561,9 +562,10 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                                 } else {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (_) => ServiceHistoryDetailScreen(
-                                        serviceHistory: kayit,
-                                      ),
+                                      builder: (_) =>
+                                          ServiceHistoryDetailScreen(
+                                            serviceHistory: kayit,
+                                          ),
                                     ),
                                   );
                                 }
@@ -583,9 +585,8 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                       );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(
-                child: Text('Veriler yüklenirken hata: $e'),
-              ),
+              error: (e, st) =>
+                  Center(child: Text('Veriler yüklenirken hata: $e')),
             ),
           ),
         ],

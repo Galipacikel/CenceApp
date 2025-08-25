@@ -72,4 +72,4 @@ class UserProfile {
       profileImagePath: json['profileImagePath'],
     );
   }
-} 
+}

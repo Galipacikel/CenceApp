@@ -18,27 +18,28 @@ class AppStateProvider extends ChangeNotifier {
   // Auth durumunu başlat
   Future<void> initAuth() async {
     _currentUser = await _authService.getCurrentUserProfile();
-    
+
     // Profil fotoğrafını SharedPreferences'dan yükle
     final prefs = await SharedPreferences.getInstance();
     final savedProfileImagePath = prefs.getString('profile_image_path');
-    
+
     // Bildirim ayarlarını SharedPreferences'dan yükle
     final faultNotification = prefs.getBool('fault_notification') ?? true;
-    final maintenanceNotification = prefs.getBool('maintenance_notification') ?? true;
+    final maintenanceNotification =
+        prefs.getBool('maintenance_notification') ?? true;
     final stockNotification = prefs.getBool('stock_notification') ?? false;
-    
+
     // Tema ayarını SharedPreferences'dan yükle
     final themeModeIndex = prefs.getInt('theme_mode') ?? 0;
     final themeMode = ThemeMode.values[themeModeIndex];
-    
+
     _appSettings = AppSettings(
       themeMode: themeMode,
       faultNotification: faultNotification,
       maintenanceNotification: maintenanceNotification,
       stockNotification: stockNotification,
     );
-    
+
     // AppUser varsa UserProfile'a dönüştür
     if (_currentUser != null) {
       _userProfile = UserProfile(
@@ -57,12 +58,12 @@ class AppStateProvider extends ChangeNotifier {
 
   void updateCurrentUser(AppUser? user) async {
     _currentUser = user;
-    
+
     if (user != null) {
       // Profil fotoğrafını SharedPreferences'dan yükle
       final prefs = await SharedPreferences.getInstance();
       final savedProfileImagePath = prefs.getString('profile_image_path');
-      
+
       _userProfile = UserProfile(
         id: user.uid,
         name: user.fullName?.split(' ').first ?? '',

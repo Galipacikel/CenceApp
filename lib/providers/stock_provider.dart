@@ -7,7 +7,8 @@ class StockProvider extends ChangeNotifier {
   final StockPartRepositoryV2 _repository;
   String? _error;
 
-  StockProvider({required StockPartRepositoryV2 repository}) : _repository = repository;
+  StockProvider({required StockPartRepositoryV2 repository})
+    : _repository = repository;
 
   List<StockPart> get parts => List.unmodifiable(_parts);
   String? get error => _error;

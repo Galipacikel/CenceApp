@@ -1,6 +1,7 @@
 import 'package:cence_app/domain/repositories/forms_repository.dart' as v2;
 import 'package:cence_app/models/device.dart';
-import 'package:cence_app/repositories/forms_repository.dart' show FormsRepositoryBase;
+import 'package:cence_app/repositories/forms_repository.dart'
+    show FormsRepositoryBase;
 
 class FormsRepositoryAdapter implements FormsRepositoryBase {
   final v2.FormsRepositoryV2 _inner;

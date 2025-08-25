@@ -28,7 +28,10 @@ final appUserProvider = FutureProvider<AppUser?>((ref) async {
   final user = await ref.watch(authUserChangesProvider.future);
   if (user == null) return null;
   final firestore = ref.watch(firebaseFirestoreProvider);
-  final doc = await firestore.collection(FirestorePaths.users).doc(user.uid).get();
+  final doc = await firestore
+      .collection(FirestorePaths.users)
+      .doc(user.uid)
+      .get();
   if (!doc.exists) return null;
   final data = doc.data() ?? {};
   return AppUser.fromFirestore(data, doc.id);
@@ -88,6 +91,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
   }
 }
 
-final appSettingsProvider = StateNotifierProvider<AppSettingsNotifier, AppSettings>((ref) {
-  return AppSettingsNotifier();
-});
+final appSettingsProvider =
+    StateNotifierProvider<AppSettingsNotifier, AppSettings>((ref) {
+      return AppSettingsNotifier();
+    });

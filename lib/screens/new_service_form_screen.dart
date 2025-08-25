@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 // import 'package:path_provider/path_provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/firestore_paths.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+import 'package:uuid/uuid.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
+import 'package:cence_app/features/service_history/use_cases.dart';
 import '../services/storage_service.dart';
-import '../services/service_record_service.dart';
 import '../models/stock_part.dart';
 import '../models/device.dart';
 import '../models/service_history.dart';
@@ -22,7 +22,8 @@ class NewServiceFormScreen extends rp.ConsumerStatefulWidget {
   const NewServiceFormScreen({super.key});
 
   @override
-  rp.ConsumerState<NewServiceFormScreen> createState() => _NewServiceFormScreenState();
+  rp.ConsumerState<NewServiceFormScreen> createState() =>
+      _NewServiceFormScreenState();
 }
 
 class SelectedPart {
@@ -31,7 +32,8 @@ class SelectedPart {
   SelectedPart({required this.part, this.adet = 1});
 }
 
-class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> {
+class _NewServiceFormScreenState
+    extends rp.ConsumerState<NewServiceFormScreen> {
   int _formTipi = 0; // 0: Kurulum, 1: Bakım, 2: Arıza
   final TextEditingController _deviceController = TextEditingController();
   final TextEditingController _technicianController = TextEditingController();
@@ -97,33 +99,6 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
       loading: () {},
       error: (e, st) {},
     );
-    // Değişimleri dinle
-    ref.listen(stockPartsProvider, (prev, next) {
-      next.when(
-        data: (parts) {
-          if (!mounted) return;
-          setState(() {
-            _allParts = parts;
-            _filteredParts = parts;
-          });
-        },
-        loading: () {},
-        error: (e, st) {},
-      );
-    });
-    ref.listen(devicesListProvider, (prev, next) {
-      next.when(
-        data: (devices) {
-          if (!mounted) return;
-          setState(() {
-            _allDevices = devices;
-            _filteredDevices = devices;
-          });
-        },
-        loading: () {},
-        error: (e, st) {},
-      );
-    });
 
     // Teknisyen adını otomatik doldur
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -144,7 +119,6 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
     _otherPartQuantityController.dispose();
     super.dispose();
   }
-
 
   void _filterParts(String query) {
     setState(() {
@@ -204,7 +178,7 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
 
   // Kullanıcı profilinden teknisyen adını al
   String _getTechnicianName() {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = ref.read(firebaseAuthProvider).currentUser;
     // displayName yoksa email'in @ öncesini kullan, hiçbiri yoksa "Teknisyen"
     if (user != null) {
       if ((user.displayName ?? '').trim().isNotEmpty) {
@@ -449,80 +423,93 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
 
     // Fotoğrafı Storage'a yükle ve URL'leri hazırla
     final List<String> photoUrls = [];
-    final recordId = FirebaseFirestore.instance
-        .collection(FirestorePaths.deviceServiceRecords(_selectedDevice!.id))
-        .doc()
-        .id;
+    // Firestore bağımlılığı olmadan benzersiz bir klasör kimliği üret
+    final recordFolderId = const Uuid().v4();
     if (_pickedImage != null) {
       final storage = StorageService();
       final fileName = 'img_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final url = await storage.uploadFile(
         file: _pickedImage!, // XFile veriyoruz
-        storagePath: 'service_images/$recordId/$fileName',
+        storagePath: 'service_images/$recordFolderId/$fileName',
       );
       photoUrls.add(url);
     }
 
-    // Firestore'a servis kaydı oluştur (stok düşüşü ile)
-    final service = ServiceRecordService();
-    final technicianUid =
-        FirebaseAuth.instance.currentUser?.uid ?? _technicianController.text;
-    final history = ServiceHistory(
-      id: recordId,
-      date: _date!,
-      deviceId: _selectedDevice!.id,
-      musteri: _customerController.text,
-      description: _descriptionController.text,
-      technician: technicianUid, // technician_id için uid kullan
-      status: _formTipi == 2 ? 'Arızalı' : 'Başarılı',
-      kullanilanParcalar: _selectedParts
-          .map(
-            (sp) => StockPart(
-              id: sp.part.id,
-              parcaAdi: sp.part.parcaAdi,
-              parcaKodu: sp.part.parcaKodu,
-              stokAdedi: sp.adet,
-              criticalLevel: sp.part.criticalLevel,
-            ),
-          )
-          .toList(),
-      photos: photoUrls.isNotEmpty ? photoUrls : null,
-    );
+    // Firestore'a servis kaydı oluştur (stok düşüşü repo/use-case içinde)
+    // Kayıtta kullanıcıya görünen teknisyen ismini kullan
+    final technicianName = _technicianController.text.isNotEmpty
+        ? _technicianController.text
+        : _getTechnicianName();
+     final history = ServiceHistory(
+       id: recordFolderId,
+       date: _date!,
+       deviceId: _selectedDevice!.id,
+       musteri: _customerController.text,
+       description: _descriptionController.text,
+      technician: technicianName,
+       status: _formTipi == 2 ? 'Arızalı' : 'Başarılı',
+       kullanilanParcalar: _selectedParts
+           .map(
+             (sp) => StockPart(
+               id: sp.part.id,
+               parcaAdi: sp.part.parcaAdi,
+               parcaKodu: sp.part.parcaKodu,
+               stokAdedi: sp.adet,
+               criticalLevel: sp.part.criticalLevel,
+             ),
+           )
+           .toList(),
+       photos: photoUrls.isNotEmpty ? photoUrls : null,
+     );
 
-    // UI listesine de ekleyelim
-     await service.createWithStockDecreaseWithId(recordId, history);
+     // UI listesine de ekleyelim
+     try {
+       final addHistory = ref.read(addServiceHistoryUseCaseProvider);
+       await addHistory(history);
+     } catch (e) {
+       if (!mounted) return;
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(
+           content: Text('Kayıt sırasında hata: $e'),
+           backgroundColor: Colors.red,
+           duration: const Duration(seconds: 2),
+         ),
+       );
+       _isSaving = false;
+       return;
+     }
      if (!mounted) return;
-     
+
      // Riverpod servis geçmişi provider'ları repository güncellemesini yansıtacaktır.
-     
+
      Navigator.of(context).pop({
-         'formTipi': _formTipi,
-         'date': _date!,
-         'deviceId': _selectedDevice!.id,
-         'customer': _customerController.text,
-         'technician': technicianUid,
-         'description': _descriptionController.text,
-         'warrantyDuration': warrantyDuration,
-         'warrantyStartDate': _date,
-         'warrantyEndDate': warrantyEndDate,
-         'usedParts': _selectedParts
-             .map(
-               (sp) => {
-                 'partCode': sp.part.parcaKodu,
-                 'partName': sp.part.parcaAdi,
-                 'quantity': sp.adet,
-               },
-             )
-             .toList(),
-       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kayıt başarıyla eklendi!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
- 
+       'formTipi': _formTipi,
+       'date': _date!,
+       'deviceId': _selectedDevice!.id,
+       'customer': _customerController.text,
+      'technician': technicianName,
+       'description': _descriptionController.text,
+       'warrantyDuration': warrantyDuration,
+       'warrantyStartDate': _date,
+       'warrantyEndDate': warrantyEndDate,
+       'usedParts': _selectedParts
+           .map(
+             (sp) => {
+               'partCode': sp.part.parcaKodu,
+               'partName': sp.part.parcaAdi,
+               'quantity': sp.adet,
+             },
+           )
+           .toList(),
+     });
+     ScaffoldMessenger.of(context).showSnackBar(
+       const SnackBar(
+         content: Text('Kayıt başarıyla eklendi!'),
+         backgroundColor: Colors.green,
+         duration: Duration(seconds: 2),
+       ),
+     );
+
      // Flag'i sıfırla
      _isSaving = false;
    }
@@ -547,6 +534,35 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
 
   @override
   Widget build(BuildContext context) {
+    // Provider değişimlerini dinle (Riverpod gereği build içinde)
+    ref.listen(stockPartsProvider, (prev, next) {
+      next.when(
+        data: (parts) {
+          if (!mounted) return;
+          setState(() {
+            _allParts = parts;
+            _filteredParts = parts;
+          });
+        },
+        loading: () {},
+        error: (e, st) {},
+      );
+    });
+
+    ref.listen(devicesListProvider, (prev, next) {
+      next.when(
+        data: (devices) {
+          if (!mounted) return;
+          setState(() {
+            _allDevices = devices;
+            _filteredDevices = devices;
+          });
+        },
+        loading: () {},
+        error: (e, st) {},
+      );
+    });
+
     _updateDateController();
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -701,7 +717,8 @@ class _NewServiceFormScreenState extends rp.ConsumerState<NewServiceFormScreen> 
                             width: 70,
                             height: 70,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stack) => const SizedBox(width: 70, height: 70),
+                            errorBuilder: (context, error, stack) =>
+                                const SizedBox(width: 70, height: 70),
                           )
                         : const SizedBox(width: 70, height: 70),
                   ),

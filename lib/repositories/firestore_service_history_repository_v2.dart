@@ -7,11 +7,12 @@ import 'package:cence_app/models/service_history.dart';
 import 'package:cence_app/models/stock_part.dart';
 import 'package:cence_app/services/firestore_paths.dart';
 
-class FirestoreServiceHistoryRepositoryV2 implements ServiceHistoryRepositoryV2 {
+class FirestoreServiceHistoryRepositoryV2
+    implements ServiceHistoryRepositoryV2 {
   final FirebaseFirestore _firestore;
 
   FirestoreServiceHistoryRepositoryV2({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
   Future<Result<Unit, app.Failure>> add(ServiceHistory history) async {
@@ -19,14 +20,16 @@ class FirestoreServiceHistoryRepositoryV2 implements ServiceHistoryRepositoryV2 
       final batch = _firestore.batch();
       final recordsRef = _firestore
           .collection(FirestorePaths.deviceServiceRecords(history.deviceId))
-          .doc();
+          .doc(history.id);
 
       final recordData = _toFirestoreMap(history, id: recordsRef.id);
       batch.set(recordsRef, recordData);
 
       for (final used in history.kullanilanParcalar) {
         if (used.id.isEmpty) continue;
-        final partDoc = _firestore.collection(FirestorePaths.spareParts).doc(used.id);
+        final partDoc = _firestore
+            .collection(FirestorePaths.spareParts)
+            .doc(used.id);
         batch.update(partDoc, {
           'stock_quantity': FieldValue.increment(-1 * (used.stokAdedi)),
           'updated_at': FieldValue.serverTimestamp(),
@@ -49,7 +52,9 @@ class FirestoreServiceHistoryRepositoryV2 implements ServiceHistoryRepositoryV2 
           .collectionGroup(FirestorePaths.serviceRecords)
           .orderBy('created_at', descending: true)
           .get();
-      final list = snapshot.docs.map((d) => _fromFirestore(d.id, d.data())).toList();
+      final list = snapshot.docs
+          .map((d) => _fromFirestore(d.id, d.data()))
+          .toList();
       return Result.ok(list);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -59,14 +64,18 @@ class FirestoreServiceHistoryRepositoryV2 implements ServiceHistoryRepositoryV2 
   }
 
   @override
-  Future<Result<List<ServiceHistory>, app.Failure>> getRecent({int count = 3}) async {
+  Future<Result<List<ServiceHistory>, app.Failure>> getRecent({
+    int count = 3,
+  }) async {
     try {
       final snapshot = await _firestore
           .collectionGroup(FirestorePaths.serviceRecords)
           .orderBy('created_at', descending: true)
           .limit(count)
           .get();
-      final list = snapshot.docs.map((d) => _fromFirestore(d.id, d.data())).toList();
+      final list = snapshot.docs
+          .map((d) => _fromFirestore(d.id, d.data()))
+          .toList();
       return Result.ok(list);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -76,14 +85,19 @@ class FirestoreServiceHistoryRepositoryV2 implements ServiceHistoryRepositoryV2 
   }
 
   @override
-  Future<Result<Unit, app.Failure>> update(String id, ServiceHistory history) async {
+  Future<Result<Unit, app.Failure>> update(
+    String id,
+    ServiceHistory history,
+  ) async {
     try {
       final snapshot = await _firestore
           .collectionGroup(FirestorePaths.serviceRecords)
           .where(FieldPath.documentId, isEqualTo: id)
           .get();
       if (snapshot.docs.isEmpty) {
-        return Result.err(app.NotFoundFailure('Kayıt bulunamadı', code: 'not-found'));
+        return Result.err(
+          app.NotFoundFailure('Kayıt bulunamadı', code: 'not-found'),
+        );
       }
       final doc = snapshot.docs.first;
       final recordData = _toFirestoreMap(history, id: id);
@@ -104,7 +118,9 @@ class FirestoreServiceHistoryRepositoryV2 implements ServiceHistoryRepositoryV2 
           .where(FieldPath.documentId, isEqualTo: id)
           .get();
       if (snapshot.docs.isEmpty) {
-        return Result.err(app.NotFoundFailure('Kayıt bulunamadı', code: 'not-found'));
+        return Result.err(
+          app.NotFoundFailure('Kayıt bulunamadı', code: 'not-found'),
+        );
       }
       final doc = snapshot.docs.first;
       await doc.reference.delete();
@@ -123,53 +139,57 @@ class FirestoreServiceHistoryRepositoryV2 implements ServiceHistoryRepositoryV2 
     return {
       'device_id': history.deviceId,
       'technician_id': history.technician,
-      'service_type': history.status,
-      'description': history.description,
-      'actions_taken': '',
-      'images': history.photos ?? <String>[],
-      'used_parts': history.kullanilanParcalar
-          .map(
-            (p) => {
-              'part_id': p.id,
-              'part_name': p.parcaAdi,
-              'quantity': p.stokAdedi,
-            },
-          )
-          .toList(),
-      'created_at': Timestamp.fromDate(history.date),
-      'is_synced': true,
-    };
-  }
+      'technician_name': history.technician,
+       'service_type': history.status,
+       'description': history.description,
+       'actions_taken': '',
+       'images': history.photos ?? <String>[],
+       'used_parts': history.kullanilanParcalar
+           .map(
+             (p) => {
+               'part_id': p.id,
+               'part_name': p.parcaAdi,
+               'quantity': p.stokAdedi,
+             },
+           )
+           .toList(),
+       'created_at': Timestamp.fromDate(history.date),
+      'customer_name': history.musteri,
+       'is_synced': true,
+     };
+   }
 
-  ServiceHistory _fromFirestore(String id, Map<String, dynamic> data) {
-    final createdAt = data['created_at'];
-    DateTime when = DateTime.now();
-    if (createdAt is Timestamp) when = createdAt.toDate();
+   ServiceHistory _fromFirestore(String id, Map<String, dynamic> data) {
+     final createdAt = data['created_at'];
+     DateTime when = DateTime.now();
+     if (createdAt is Timestamp) when = createdAt.toDate();
 
-    final usedParts = (data['used_parts'] as List<dynamic>? ?? [])
-        .map(
-          (raw) => StockPart(
-            id: (raw['part_id'] ?? '') as String,
-            parcaAdi: (raw['part_name'] ?? '') as String,
-            parcaKodu: (raw['stock_code'] ?? '') as String,
-            stokAdedi: (raw['quantity'] ?? 1) as int,
-            criticalLevel: 0,
-          ),
-        )
-        .toList();
+     final usedParts = (data['used_parts'] as List<dynamic>? ?? [])
+         .map(
+           (raw) => StockPart(
+             id: (raw['part_id'] ?? '') as String,
+             parcaAdi: (raw['part_name'] ?? '') as String,
+             parcaKodu: (raw['stock_code'] ?? '') as String,
+             stokAdedi: (raw['quantity'] ?? 1) as int,
+             criticalLevel: 0,
+           ),
+         )
+         .toList();
 
-    return ServiceHistory(
-      id: id,
-      date: when,
-      deviceId: (data['device_id'] ?? '') as String,
-      musteri: '',
-      description: (data['description'] ?? '') as String,
-      technician: (data['technician_id'] ?? '') as String,
-      status: (data['service_type'] ?? '') as String,
-      kullanilanParcalar: usedParts,
-      photos: (data['images'] as List<dynamic>? ?? []).cast<String>(),
-    );
-  }
+    final String technicianStr = (data['technician_name'] ?? data['technician_id'] ?? '') as String;
+
+     return ServiceHistory(
+       id: id,
+       date: when,
+       deviceId: (data['device_id'] ?? '') as String,
+      musteri: (data['customer_name'] ?? '') as String,
+       description: (data['description'] ?? '') as String,
+      technician: technicianStr,
+       status: (data['service_type'] ?? '') as String,
+       kullanilanParcalar: usedParts,
+       photos: (data['images'] as List<dynamic>? ?? []).cast<String>(),
+     );
+   }
 
   app.Failure _toFailure(FirebaseException e) {
     switch (e.code) {

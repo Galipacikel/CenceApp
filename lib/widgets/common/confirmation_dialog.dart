@@ -38,7 +38,9 @@ class ConfirmationDialog extends StatelessWidget {
           child: Text(cancelText, style: GoogleFonts.montserrat()),
         ),
         ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.criticalRed),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.criticalRed,
+          ),
           onPressed: () => Navigator.pop(context, true),
           icon: const Icon(Icons.delete),
           label: Text(confirmText, style: GoogleFonts.montserrat()),

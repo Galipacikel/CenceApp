@@ -112,7 +112,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final fullName = u?.fullName ?? '';
       final parts = fullName.trim().split(RegExp(r"\s+"));
       name = parts.isNotEmpty ? capitalizeEachWord(parts.first) : '';
-      surname = parts.length > 1 ? capitalizeEachWord(parts.sublist(1).join(' ')) : '';
+      surname = parts.length > 1
+          ? capitalizeEachWord(parts.sublist(1).join(' '))
+          : '';
       titleStr = (u?.isAdmin ?? false) ? 'Admin' : 'Teknisyen';
     });
 
@@ -130,16 +132,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             fontSize: 22,
           ),
         ),
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-          size: 28,
-        ),
+        iconTheme: const IconThemeData(color: Colors.white, size: 28),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
-            size: 28,
-          ),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -172,11 +167,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                         CircleAvatar(
                           radius: 38,
                           backgroundColor: primaryBlue,
-                          backgroundImage: _profileImageBytes != null 
-                              ? null 
-                              : (_savedProfileImagePath != null 
-                                  ? FileImage(File(_savedProfileImagePath!))
-                                  : null),
+                          backgroundImage: _profileImageBytes != null
+                              ? null
+                              : (_savedProfileImagePath != null
+                                    ? FileImage(File(_savedProfileImagePath!))
+                                    : null),
                           child: ClipOval(
                             child: (_profileImageBytes != null)
                                 ? Image.memory(
@@ -186,12 +181,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                     fit: BoxFit.cover,
                                   )
                                 : (_savedProfileImagePath == null
-                                    ? Icon(
-                                        Icons.person,
-                                        color: Colors.white,
-                                        size: 38,
-                                      )
-                                    : null),
+                                      ? Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 38,
+                                        )
+                                      : null),
                           ),
                         ),
                         Container(
@@ -212,20 +207,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  _ProfileInfoField(
-                    label: 'Ad',
-                    value: name,
-                  ),
+                  _ProfileInfoField(label: 'Ad', value: name),
                   const SizedBox(height: 16),
-                  _ProfileInfoField(
-                    label: 'Soyad',
-                    value: surname,
-                  ),
+                  _ProfileInfoField(label: 'Soyad', value: surname),
                   const SizedBox(height: 16),
-                  _ProfileInfoField(
-                    label: 'Unvan',
-                    value: titleStr,
-                  ),
+                  _ProfileInfoField(label: 'Unvan', value: titleStr),
                   const SizedBox(height: 28),
                   if (_profileImage != null) ...[
                     SizedBox(
@@ -243,7 +229,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                         onPressed: () async {
                           final prefs = await SharedPreferences.getInstance();
                           if (_profileImage != null) {
-                            await prefs.setString('profile_image_path', _profileImage!.path);
+                            await prefs.setString(
+                              'profile_image_path',
+                              _profileImage!.path,
+                            );
                             if (mounted) {
                               setState(() {
                                 _savedProfileImagePath = _profileImage!.path;
@@ -253,7 +242,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             final messenger = ScaffoldMessenger.of(context);
                             messenger.showSnackBar(
                               const SnackBar(
-                                content: Text('Profil fotoğrafı başarıyla güncellendi!'),
+                                content: Text(
+                                  'Profil fotoğrafı başarıyla güncellendi!',
+                                ),
                               ),
                             );
                             Navigator.pop(context);
@@ -282,11 +273,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 class _ProfileInfoField extends StatelessWidget {
   final String label;
   final String value;
-  
-  const _ProfileInfoField({
-    required this.label,
-    required this.value,
-  });
+
+  const _ProfileInfoField({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

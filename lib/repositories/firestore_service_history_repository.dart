@@ -61,7 +61,7 @@ class FirestoreServiceHistoryRepository implements ServiceHistoryRepository {
         .collectionGroup(FirestorePaths.serviceRecords)
         .where(FieldPath.documentId, isEqualTo: id)
         .get();
-    
+
     if (snapshot.docs.isNotEmpty) {
       final doc = snapshot.docs.first;
       final recordData = _toFirestoreMap(history, id: id);
@@ -76,7 +76,7 @@ class FirestoreServiceHistoryRepository implements ServiceHistoryRepository {
         .collectionGroup(FirestorePaths.serviceRecords)
         .where(FieldPath.documentId, isEqualTo: id)
         .get();
-    
+
     if (snapshot.docs.isNotEmpty) {
       final doc = snapshot.docs.first;
       await doc.reference.delete();

@@ -17,8 +17,7 @@ class CustomAppBar extends ConsumerWidget {
       orElse: () => 'Kullanıcı',
     );
 
-    return Container
-(
+    return Container(
       padding: const EdgeInsets.only(top: 32, left: 16, right: 16, bottom: 12),
       decoration: const BoxDecoration(
         color: Color(0xFF23408E),
@@ -33,7 +32,11 @@ class CustomAppBar extends ConsumerWidget {
               color: Colors.white.withAlpha(31), // 0.12 * 255 ≈ 31
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.medical_services_rounded, color: Colors.white, size: 28),
+            child: const Icon(
+              Icons.medical_services_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 14),
           // Orta: Uygulama adı
@@ -54,14 +57,26 @@ class CustomAppBar extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(displayName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
-                  Text(isAdmin ? 'Admin' : 'Teknisyen', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  Text(
+                    isAdmin ? 'Admin' : 'Teknisyen',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ],
               ),
               const SizedBox(width: 8),
               const CircleAvatar(
                 radius: 18,
-                backgroundImage: AssetImage('assets/images/profile_placeholder.png'),
+                backgroundImage: AssetImage(
+                  'assets/images/profile_placeholder.png',
+                ),
                 backgroundColor: Colors.white,
               ),
             ],

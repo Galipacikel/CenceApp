@@ -12,7 +12,7 @@ class FormsRepository implements FormsRepositoryBase {
   final FirebaseFirestore _firestore;
 
   FormsRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Tek bir metin girdisiyle model veya seri no üzerinden arama (OR mantığı)
   @override
@@ -39,9 +39,30 @@ class FormsRepository implements FormsRepositoryBase {
     }
 
     // 1) Prefix aramalar (başlayanla)
-    await tryQuery(col.orderBy('MODEL').startAt([qUpper]).endAt(['$qUpper\uf8ff']).limit(20).get());
-    await tryQuery(col.orderBy('MODEL').startAt([qExact]).endAt(['$qExact\uf8ff']).limit(20).get());
-    await tryQuery(col.orderBy('SERİ NO').startAt([qExact]).endAt(['$qExact\uf8ff']).limit(20).get());
+    await tryQuery(
+      col
+          .orderBy('MODEL')
+          .startAt([qUpper])
+          .endAt(['$qUpper\uf8ff'])
+          .limit(20)
+          .get(),
+    );
+    await tryQuery(
+      col
+          .orderBy('MODEL')
+          .startAt([qExact])
+          .endAt(['$qExact\uf8ff'])
+          .limit(20)
+          .get(),
+    );
+    await tryQuery(
+      col
+          .orderBy('SERİ NO')
+          .startAt([qExact])
+          .endAt(['$qExact\uf8ff'])
+          .limit(20)
+          .get(),
+    );
 
     // 2) Hiç sonuç yoksa veya index hatasından ötürü başarısız olduysa eşitlik fallback
     if (seen.isEmpty) {
@@ -61,11 +82,16 @@ class FormsRepository implements FormsRepositoryBase {
     final firma = (data['FİRMA'] ?? '').toString();
 
     // Model adı: MARKA + MODEL veya CİHAZ ADI + MODEL
-    final modelName = [if (marka.isNotEmpty) marka, if (model.isNotEmpty) model].join(' ').trim();
+    final modelName = [
+      if (marka.isNotEmpty) marka,
+      if (model.isNotEmpty) model,
+    ].join(' ').trim();
 
     return Device(
       id: id,
-      modelName: modelName.isNotEmpty ? modelName : (cihazAdi.isNotEmpty ? cihazAdi : model),
+      modelName: modelName.isNotEmpty
+          ? modelName
+          : (cihazAdi.isNotEmpty ? cihazAdi : model),
       serialNumber: serial,
       customer: firma,
       installDate: '',

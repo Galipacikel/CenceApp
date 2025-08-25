@@ -1,4 +1,5 @@
-import 'package:cence_app/domain/repositories/service_history_repository.dart' as v2;
+import 'package:cence_app/domain/repositories/service_history_repository.dart'
+    as v2;
 import 'package:cence_app/models/service_history.dart';
 
 class ServiceHistoryRepositoryAdapter implements ServiceHistoryRepository {

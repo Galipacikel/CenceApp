@@ -11,7 +11,10 @@ final formsRepositoryProvider = Provider<FormsRepositoryV2>((ref) {
 });
 
 /// Query tabanlı cihaz arama
-final formsDeviceSearchProvider = FutureProvider.family<List<Device>, String>((ref, query) async {
+final formsDeviceSearchProvider = FutureProvider.family<List<Device>, String>((
+  ref,
+  query,
+) async {
   final repo = ref.watch(formsRepositoryProvider);
   final result = await repo.searchDevices(query);
   return result.fold(

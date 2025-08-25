@@ -7,10 +7,12 @@ class NotificationSettingsScreen extends ConsumerStatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  ConsumerState<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  ConsumerState<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends ConsumerState<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends ConsumerState<NotificationSettingsScreen> {
   bool _faultNotification = true;
   bool _maintenanceNotification = false;
   bool _stockNotification = true;
@@ -49,16 +51,9 @@ class _NotificationSettingsScreenState extends ConsumerState<NotificationSetting
             fontSize: 22,
           ),
         ),
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-          size: 28,
-        ),
+        iconTheme: const IconThemeData(color: Colors.white, size: 28),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
-            size: 28,
-          ),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -136,9 +131,11 @@ class _NotificationSettingsScreenState extends ConsumerState<NotificationSetting
                 // Ayarları kaydet
                 final notifier = ref.read(appSettingsProvider.notifier);
                 await notifier.setFaultNotification(_faultNotification);
-                await notifier.setMaintenanceNotification(_maintenanceNotification);
+                await notifier.setMaintenanceNotification(
+                  _maintenanceNotification,
+                );
                 await notifier.setStockNotification(_stockNotification);
-                
+
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -146,7 +143,7 @@ class _NotificationSettingsScreenState extends ConsumerState<NotificationSetting
                     backgroundColor: Color(0xFF424242),
                   ),
                 );
-                
+
                 if (!context.mounted) return;
                 Navigator.pop(context);
               },

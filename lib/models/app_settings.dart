@@ -22,8 +22,9 @@ class AppSettings {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
       faultNotification: faultNotification ?? this.faultNotification,
-      maintenanceNotification: maintenanceNotification ?? this.maintenanceNotification,
+      maintenanceNotification:
+          maintenanceNotification ?? this.maintenanceNotification,
       stockNotification: stockNotification ?? this.stockNotification,
     );
   }
-} 
+}

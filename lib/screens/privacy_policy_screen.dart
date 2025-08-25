@@ -27,16 +27,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
             fontSize: 22,
           ),
         ),
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-          size: 28,
-        ),
+        iconTheme: const IconThemeData(color: Colors.white, size: 28),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
-            size: 28,
-          ),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -64,27 +57,55 @@ class PrivacyPolicyScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.privacy_tip_outlined, color: primaryBlue, size: 28),
+                        Icon(
+                          Icons.privacy_tip_outlined,
+                          color: primaryBlue,
+                          size: 28,
+                        ),
                         const SizedBox(width: 12),
-                        Text('Gizlilik Politikası', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18, color: textColor)),
+                        Text(
+                          'Gizlilik Politikası',
+                          style: GoogleFonts.montserrat(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: textColor,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Text(
                       'Cence uygulaması, kullanıcı verilerinin gizliliğine ve güvenliğine büyük önem verir. Kişisel bilgileriniz, yalnızca uygulamanın işlevselliğini sağlamak ve yasal gereklilikler doğrultusunda kullanılır. Üçüncü şahıslarla paylaşılmaz.',
-                      style: GoogleFonts.montserrat(fontSize: 15, color: subtitleColor),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 15,
+                        color: subtitleColor,
+                      ),
                     ),
                     const SizedBox(height: 24),
-                    Text('Kullanım Koşulları', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 18, color: textColor)),
+                    Text(
+                      'Kullanım Koşulları',
+                      style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: textColor,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'Uygulamayı kullanarak, sağlanan bilgilerin doğru ve güncel olduğunu kabul etmiş olursunuz. Uygulamanın izinsiz kullanımı, veri bütünlüğünü bozacak veya güvenliği tehlikeye atacak eylemler yasaktır. Tüm kullanıcılar, şirket politikalarına ve yasal düzenlemelere uymakla yükümlüdür.',
-                      style: GoogleFonts.montserrat(fontSize: 15, color: subtitleColor),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 15,
+                        color: subtitleColor,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     Text(
                       'Daha fazla bilgi için lütfen yöneticinizle veya destek ekibimizle iletişime geçin.',
-                      style: GoogleFonts.montserrat(fontSize: 15, fontStyle: FontStyle.italic, color: subtitleColor),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 15,
+                        fontStyle: FontStyle.italic,
+                        color: subtitleColor,
+                      ),
                     ),
                   ],
                 ),

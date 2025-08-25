@@ -8,19 +8,19 @@ abstract class BaseProvider<T> extends ChangeNotifier {
 
   /// Getter for items list (immutable)
   List<T> get items => List.unmodifiable(_items);
-  
+
   /// Getter for loading state
   bool get isLoading => _isLoading;
-  
+
   /// Getter for error state
   String? get error => _error;
-  
+
   /// Getter for items count
   int get count => _items.length;
-  
+
   /// Getter for empty state
   bool get isEmpty => _items.isEmpty;
-  
+
   /// Getter for not empty state
   bool get isNotEmpty => _items.isNotEmpty;
 

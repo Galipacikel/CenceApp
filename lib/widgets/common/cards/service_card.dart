@@ -4,11 +4,8 @@ import '../../../screens/service_history_detail_screen.dart';
 
 class ModernServiceCard extends StatelessWidget {
   final ServiceHistory item;
-  
-  const ModernServiceCard({
-    super.key,
-    required this.item,
-  });
+
+  const ModernServiceCard({super.key, required this.item});
 
   Map<String, dynamic> getStatusData(String status) {
     switch (status) {

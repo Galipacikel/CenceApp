@@ -43,16 +43,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
             fontSize: 22,
           ),
         ),
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-          size: 28,
-        ),
+        iconTheme: const IconThemeData(color: Colors.white, size: 28),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.white,
-            size: 28,
-          ),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -80,7 +73,14 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Konu', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      Text(
+                        'Konu',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: textColor,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _subjectController,
@@ -92,26 +92,44 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Konu başlığını girin',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
+                          hintStyle: GoogleFonts.montserrat(
+                            color: subtitleColor.withAlpha(179),
+                          ),
                           filled: true,
                           fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 1,
+                            ),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red, width: 2),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text('Açıklama', style: GoogleFonts.montserrat(fontWeight: FontWeight.w600, fontSize: 15, color: textColor)),
+                      Text(
+                        'Açıklama',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: textColor,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _descriptionController,
@@ -127,22 +145,34 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                         minLines: 3,
                         maxLines: 6,
                         decoration: InputDecoration(
-                          hintText: 'Sorununuzu veya talebinizi detaylıca yazın...',
-                          hintStyle: GoogleFonts.montserrat(color: subtitleColor.withAlpha(179)),
+                          hintText:
+                              'Sorununuzu veya talebinizi detaylıca yazın...',
+                          hintStyle: GoogleFonts.montserrat(
+                            color: subtitleColor.withAlpha(179),
+                          ),
                           filled: true,
                           fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 14,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red, width: 1),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 1,
+                            ),
                           ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red, width: 2),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 2,
+                            ),
                           ),
                         ),
                       ),
@@ -153,7 +183,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryBlue,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
@@ -162,21 +194,29 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                               // Form geçerli, gönderme işlemi
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Destek talebiniz başarıyla gönderildi!'),
+                                  content: Text(
+                                    'Destek talebiniz başarıyla gönderildi!',
+                                  ),
                                   backgroundColor: Color(0xFF424242),
                                 ),
                               );
-                              
+
                               // Formu temizle
                               _subjectController.clear();
                               _descriptionController.clear();
-                              
+
                               // Settings'e geri dön
                               Navigator.pop(context);
                             }
                           },
                           icon: const Icon(Icons.send),
-                          label: Text('Gönder', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: 16)),
+                          label: Text(
+                            'Gönder',
+                            style: GoogleFonts.montserrat(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       ),
                     ],

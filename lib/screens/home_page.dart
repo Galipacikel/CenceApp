@@ -180,7 +180,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF23408E).withAlpha(20), // 0.08 * 255 ≈ 20
+                    color: const Color(
+                      0xFF23408E,
+                    ).withAlpha(20), // 0.08 * 255 ≈ 20
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -194,7 +196,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF23408E).withAlpha(26), // 0.1 * 255 ≈ 26
+                          color: const Color(
+                            0xFF23408E,
+                          ).withAlpha(26), // 0.1 * 255 ≈ 26
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
