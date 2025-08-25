@@ -2,6 +2,8 @@ class FirestorePaths {
   static const String users = 'users';
   static const String devices = 'devices';
   static const String forms = 'formlar';
+  static const String serviceHistory =
+      'service_history'; // Yeni servis kayıtları top-level koleksiyon
   static const String serviceRecords =
       'serviceRecords'; // Alt koleksiyon olacak
   static const String serviceRecordsArchive = 'service_records_archive';

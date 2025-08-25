@@ -19,7 +19,7 @@ class FirestoreServiceHistoryRepositoryV2
     try {
       final batch = _firestore.batch();
       final recordsRef = _firestore
-          .collection(FirestorePaths.deviceServiceRecords(history.deviceId))
+          .collection(FirestorePaths.serviceHistory)
           .doc(history.id);
 
       final recordData = _toFirestoreMap(history, id: recordsRef.id);
@@ -49,7 +49,7 @@ class FirestoreServiceHistoryRepositoryV2
   Future<Result<List<ServiceHistory>, app.Failure>> getAll() async {
     try {
       final snapshot = await _firestore
-          .collectionGroup(FirestorePaths.serviceRecords)
+          .collection(FirestorePaths.serviceHistory)
           .orderBy('created_at', descending: true)
           .get();
       final list = snapshot.docs
@@ -69,7 +69,7 @@ class FirestoreServiceHistoryRepositoryV2
   }) async {
     try {
       final snapshot = await _firestore
-          .collectionGroup(FirestorePaths.serviceRecords)
+          .collection(FirestorePaths.serviceHistory)
           .orderBy('created_at', descending: true)
           .limit(count)
           .get();
@@ -90,18 +90,11 @@ class FirestoreServiceHistoryRepositoryV2
     ServiceHistory history,
   ) async {
     try {
-      final snapshot = await _firestore
-          .collectionGroup(FirestorePaths.serviceRecords)
-          .where(FieldPath.documentId, isEqualTo: id)
-          .get();
-      if (snapshot.docs.isEmpty) {
-        return Result.err(
-          app.NotFoundFailure('Kayıt bulunamadı', code: 'not-found'),
-        );
-      }
-      final doc = snapshot.docs.first;
       final recordData = _toFirestoreMap(history, id: id);
-      await doc.reference.update(recordData);
+      await _firestore
+          .collection(FirestorePaths.serviceHistory)
+          .doc(id)
+          .update(recordData);
       return Result.ok(const Unit());
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -113,17 +106,10 @@ class FirestoreServiceHistoryRepositoryV2
   @override
   Future<Result<Unit, app.Failure>> delete(String id) async {
     try {
-      final snapshot = await _firestore
-          .collectionGroup(FirestorePaths.serviceRecords)
-          .where(FieldPath.documentId, isEqualTo: id)
-          .get();
-      if (snapshot.docs.isEmpty) {
-        return Result.err(
-          app.NotFoundFailure('Kayıt bulunamadı', code: 'not-found'),
-        );
-      }
-      final doc = snapshot.docs.first;
-      await doc.reference.delete();
+      await _firestore
+          .collection(FirestorePaths.serviceHistory)
+          .doc(id)
+          .delete();
       return Result.ok(const Unit());
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
