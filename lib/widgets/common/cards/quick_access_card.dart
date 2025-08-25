@@ -6,7 +6,7 @@ class ModernQuickAccessCard extends StatelessWidget {
   final double iconSize;
   final VoidCallback onTap;
   final Color iconColor;
-
+  
   const ModernQuickAccessCard({
     super.key,
     required this.icon,
