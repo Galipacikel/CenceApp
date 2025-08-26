@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../widgets/common/bottom_nav_bar.dart';
 import '../widgets/common/cards/quick_access_card.dart';
@@ -12,32 +11,41 @@ import 'service_history_screen.dart';
 import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
+import '../models/service_history.dart';
 
-// removed: import 'package:provider/provider.dart' as p;
-import 'package:cence_app/features/service_history/providers.dart';
-// removed: ../providers/stock_provider.dart
-// removed: ../providers/device_provider.dart
-import 'package:cence_app/features/devices/providers.dart';
-import 'package:cence_app/features/stock/providers.dart';
+import 'package:provider/provider.dart';
+import '../providers/service_history_provider.dart';
+import '../providers/stock_provider.dart';
+import '../providers/device_provider.dart';
 
-class HomePage extends ConsumerStatefulWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // Firestore'dan ilk verileri yükle (Riverpod FutureProvider'ları ile ön ısıtma)
+    // Firestore'dan ilk verileri yükle
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final deviceProvider = Provider.of<DeviceProvider>(
+        context,
+        listen: false,
+      );
+      final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
+        context,
+        listen: false,
+      );
+      final stockProvider = Provider.of<StockProvider>(context, listen: false);
       await Future.wait([
-        ref.read(devicesListProvider.future),
-        ref.read(stockPartsProvider.future),
+        deviceProvider.fetchAll(),
+        serviceHistoryProvider.fetchAll(),
+        stockProvider.fetchAll(),
       ]);
     });
   }
@@ -60,7 +68,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             color: const Color(0xFF23408E),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF23408E).withAlpha(51), // 0.2 * 255 ≈ 51
+                color: const Color(0xFF23408E).withOpacity(0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -79,7 +87,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withAlpha(51), // 0.2 * 255 ≈ 51
+                  color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -114,7 +122,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                           TextSpan(
                             text: 'ce',
-                            style: TextStyle(color: Color(0xE6FFFFFF)),
+                            style: TextStyle(color: Colors.white),
                           ),
                         ],
                       ),
@@ -123,7 +131,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       'Medikal Cihazlar',
                       style: TextStyle(
                         fontSize: isWide ? 14 : 12,
-                        color: const Color(0xE6FFFFFF),
+                        color: Colors.white.withOpacity(0.9),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -161,7 +169,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         : 2;
     final gridSpacing = isWide ? 24.0 : 12.0;
     final iconColor = const Color(0xFF23408E);
-    final asyncRecent = ref.watch(recentServiceHistoryProvider(3));
+    final serviceHistoryList = Provider.of<ServiceHistoryProvider>(context).all;
     return Container(
       color: const Color(0xFFF5F6FA),
       child: SingleChildScrollView(
@@ -180,9 +188,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(
-                      0xFF23408E,
-                    ).withAlpha(20), // 0.08 * 255 ≈ 20
+                    color: const Color(0xFF23408E).withOpacity(0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -196,9 +202,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(
-                            0xFF23408E,
-                          ).withAlpha(26), // 0.1 * 255 ≈ 26
+                          color: const Color(0xFF23408E).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -329,20 +333,15 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
             ),
             const SizedBox(height: 18),
-            asyncRecent.when(
-              data: (serviceHistoryList) {
-                if (serviceHistoryList.isEmpty) {
-                  return const EmptyServiceCard();
-                }
-                return Column(
-                  children: serviceHistoryList
-                      .map((item) => ModernServiceCard(item: item))
-                      .toList(),
-                );
-              },
-              loading: () => const EmptyServiceCard(),
-              error: (_, __) => const EmptyServiceCard(),
-            ),
+            if (serviceHistoryList.isEmpty)
+              const EmptyServiceCard()
+            else
+              Column(
+                children: serviceHistoryList
+                    .take(3)
+                    .map((item) => ModernServiceCard(item: item))
+                    .toList(),
+              ),
 
             const SizedBox(height: 24),
             // Footer
