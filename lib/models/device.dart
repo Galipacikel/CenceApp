@@ -7,6 +7,7 @@ class Device {
   final String warrantyStatus;
   final String lastMaintenance;
   final DateTime? warrantyEndDate; // Yeni alan
+  final int stokAdedi; // Yeni alan
 
   Device({
     required this.id,
@@ -17,6 +18,7 @@ class Device {
     required this.warrantyStatus,
     required this.lastMaintenance,
     this.warrantyEndDate,
+    this.stokAdedi = 1, // Varsayılan değer 1
   });
 
   // Garanti durumunu otomatik hesapla
@@ -56,6 +58,7 @@ class Device {
       'warrantyStatus': warrantyStatus,
       'lastMaintenance': lastMaintenance,
       'warrantyEndDate': warrantyEndDate?.toIso8601String(),
+      'stokAdedi': stokAdedi,
     };
   }
 
@@ -71,6 +74,7 @@ class Device {
       warrantyEndDate: json['warrantyEndDate'] != null
           ? DateTime.parse(json['warrantyEndDate'])
           : null,
+      stokAdedi: json['stokAdedi'] ?? 1,
     );
   }
 
@@ -83,6 +87,7 @@ class Device {
     String? warrantyStatus,
     String? lastMaintenance,
     DateTime? warrantyEndDate,
+    int? stokAdedi,
   }) {
     return Device(
       id: id ?? this.id,
@@ -93,6 +98,7 @@ class Device {
       warrantyStatus: warrantyStatus ?? this.warrantyStatus,
       lastMaintenance: lastMaintenance ?? this.lastMaintenance,
       warrantyEndDate: warrantyEndDate ?? this.warrantyEndDate,
+      stokAdedi: stokAdedi ?? this.stokAdedi,
     );
   }
 }

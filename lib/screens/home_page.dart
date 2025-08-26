@@ -13,10 +13,7 @@ import 'stock_tracking_screen.dart';
 import 'settings_screen.dart';
 import 'all_service_history_screen.dart';
 
-// removed: import 'package:provider/provider.dart' as p;
 import 'package:cence_app/features/service_history/providers.dart';
-// removed: ../providers/stock_provider.dart
-// removed: ../providers/device_provider.dart
 
 
 class HomePage extends ConsumerStatefulWidget {
@@ -32,10 +29,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Firestore'dan ilk verileri yükle (inventoryProvider ile ön ısıtma)
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // inventoryProvider otomatik olarak verileri yükleyecek
-    });
+    // inventoryProvider otomatik olarak verileri yükleyecek
   }
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {

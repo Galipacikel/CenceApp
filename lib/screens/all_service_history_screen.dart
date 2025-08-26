@@ -178,7 +178,7 @@ class _AllServiceHistoryScreenState
     });
   }
 
-  // removed unused _deselectAllItems
+
 
   void _deleteSelectedItems() {
     final isAdmin = ref.read(isAdminProvider);

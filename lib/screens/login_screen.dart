@@ -3,7 +3,6 @@ import 'home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_paths.dart';
 import '../services/username_auth_service.dart';
-// removed: import '../services/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
-// import 'package:path_provider/path_provider.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';

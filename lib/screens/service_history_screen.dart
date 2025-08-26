@@ -124,7 +124,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
     });
   }
 
-  // removed unused _deselectAllItems
+
 
   void _deleteSelectedItems() {
     final isAdmin = ref.read(isAdminProvider);

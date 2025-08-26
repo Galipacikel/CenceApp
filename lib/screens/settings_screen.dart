@@ -5,9 +5,6 @@ import 'theme_settings_screen.dart';
 import 'help_center_screen.dart';
 import 'support_request_screen.dart';
 import 'privacy_policy_screen.dart';
-// removed: import 'package:provider/provider.dart';
-// removed: ../providers/app_state_provider.dart
-// removed: import 'login_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';

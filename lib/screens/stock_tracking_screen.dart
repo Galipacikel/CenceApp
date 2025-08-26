@@ -229,8 +229,7 @@ class StokTakibiScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   // Kritik uyarı banner'ı
-                                  if (criticalParts.isNotEmpty)
-                                    _buildCriticalWarningBanner(context, ref, showOnlyCritical, criticalParts),
+                                  _buildCriticalWarningBanner(context, ref, showOnlyCritical, criticalParts),
                                   Expanded(
                                     child: ListView(
                                       padding: const EdgeInsets.symmetric(
@@ -277,9 +276,13 @@ class StokTakibiScreen extends ConsumerWidget {
   }
 
   Widget _buildCriticalWarningBanner(BuildContext context, WidgetRef ref, bool showOnlyCritical, List<StockPart> criticalParts) {
+    final hasCriticalParts = criticalParts.isNotEmpty;
+    
     return GestureDetector(
       onTap: () {
-        ref.read(inventoryProvider.notifier).toggleShowOnlyCritical();
+        if (hasCriticalParts) {
+          ref.read(inventoryProvider.notifier).toggleShowOnlyCritical();
+        }
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 350),
@@ -287,15 +290,21 @@ class StokTakibiScreen extends ConsumerWidget {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.criticalRed.withAlpha(33),
+          color: hasCriticalParts 
+              ? AppColors.criticalRed.withAlpha(33)
+              : Colors.grey.withAlpha(33),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: AppColors.criticalRed.withAlpha(77),
+            color: hasCriticalParts 
+                ? AppColors.criticalRed.withAlpha(77)
+                : Colors.grey.withAlpha(77),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.criticalRed.withAlpha(26),
+              color: hasCriticalParts 
+                  ? AppColors.criticalRed.withAlpha(26)
+                  : Colors.grey.withAlpha(26),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -305,8 +314,8 @@ class StokTakibiScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
-              Icons.warning_amber_rounded,
-              color: AppColors.criticalRed,
+              hasCriticalParts ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+              color: hasCriticalParts ? AppColors.criticalRed : Colors.grey[600],
               size: 22,
             ),
             const SizedBox(width: 10),
@@ -317,11 +326,11 @@ class StokTakibiScreen extends ConsumerWidget {
                   Row(
                     children: [
                       Text(
-                        'Kritik Seviye Uyarısı',
+                        hasCriticalParts ? 'Kritik Seviye Uyarısı' : 'Stok Durumu',
                         style: GoogleFonts.montserrat(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: AppColors.criticalRed,
+                          color: hasCriticalParts ? AppColors.criticalRed : Colors.grey[600],
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -331,14 +340,16 @@ class StokTakibiScreen extends ConsumerWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.criticalRed.withAlpha(46),
+                          color: hasCriticalParts 
+                              ? AppColors.criticalRed.withAlpha(46)
+                              : Colors.grey.withAlpha(46),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           '${criticalParts.length}',
                           style: GoogleFonts.montserrat(
                             fontWeight: FontWeight.bold,
-                            color: AppColors.criticalRed,
+                            color: hasCriticalParts ? AppColors.criticalRed : Colors.grey[600],
                             fontSize: 12,
                           ),
                         ),
@@ -347,26 +358,29 @@ class StokTakibiScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    showOnlyCritical
-                        ? 'Kritik seviyedekiler gösteriliyor'
-                        : 'Stokta kritik seviyeye düşen parçalarınız var!',
+                    hasCriticalParts
+                        ? (showOnlyCritical
+                            ? 'Kritik seviyedekiler gösteriliyor'
+                            : 'Stokta kritik seviyeye düşen parçalarınız var!')
+                        : 'Tüm parçalar normal seviyede',
                     style: GoogleFonts.montserrat(
                       fontSize: 13,
-                      color: AppColors.criticalRed,
+                      color: hasCriticalParts ? AppColors.criticalRed : Colors.grey[600],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: Text(
-                      showOnlyCritical
-                          ? 'Tüm parçaları göster'
-                          : 'Kritik seviyeleri gör',
-                      style: GoogleFonts.montserrat(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.criticalRed,
+                  if (hasCriticalParts)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6.0),
+                      child: Text(
+                        showOnlyCritical
+                            ? 'Tüm parçaları göster'
+                            : 'Kritik seviyeleri gör',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.criticalRed,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -382,6 +396,7 @@ class StokTakibiScreen extends ConsumerWidget {
     final cihazAdiCtrl = TextEditingController();
     final markaCtrl = TextEditingController();
     final modelCtrl = TextEditingController();
+    final stokAdediCtrl = TextEditingController(text: '1');
     
     showModalBottomSheet(
       context: context,
@@ -464,6 +479,26 @@ class StokTakibiScreen extends ConsumerWidget {
                     ),
                     validator: (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
                   ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: stokAdediCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Stok Adedi',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v!.isEmpty) return 'Bu alan boş bırakılamaz';
+                      if (int.tryParse(v) == null) {
+                        return 'Lütfen geçerli bir sayı girin';
+                      }
+                      return null;
+                    },
+                  ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -480,6 +515,7 @@ class StokTakibiScreen extends ConsumerWidget {
                             warrantyStatus: 'Devam Ediyor',
                             lastMaintenance: DateTime.now().toString().split(' ')[0],
                             warrantyEndDate: DateTime.now().add(const Duration(days: 365)),
+                            stokAdedi: int.parse(stokAdediCtrl.text),
                           );
                           
                           final success = await ref.read(inventoryProvider.notifier).addDevice(newDevice);
@@ -668,6 +704,7 @@ class StokTakibiScreen extends ConsumerWidget {
     final cihazAdiCtrl = TextEditingController(text: device.customer);
     final markaCtrl = TextEditingController(text: marka);
     final modelCtrl = TextEditingController(text: model);
+    final stokAdediCtrl = TextEditingController(text: device.stokAdedi.toString());
     
     showModalBottomSheet(
       context: context,
@@ -750,6 +787,26 @@ class StokTakibiScreen extends ConsumerWidget {
                     ),
                     validator: (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
                   ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: stokAdediCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Stok Adedi',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      if (v!.isEmpty) return 'Bu alan boş bırakılamaz';
+                      if (int.tryParse(v) == null) {
+                        return 'Lütfen geçerli bir sayı girin';
+                      }
+                      return null;
+                    },
+                  ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -761,6 +818,7 @@ class StokTakibiScreen extends ConsumerWidget {
                             serialNumber: serialNumberCtrl.text,
                             modelName: '${markaCtrl.text} ${modelCtrl.text}',
                             customer: cihazAdiCtrl.text,
+                            stokAdedi: int.parse(stokAdediCtrl.text),
                           );
                           
                           final success = await ref.read(inventoryProvider.notifier).updateDevice(updatedDevice);
@@ -1057,7 +1115,7 @@ class _DeviceTile extends StatelessWidget {
           device.modelName,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('Seri No: ${device.serialNumber}'),
+        subtitle: Text('Seri No: ${device.serialNumber} | Adet: ${device.stokAdedi}'),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             switch (value) {

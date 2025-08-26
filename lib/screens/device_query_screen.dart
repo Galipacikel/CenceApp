@@ -3,7 +3,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'dart:async'; // removed unused import
+
 import 'package:cence_app/features/devices/providers.dart';
 import '../models/device.dart';
 import 'barcode_scanner_screen.dart';
@@ -35,7 +35,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
    // late FormsRepositoryV2 _formsRepository;
   // yerel arama sonuçları ve loading state’i kaldırıldı; Notifier kullanılacak
 
-   // int _autocompleteKeyCounter = 0; // removed unused
+
 
    @override
    void initState() {
@@ -69,9 +69,7 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
-    // Autocomplete kendi controller'ını yönetir; sadece listener'ı kaldırıyoruz
     _searchController?.removeListener(_onSearchTextChanged);
-    // _searchController?.dispose(); // KALDIRILDI: RawAutocomplete yönetiyor
     super.dispose();
   }
 

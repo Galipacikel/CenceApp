@@ -176,7 +176,15 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
       if (result.isSuccess) {
         // Direkt state'den kaldır - anında görünüm için
         final updatedParts = current.parts.where((p) => p.id != partId).toList();
-        state = AsyncData(current.copyWith(parts: updatedParts));
+        
+        // Kritik parça kontrolü - eğer kritik parça kalmadıysa filtreyi kapat
+        final criticalParts = updatedParts.where((p) => p.stokAdedi <= p.criticalLevel).toList();
+        final shouldShowOnlyCritical = current.showOnlyCritical && criticalParts.isNotEmpty;
+        
+        state = AsyncData(current.copyWith(
+          parts: updatedParts,
+          showOnlyCritical: shouldShowOnlyCritical,
+        ));
         return true;
       } else {
         debugPrint('Parça silme hatası: ${result.failureOrNull?.message}');
@@ -198,7 +206,15 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
       if (result.isSuccess) {
         // Direkt state'i güncelle - anında görünüm için
         final updatedParts = current.parts.map((p) => p.id == part.id ? part : p).toList();
-        state = AsyncData(current.copyWith(parts: updatedParts));
+        
+        // Kritik parça kontrolü - eğer kritik parça kalmadıysa filtreyi kapat
+        final criticalParts = updatedParts.where((p) => p.stokAdedi <= p.criticalLevel).toList();
+        final shouldShowOnlyCritical = current.showOnlyCritical && criticalParts.isNotEmpty;
+        
+        state = AsyncData(current.copyWith(
+          parts: updatedParts,
+          showOnlyCritical: shouldShowOnlyCritical,
+        ));
         return true;
       } else {
         debugPrint('Parça güncelleme hatası: ${result.failureOrNull?.message}');
