@@ -64,12 +64,20 @@ flutter:
 
 # Configuration for flutter_launcher_icons
 flutter_launcher_icons:
+  image_path: assets/app_icon/cence_app_icon.png
   android: true
   ios: true
-  web: true
-  macos: true
-  windows: true
-  linux: true
-  image_path: assets/app_icon/icon.png
   adaptive_icon_background: "#FFFFFF"
+  web:
+    generate: true
+    image_path: assets/app_icon/cence_app_icon.png
+  macos:
+    generate: true
+    image_path: assets/app_icon/cence_app_icon.png
+  windows:
+    generate: true
+    image_path: assets/app_icon/cence_app_icon.png
+  linux:
+    generate: true
+    image_path: assets/app_icon/cence_app_icon.png
   min_sdk_android: 21
