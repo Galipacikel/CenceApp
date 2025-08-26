@@ -1,49 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../constants/app_colors.dart';
+import 'package:cence_app/constants/app_colors.dart';
 
 class ConfirmationDialog extends StatelessWidget {
   final String title;
   final String message;
-  final String confirmText;
-  final String cancelText;
-  final IconData icon;
-  final Color iconColor;
+  final String? confirmText;
+  final String? cancelText;
 
   const ConfirmationDialog({
     super.key,
     required this.title,
     required this.message,
-    this.confirmText = 'Sil',
-    this.cancelText = 'İptal',
-    this.icon = Icons.warning_amber_rounded,
-    this.iconColor = AppColors.criticalRed,
+    this.confirmText,
+    this.cancelText,
   });
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          Icon(icon, color: iconColor),
-          const SizedBox(width: 8),
-          Text(title, style: GoogleFonts.montserrat()),
-        ],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
       ),
-      content: Text(message, style: GoogleFonts.montserrat()),
+      title: Text(
+        title,
+        style: GoogleFonts.montserrat(
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+          color: AppColors.textColor,
+        ),
+      ),
+      content: Text(
+        message,
+        style: GoogleFonts.montserrat(
+          fontSize: 14,
+          color: AppColors.subtitleColor,
+        ),
+      ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(cancelText, style: GoogleFonts.montserrat()),
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(
+            cancelText ?? 'İptal',
+            style: GoogleFonts.montserrat(
+              color: AppColors.subtitleColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
-        ElevatedButton.icon(
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(true),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.criticalRed,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-          onPressed: () => Navigator.pop(context, true),
-          icon: const Icon(Icons.delete),
-          label: Text(confirmText, style: GoogleFonts.montserrat()),
+          child: Text(
+            confirmText ?? 'Sil',
+            style: GoogleFonts.montserrat(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ],
     );

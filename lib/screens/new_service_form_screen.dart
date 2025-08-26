@@ -8,7 +8,6 @@ import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';
 import '../services/storage_service.dart';
 import '../models/stock_part.dart';
-import '../models/device.dart';
 import '../models/service_history.dart';
 
 import '../widgets/service/form_sections/device_selection_section.dart';
@@ -16,8 +15,6 @@ import '../widgets/service/form_sections/customer_info_section.dart';
 import '../widgets/service/form_widgets/form_type_chip.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'package:cence_app/features/stock/providers.dart';
-import 'package:cence_app/features/devices/providers.dart';
-import 'package:cence_app/features/devices/use_cases.dart';
 
 class NewServiceFormScreen extends rp.ConsumerStatefulWidget {
   const NewServiceFormScreen({super.key});
@@ -71,13 +68,7 @@ class _NewServiceFormScreenState
   final TextEditingController _otherPartQuantityController =
       TextEditingController();
 
-  // Cihaz seçimi için
-  Device? _selectedDevice;
-  final TextEditingController _deviceSearchController = TextEditingController();
-  List<Device> _allDevices = [];
-  List<Device> _filteredDevices = [];
-  bool _showDeviceSuggestions = false;
-  // Firestore üzerinden DeviceProvider kullanılacak
+
 
   final List<SelectedPart> _selectedParts = [];
   bool _isSaving = false; // Çift kaydetmeyi önlemek için flag
@@ -99,17 +90,7 @@ class _NewServiceFormScreenState
       loading: () {},
       error: (e, st) {},
     );
-    final devicesAsync = ref.read(devicesListProvider);
-    devicesAsync.when(
-      data: (devices) {
-        setState(() {
-          _allDevices = devices;
-          _filteredDevices = devices;
-        });
-      },
-      loading: () {},
-      error: (e, st) {},
-    );
+
 
     // Teknisyen adını otomatik doldur
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -130,7 +111,7 @@ class _NewServiceFormScreenState
     _otherPartNameController.dispose();
     _otherPartQuantityController.dispose();
     
-    // Yeni controller'ları dispose et
+    // Cihaz bilgileri controller'ları dispose et
     _serialNumberController.dispose();
     _deviceNameController.dispose();
     _brandController.dispose();
@@ -162,48 +143,7 @@ class _NewServiceFormScreenState
     });
   }
 
-  void _filterDevices(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filteredDevices = _allDevices;
-      } else {
-        _filteredDevices = _allDevices
-            .where(
-              (device) =>
-                  device.modelName.toLowerCase().contains(
-                    query.toLowerCase(),
-                  ) ||
-                  device.serialNumber.toLowerCase().contains(
-                    query.toLowerCase(),
-                  ),
-            )
-            .toList();
-      }
-      _showDeviceSuggestions = true;
-    });
-  }
 
-  void _selectDevice(Device device) {
-    setState(() {
-      _selectedDevice = device;
-      _deviceSearchController.text = device.modelName;
-      _showDeviceSuggestions = false;
-
-      // Otomatik alan doldurma (Bakım/Arıza için)
-      _serialNumberController.text = device.serialNumber;
-      _deviceNameController.text = device.modelName;
-      _brandController.text = device.modelName;
-      _modelController.text = device.modelName;
-      _companyController.text = device.customer;
-      _customerController.text = device.customer;
-
-      // Kurulum tarihi seçili değilse bugünün tarihini ata
-      if (_date == null) {
-        _date = DateTime.now();
-        _updateDateController();
-      }
-    });
-  }
 
   // Kullanıcı profilinden teknisyen adını al
   String _getTechnicianName() {
@@ -397,18 +337,7 @@ class _NewServiceFormScreenState
       _customerController.text = _companyController.text.trim();
     }
 
-    // Bakım/Arıza için cihaz seçimi zorunlu
-    if (!isInstallation && _selectedDevice == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen bir cihaz seçin.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      _isSaving = false;
-      return;
-    }
+
 
     // Kurulum için en az seri no veya cihaz adı zorunlu
     if (isInstallation &&
@@ -473,24 +402,7 @@ class _NewServiceFormScreenState
       );
     }
 
-    // Cihaz bilgilerini güncelle (sadece Bakım/Arıza için)
-    if (!isInstallation && _selectedDevice != null) {
-      final updatedDevice = Device(
-        id: _selectedDevice!.id,
-        modelName: _selectedDevice!.modelName,
-        serialNumber: _selectedDevice!.serialNumber,
-        customer: _customerController.text,
-        installDate: _dateController.text,
-        warrantyStatus:
-            warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
-                ? 'Devam Ediyor'
-                : 'Bitti',
-        lastMaintenance: _dateController.text,
-        warrantyEndDate: warrantyEndDate,
-      );
-      final updateDevice = ref.read(updateDeviceUseCaseProvider);
-      await updateDevice(updatedDevice);
-    }
+
 
     // Fotoğrafı Storage'a yükle ve URL'leri hazırla
     final List<String> photoUrls = [];
@@ -506,11 +418,10 @@ class _NewServiceFormScreenState
       photoUrls.add(url);
     }
 
-    // ServiceHistory için cihaz id'si: Bakım/Arıza -> seçili cihaz id; Kurulum -> girilen seri no / cihaz adı
-    final String historyDeviceId = _selectedDevice?.id ??
-        (_serialNumberController.text.trim().isNotEmpty
-            ? _serialNumberController.text.trim()
-            : _deviceNameController.text.trim());
+    // ServiceHistory için cihaz id'si: girilen seri no / cihaz adı
+    final String historyDeviceId = _serialNumberController.text.trim().isNotEmpty
+        ? _serialNumberController.text.trim()
+        : _deviceNameController.text.trim();
 
     // Firestore'a servis kaydı oluştur (stok düşüşü repo/use-case içinde)
     // Kayıtta kullanıcıya görünen teknisyen ismini kullan
@@ -626,19 +537,7 @@ class _NewServiceFormScreenState
       );
     });
 
-    ref.listen(devicesListProvider, (prev, next) {
-      next.when(
-        data: (devices) {
-          if (!mounted) return;
-          setState(() {
-            _allDevices = devices;
-            _filteredDevices = devices;
-          });
-        },
-        loading: () {},
-        error: (e, st) {},
-      );
-    });
+
 
     // AppUser yüklendiğinde kullanıcı adı ile teknisyen alanını güncelle
     ref.listen(appUserProvider, (previous, next) {
@@ -735,29 +634,11 @@ class _NewServiceFormScreenState
             ),
             const SizedBox(height: 22),
             DeviceSelectionSection(
-              deviceSearchController: _deviceSearchController,
               serialNumberController: _serialNumberController,
               deviceNameController: _deviceNameController,
               brandController: _brandController,
               modelController: _modelController,
-              selectedDevice: _selectedDevice,
-              filteredDevices: _filteredDevices,
-              showDeviceSuggestions: _showDeviceSuggestions,
-              onFilterDevices: _filterDevices,
-              onSelectDevice: _selectDevice,
-              onClearDevice: () {
-                setState(() {
-                  _selectedDevice = null;
-                  _deviceSearchController.clear();
-                  _showDeviceSuggestions = false;
-                });
-              },
-              onShowSuggestions: () {
-                setState(() {
-                  _showDeviceSuggestions = true;
-                });
-              },
-              isInstallation: _formTipi == 0,
+              formTipi: _formTipi,
             ),
             const SizedBox(height: 22),
             CustomerInfoSection(

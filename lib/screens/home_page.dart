@@ -17,8 +17,7 @@ import 'all_service_history_screen.dart';
 import 'package:cence_app/features/service_history/providers.dart';
 // removed: ../providers/stock_provider.dart
 // removed: ../providers/device_provider.dart
-import 'package:cence_app/features/devices/providers.dart';
-import 'package:cence_app/features/stock/providers.dart';
+
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -33,12 +32,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Firestore'dan ilk verileri yükle (Riverpod FutureProvider'ları ile ön ısıtma)
+    // Firestore'dan ilk verileri yükle (inventoryProvider ile ön ısıtma)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Future.wait([
-        ref.read(devicesListProvider.future),
-        ref.read(stockPartsProvider.future),
-      ]);
+      // inventoryProvider otomatik olarak verileri yükleyecek
     });
   }
 

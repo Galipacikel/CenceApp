@@ -3,6 +3,7 @@ import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/domain/repositories/stock_part_repository.dart';
 import 'package:cence_app/repositories/firestore_stock_repository_v2.dart';
 import 'package:cence_app/models/stock_part.dart';
+import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
 
 /// Repository provider
 final stockRepositoryProvider = Provider<StockPartRepositoryV2>((ref) {
@@ -10,12 +11,12 @@ final stockRepositoryProvider = Provider<StockPartRepositoryV2>((ref) {
   return FirestoreStockRepositoryV2(firestore: firestore);
 });
 
-/// Parça listesi
-final stockPartsProvider = FutureProvider<List<StockPart>>((ref) async {
-  final repo = ref.watch(stockRepositoryProvider);
-  final result = await repo.getAll();
-  return result.fold(
-    onSuccess: (list) => list,
-    onFailure: (e) => throw Exception(e.message),
+/// Parça listesi - inventoryProvider'dan alır
+final stockPartsProvider = Provider<AsyncValue<List<StockPart>>>((ref) {
+  final inventoryAsync = ref.watch(inventoryProvider);
+  return inventoryAsync.when(
+    data: (state) => AsyncData(state.parts),
+    loading: () => const AsyncLoading(),
+    error: (error, stack) => AsyncError(error, stack),
   );
 });

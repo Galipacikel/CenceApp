@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/models/device.dart';
-import 'package:cence_app/features/devices/providers.dart';
 import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
 
 final filteredDevicesProvider = FutureProvider<List<Device>>((ref) async {
-  final allDevices = await ref.watch(devicesListProvider.future);
-  final query = ref.watch(inventoryProvider).value?.deviceSearch ?? '';
+  final inventoryState = ref.watch(inventoryProvider).value;
+  final allDevices = inventoryState?.devices ?? [];
+  final query = inventoryState?.deviceSearch ?? '';
 
   // Unique by modelName + serialNumber
   final uniqueKeys = <String>{};

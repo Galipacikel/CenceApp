@@ -4,6 +4,7 @@ import 'package:cence_app/domain/repositories/device_repository.dart';
 import 'package:cence_app/features/devices/data/repositories/device_repository_impl.dart';
 import 'package:cence_app/features/devices/domain/use_cases.dart';
 import 'package:cence_app/models/device.dart';
+import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
 
 /// Repository provider
 final deviceRepositoryProvider = Provider<DeviceRepositoryV2>((ref) {
@@ -11,13 +12,13 @@ final deviceRepositoryProvider = Provider<DeviceRepositoryV2>((ref) {
   return FirestoreDeviceRepositoryV2(firestore: firestore);
 });
 
-/// Cihaz listesi (okuma)
-final devicesListProvider = FutureProvider<List<Device>>((ref) async {
-  final repo = ref.watch(deviceRepositoryProvider);
-  final result = await repo.getAll();
-  return result.fold(
-    onSuccess: (list) => list,
-    onFailure: (e) => throw Exception(e.message),
+/// Cihaz listesi - inventoryProvider'dan alır
+final devicesListProvider = Provider<AsyncValue<List<Device>>>((ref) {
+  final inventoryAsync = ref.watch(inventoryProvider);
+  return inventoryAsync.when(
+    data: (state) => AsyncData(state.devices),
+    loading: () => const AsyncLoading(),
+    error: (error, stack) => AsyncError(error, stack),
   );
 });
 
