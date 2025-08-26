@@ -115,6 +115,8 @@ class _NewServiceFormScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _technicianController.text = _getTechnicianName();
     });
+
+
   }
 
   @override
@@ -187,6 +189,14 @@ class _NewServiceFormScreenState
       _deviceSearchController.text = device.modelName;
       _showDeviceSuggestions = false;
 
+      // Otomatik alan doldurma (Bakım/Arıza için)
+      _serialNumberController.text = device.serialNumber;
+      _deviceNameController.text = device.modelName;
+      _brandController.text = device.modelName;
+      _modelController.text = device.modelName;
+      _companyController.text = device.customer;
+      _customerController.text = device.customer;
+
       // Kurulum tarihi seçili değilse bugünün tarihini ata
       if (_date == null) {
         _date = DateTime.now();
@@ -197,8 +207,24 @@ class _NewServiceFormScreenState
 
   // Kullanıcı profilinden teknisyen adını al
   String _getTechnicianName() {
+    // Öncelik: Firestore AppUser profilinden username
+    final asyncUser = ref.read(appUserProvider);
+    final fromProfile = asyncUser.maybeWhen<String?>(
+      data: (u) {
+        final uname = (u?.username ?? u?.usernameLowercase)?.trim();
+        if (uname != null && uname.isNotEmpty) return uname;
+        final fullName = (u?.fullName ?? '').trim();
+        if (fullName.isNotEmpty) return fullName;
+        return null;
+      },
+      orElse: () => null,
+    );
+    if (fromProfile != null && fromProfile.isNotEmpty) {
+      return fromProfile;
+    }
+
+    // Geriye dönük: FirebaseAuth displayName, sonra email'in @ öncesi
     final user = ref.read(firebaseAuthProvider).currentUser;
-    // displayName yoksa email'in @ öncesini kullan, hiçbiri yoksa "Teknisyen"
     if (user != null) {
       if ((user.displayName ?? '').trim().isNotEmpty) {
         return user.displayName!.trim();
@@ -364,7 +390,15 @@ class _NewServiceFormScreenState
     if (_isSaving) return;
     _isSaving = true;
 
-    if (_selectedDevice == null) {
+    final bool isInstallation = _formTipi == 0; // 0: Kurulum
+
+    // Firma alanından müşteri alanını senkronize et
+    if (_customerController.text.isEmpty && _companyController.text.isNotEmpty) {
+      _customerController.text = _companyController.text.trim();
+    }
+
+    // Bakım/Arıza için cihaz seçimi zorunlu
+    if (!isInstallation && _selectedDevice == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Lütfen bir cihaz seçin.'),
@@ -375,6 +409,22 @@ class _NewServiceFormScreenState
       _isSaving = false;
       return;
     }
+
+    // Kurulum için en az seri no veya cihaz adı zorunlu
+    if (isInstallation &&
+        _serialNumberController.text.trim().isEmpty &&
+        _deviceNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kurulum için en az Seri No veya Cihaz Adı girin.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      _isSaving = false;
+      return;
+    }
+
     if (_customerController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -423,22 +473,24 @@ class _NewServiceFormScreenState
       );
     }
 
-    // Cihaz bilgilerini güncelle (Riverpod use-case ile)
-    final updatedDevice = Device(
-      id: _selectedDevice!.id,
-      modelName: _selectedDevice!.modelName,
-      serialNumber: _selectedDevice!.serialNumber,
-      customer: _customerController.text,
-      installDate: _dateController.text,
-      warrantyStatus:
-          warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
-          ? 'Devam Ediyor'
-          : 'Bitti',
-      lastMaintenance: _dateController.text,
-      warrantyEndDate: warrantyEndDate,
-    );
-    final updateDevice = ref.read(updateDeviceUseCaseProvider);
-    await updateDevice(updatedDevice);
+    // Cihaz bilgilerini güncelle (sadece Bakım/Arıza için)
+    if (!isInstallation && _selectedDevice != null) {
+      final updatedDevice = Device(
+        id: _selectedDevice!.id,
+        modelName: _selectedDevice!.modelName,
+        serialNumber: _selectedDevice!.serialNumber,
+        customer: _customerController.text,
+        installDate: _dateController.text,
+        warrantyStatus:
+            warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
+                ? 'Devam Ediyor'
+                : 'Bitti',
+        lastMaintenance: _dateController.text,
+        warrantyEndDate: warrantyEndDate,
+      );
+      final updateDevice = ref.read(updateDeviceUseCaseProvider);
+      await updateDevice(updatedDevice);
+    }
 
     // Fotoğrafı Storage'a yükle ve URL'leri hazırla
     final List<String> photoUrls = [];
@@ -454,84 +506,90 @@ class _NewServiceFormScreenState
       photoUrls.add(url);
     }
 
+    // ServiceHistory için cihaz id'si: Bakım/Arıza -> seçili cihaz id; Kurulum -> girilen seri no / cihaz adı
+    final String historyDeviceId = _selectedDevice?.id ??
+        (_serialNumberController.text.trim().isNotEmpty
+            ? _serialNumberController.text.trim()
+            : _deviceNameController.text.trim());
+
     // Firestore'a servis kaydı oluştur (stok düşüşü repo/use-case içinde)
     // Kayıtta kullanıcıya görünen teknisyen ismini kullan
     final technicianName = _technicianController.text.isNotEmpty
         ? _technicianController.text
         : _getTechnicianName();
-     final history = ServiceHistory(
-       id: recordFolderId,
-       date: _date!,
-       deviceId: _selectedDevice!.id,
-       musteri: _customerController.text,
-       description: _descriptionController.text,
+    final history = ServiceHistory(
+      id: recordFolderId,
+      date: _date!,
+      deviceId: historyDeviceId,
+      musteri: _customerController.text,
+      description: _descriptionController.text,
       technician: technicianName,
-       status: _formTipi == 2 ? 'Arızalı' : 'Başarılı',
-       kullanilanParcalar: _selectedParts
-           .map(
-             (sp) => StockPart(
-               id: sp.part.id,
-               parcaAdi: sp.part.parcaAdi,
-               parcaKodu: sp.part.parcaKodu,
-               stokAdedi: sp.adet,
-               criticalLevel: sp.part.criticalLevel,
-             ),
-           )
-           .toList(),
-       photos: photoUrls.isNotEmpty ? photoUrls : null,
-     );
+      status: _formTipi == 2 ? 'Arızalı' : 'Başarılı',
+      kullanilanParcalar: _selectedParts
+          .map(
+            (sp) => StockPart(
+              id: sp.part.id,
+              parcaAdi: sp.part.parcaAdi,
+              parcaKodu: sp.part.parcaKodu,
+              stokAdedi: sp.adet,
+              criticalLevel: sp.part.criticalLevel,
+            ),
+          )
+          .toList(),
+      photos: photoUrls.isNotEmpty ? photoUrls : null,
+    );
 
-     // UI listesine de ekleyelim
-     try {
-       final addHistory = ref.read(addServiceHistoryUseCaseProvider);
-       await addHistory(history);
-     } catch (e) {
-       if (!mounted) return;
-       ScaffoldMessenger.of(context).showSnackBar(
-         SnackBar(
-           content: Text('Kayıt sırasında hata: $e'),
-           backgroundColor: Colors.red,
-           duration: const Duration(seconds: 2),
-         ),
-       );
-       _isSaving = false;
-       return;
-     }
-     if (!mounted) return;
+    // UI listesine de ekleyelim
+    try {
+      final addHistory = ref.read(addServiceHistoryUseCaseProvider);
+      await addHistory(history);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Kayıt sırasında hata: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      _isSaving = false;
+      return;
+    }
+    if (!mounted) return;
 
-     // Riverpod servis geçmişi provider'ları repository güncellemesini yansıtacaktır.
+    // Riverpod servis geçmişi provider'ları repository güncellemesini yansıtacaktır.
 
-     Navigator.of(context).pop({
-       'formTipi': _formTipi,
-       'date': _date!,
-       'deviceId': _selectedDevice!.id,
-       'customer': _customerController.text,
+    Navigator.of(context).pop({
+      'formTipi': _formTipi,
+      'date': _date!,
+      'deviceId': historyDeviceId,
+      'customer': _customerController.text,
       'technician': technicianName,
-       'description': _descriptionController.text,
-       'warrantyDuration': warrantyDuration,
-       'warrantyStartDate': _date,
-       'warrantyEndDate': warrantyEndDate,
-       'usedParts': _selectedParts
-           .map(
-             (sp) => {
-               'partCode': sp.part.parcaKodu,
-               'partName': sp.part.parcaAdi,
-               'quantity': sp.adet,
-             },
-           )
-           .toList(),
-     });
-     ScaffoldMessenger.of(context).showSnackBar(
-       const SnackBar(
-         content: Text('Kayıt başarıyla eklendi!'),
-         backgroundColor: Colors.green,
-         duration: Duration(seconds: 2),
-       ),
-     );
+      'description': _descriptionController.text,
+      'warrantyDuration': warrantyDuration,
+      'warrantyStartDate': _date,
+      'warrantyEndDate': warrantyEndDate,
+      'usedParts': _selectedParts
+          .map(
+            (sp) => {
+              'partCode': sp.part.parcaKodu,
+              'partName': sp.part.parcaAdi,
+              'quantity': sp.adet,
+            },
+          )
+          .toList(),
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Kayıt başarıyla eklendi!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
 
-     // Flag'i sıfırla
-     _isSaving = false;
-   }
+    // Flag'i sıfırla
+    _isSaving = false;
+  }
 
   String _calculateWarrantyEndDate() {
     if (_date == null || _warrantyDurationController.text.isEmpty) {
@@ -579,6 +637,22 @@ class _NewServiceFormScreenState
         },
         loading: () {},
         error: (e, st) {},
+      );
+    });
+
+    // AppUser yüklendiğinde kullanıcı adı ile teknisyen alanını güncelle
+    ref.listen(appUserProvider, (previous, next) {
+      next.when(
+        data: (appUser) {
+          final uname = (appUser?.username ?? appUser?.usernameLowercase ?? '').trim();
+          if (uname.isNotEmpty) {
+            if (_technicianController.text != uname) {
+              _technicianController.text = uname;
+            }
+          }
+        },
+        loading: () {},
+        error: (_, __) {},
       );
     });
 
@@ -683,6 +757,7 @@ class _NewServiceFormScreenState
                   _showDeviceSuggestions = true;
                 });
               },
+              isInstallation: _formTipi == 0,
             ),
             const SizedBox(height: 22),
             CustomerInfoSection(

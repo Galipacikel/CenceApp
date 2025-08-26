@@ -50,6 +50,9 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
   
+  # App icon generator
+  flutter_launcher_icons: ^0.13.1
+  
   # Code generation
   build_runner: ^2.4.11
   riverpod_generator: ^2.3.5
@@ -58,3 +61,15 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+# Configuration for flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web: true
+  macos: true
+  windows: true
+  linux: true
+  image_path: assets/app_icon/icon.png
+  adaptive_icon_background: "#FFFFFF"
+  min_sdk_android: 21
