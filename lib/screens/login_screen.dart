@@ -255,10 +255,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                   color: const Color(0xFF23408E).withAlpha(26),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
-                                  Icons.medical_services_rounded,
-                                  size: isWide ? 48 : 40,
-                                  color: const Color(0xFF23408E),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/app_icon/cence_logo.jpeg',
+                                    width: isWide ? 48 : 40,
+                                    height: isWide ? 48 : 40,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 20),

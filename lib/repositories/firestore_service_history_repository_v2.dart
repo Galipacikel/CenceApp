@@ -48,6 +48,7 @@ class FirestoreServiceHistoryRepositoryV2
   @override
   Future<Result<List<ServiceHistory>, app.Failure>> getAll() async {
     try {
+      // Fetch from new top-level service_history collection
       final snapshot = await _firestore
           .collection(FirestorePaths.serviceHistory)
           .orderBy('created_at', descending: true)
@@ -55,7 +56,19 @@ class FirestoreServiceHistoryRepositoryV2
       final list = snapshot.docs
           .map((d) => _fromFirestore(d.id, d.data()))
           .toList();
-      return Result.ok(list);
+
+      // Fetch additional historical records from legacy/general 'formlar' collection
+      // We do not assume indexes; keep query simple to avoid index errors.
+      final formsSnap = await _firestore.collection(FirestorePaths.forms).get();
+      final formsList = formsSnap.docs
+          .map((d) => _fromForms(d.id, d.data()))
+          .toList();
+
+      // Merge and sort by date desc
+      final merged = <ServiceHistory>[...list, ...formsList]
+        ..sort((a, b) => b.date.compareTo(a.date));
+
+      return Result.ok(merged);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
     } catch (e) {
@@ -68,20 +81,78 @@ class FirestoreServiceHistoryRepositoryV2
     int count = 3,
   }) async {
     try {
-      final snapshot = await _firestore
+      // Query both sources, merge and then take first N
+      final serviceHistorySnap = await _firestore
           .collection(FirestorePaths.serviceHistory)
           .orderBy('created_at', descending: true)
-          .limit(count)
+          .limit(count * 3) // take a bit more before merge to keep variety
           .get();
-      final list = snapshot.docs
+      final list = serviceHistorySnap.docs
           .map((d) => _fromFirestore(d.id, d.data()))
           .toList();
-      return Result.ok(list);
+
+      final formsSnap = await _firestore
+          .collection(FirestorePaths.forms)
+          .get();
+      final formsList = formsSnap.docs
+          .map((d) => _fromForms(d.id, d.data()))
+          .toList();
+
+      final merged = <ServiceHistory>[...list, ...formsList]
+        ..sort((a, b) => b.date.compareTo(a.date));
+
+      final limited = merged.take(count).toList();
+      return Result.ok(limited);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
     } catch (e) {
       return Result.err(app.UnknownFailure(e.toString()));
     }
+  }
+
+  // Map a document from the 'formlar' collection into a ServiceHistory model
+  ServiceHistory _fromForms(String id, Map<String, dynamic> data) {
+    // Date parsing with multiple fallbacks
+    DateTime when = DateTime.now();
+    final dynamic rawTarih = data['TARİH'] ?? data['TARIH'] ?? data['tarih'] ?? data['created_at'] ?? data['date'];
+    if (rawTarih is Timestamp) {
+      when = rawTarih.toDate();
+    } else if (rawTarih is String) {
+      // Try ISO first, then fallback to DateTime.tryParse
+      final parsed = DateTime.tryParse(rawTarih);
+      if (parsed != null) when = parsed;
+    }
+
+    String readString(List<String> keys) {
+      for (final k in keys) {
+        final v = data[k];
+        if (v == null) continue;
+        final s = v.toString().trim();
+        if (s.isNotEmpty) return s;
+      }
+      return '';
+    }
+
+    final model = readString(['MODEL', 'model', 'CİHAZ ADI', 'CIHAZ ADI']);
+    final seri = readString(['SERİ NO', 'SERI NO', 'SERINO', 'seri_no', 'serial', 'serialNumber']);
+    final musteri = readString(['FİRMA', 'firma', 'MÜŞTERİ', 'MUSTERİ', 'MUSTERI', 'musteri', 'customer']);
+    final aciklama = readString(['AÇIKLAMA', 'ACIKLAMA', 'açıklama', 'aciklama', 'description']);
+    final teknisyen = readString(['TEKNİSYEN', 'TEKNISYEN', 'teknisyen', 'technician', 'teknisyen_adi']);
+    final durum = readString(['DURUM', 'durum', 'status']);
+
+    final deviceLabel = [model, seri].where((e) => e.isNotEmpty).join(' ').trim();
+
+    return ServiceHistory(
+      id: id,
+      date: when,
+      deviceId: deviceLabel.isNotEmpty ? deviceLabel : id,
+      musteri: musteri,
+      description: aciklama,
+      technician: teknisyen.isNotEmpty ? teknisyen : '-',
+      status: durum.isNotEmpty ? durum : 'Başarılı',
+      kullanilanParcalar: const <StockPart>[],
+      photos: const <String>[],
+    );
   }
 
   @override
