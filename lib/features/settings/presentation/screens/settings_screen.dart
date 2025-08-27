@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'profile_edit_screen.dart';
-import 'notification_settings_screen.dart';
-import 'theme_settings_screen.dart';
-import 'help_center_screen.dart';
-import 'support_request_screen.dart';
-import 'privacy_policy_screen.dart';
+import 'package:cence_app/features/profile/presentation/screens/profile_edit_screen.dart';
+import 'package:cence_app/features/settings/presentation/screens/notification_settings_screen.dart';
+import 'package:cence_app/features/settings/presentation/screens/theme_settings_screen.dart';
+import 'package:cence_app/features/support/presentation/screens/help_center_screen.dart';
+import 'package:cence_app/features/support/presentation/screens/support_request_screen.dart';
+import 'package:cence_app/features/settings/presentation/screens/privacy_policy_screen.dart';
 // removed: import 'package:provider/provider.dart';
 // removed: ../providers/app_state_provider.dart
 // removed: import 'login_screen.dart';

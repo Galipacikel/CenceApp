@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/service_history.dart';
+import 'package:cence_app/models/service_history.dart';
 import 'service_history_detail_screen.dart';
 // Add Riverpod service history providers
 import 'package:cence_app/features/service_history/providers.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
-import '../widgets/common/cards/service_history_selectable_card.dart';
+import 'package:cence_app/widgets/common/cards/service_history_selectable_card.dart';
 
 class AllServiceHistoryScreen extends ConsumerStatefulWidget {
   const AllServiceHistoryScreen({super.key});
@@ -675,5 +675,3 @@ class _AllServiceHistoryScreenState
     );
   }
 }
-
-// Moved to widgets/common/cards/service_history_selectable_card.dart

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/service_history.dart';
+import 'package:cence_app/models/service_history.dart';
 import 'package:intl/intl.dart';
 
 class ServiceHistoryDetailScreen extends StatelessWidget {

@@ -30,12 +30,20 @@ class FirestoreStockRepository implements StockPartRepository {
   }
 
   StockPart _fromFirestore(String id, Map<String, dynamic> data) {
+    final clRaw = data['critical_level'];
+    int critical = 0;
+    if (clRaw is int) {
+      critical = clRaw;
+    } else if (clRaw is num) {
+      critical = clRaw.toInt();
+    }
+
     return StockPart(
       id: id,
       parcaAdi: (data['part_name'] ?? data['name'] ?? '') as String,
       parcaKodu: (data['stock_code'] ?? '') as String,
       stokAdedi: (data['stock_quantity'] ?? 0) as int,
-      criticalLevel: 0,
+      criticalLevel: critical,
     );
   }
 }

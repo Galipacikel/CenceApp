@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'screens/login_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 // removed: import 'package:provider/provider.dart' as provider;
@@ -19,24 +18,17 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'core/providers/firebase_providers.dart';
-import 'screens/home_page.dart';
+import 'package:cence_app/features/home/presentation/screens/home_page.dart';
+import 'package:cence_app/features/auth/presentation/screens/login_screen.dart';
 
-// removed: import 'repositories/forms_repository.dart';
-// removed: import 'domain/repositories/device_repository.dart';
-// removed: import 'domain/repositories/service_history_repository.dart';
-// removed: import 'domain/repositories/stock_part_repository.dart';
-// removed: import 'domain/repositories/forms_repository.dart';
-// removed: import 'repositories/firestore_device_repository_v2.dart';
-// removed: import 'repositories/firestore_service_history_repository_v2.dart';
-// removed: import 'repositories/firestore_stock_repository_v2.dart';
-// removed: import 'repositories/forms_repository_v2.dart';
-// removed: import 'repositories/adapters/device_repository_adapter.dart';
-// removed: import 'repositories/adapters/service_history_repository_adapter.dart';
-// removed: import 'repositories/adapters/stock_part_repository_adapter.dart';
-// removed: import 'repositories/adapters/forms_repository_adapter.dart';
-// removed: import 'models/device.dart';
-// removed: import 'models/service_history.dart';
-// removed: import 'models/stock_part.dart';
+// added: Provider and ChangeNotifier providers
+import 'package:provider/provider.dart' as provider;
+import 'providers/app_state_provider.dart';
+import 'providers/device_provider.dart';
+import 'providers/service_history_provider.dart';
+import 'providers/stock_provider.dart';
+import 'repositories/firestore_device_repository_v2.dart';
+import 'repositories/firestore_service_history_repository_v2.dart';
 
 const bool kUseEmulators = bool.fromEnvironment(
   'USE_EMULATORS',
@@ -67,7 +59,31 @@ Future<void> main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
-  runApp(rp.ProviderScope(child: const MyApp()));
+  runApp(
+    rp.ProviderScope(
+      child: provider.MultiProvider(
+        providers: [
+          provider.ChangeNotifierProvider<AppStateProvider>(
+            create: (_) => AppStateProvider(),
+          ),
+          provider.ChangeNotifierProvider<DeviceProvider>(
+            create: (_) => DeviceProvider(
+              repository: FirestoreDeviceRepositoryV2(),
+            ),
+          ),
+          provider.ChangeNotifierProvider<ServiceHistoryProvider>(
+            create: (_) => ServiceHistoryProvider(
+              repository: FirestoreServiceHistoryRepositoryV2(),
+            ),
+          ),
+          provider.ChangeNotifierProvider<StockProvider>(
+            create: (_) => StockProvider(),
+          ),
+        ],
+        child: const MyApp(),
+      ),
+    ),
+  );
 }
 
 class MyApp extends rp.ConsumerWidget {

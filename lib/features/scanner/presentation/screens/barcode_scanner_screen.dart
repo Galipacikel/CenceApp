@@ -1,46 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
-class CameraScreen extends StatefulWidget {
-  const CameraScreen({super.key});
+class BarcodeScannerScreen extends StatefulWidget {
+  const BarcodeScannerScreen({super.key});
 
   @override
-  State<CameraScreen> createState() => _CameraScreenState();
+  State<BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> {
-  CameraController? _controller;
-  bool _isLoading = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _initCamera();
-  }
-
-  Future<void> _initCamera() async {
-    try {
-      final cameras = await availableCameras();
-      final camera = cameras.first;
-      _controller = CameraController(camera, ResolutionPreset.medium);
-      await _controller!.initialize();
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = 'Kamera başlatılamadı: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
+class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
+  bool _isScanned = false;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +27,7 @@ class _CameraScreenState extends State<CameraScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Kamera',
+          'Barkod/QR Tara',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -92,7 +61,7 @@ class _CameraScreenState extends State<CameraScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text(
-                    'Kamera kullanımı konusunda yardım için destek ekibimizle iletişime geçin.',
+                    'Barkod/QR kod tarama konusunda yardım için destek ekibimizle iletişime geçin.',
                   ),
                   duration: Duration(seconds: 3),
                 ),
@@ -101,20 +70,32 @@ class _CameraScreenState extends State<CameraScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _error != null
-          ? Center(
-              child: Text(_error!, style: const TextStyle(color: Colors.white)),
-            )
-          : _controller != null && _controller!.value.isInitialized
-          ? CameraPreview(_controller!)
-          : const Center(
-              child: Text(
-                'Kamera bulunamadı',
-                style: TextStyle(color: Colors.white),
+      body: Stack(
+        children: [
+          MobileScanner(
+            onDetect: (capture) {
+              if (_isScanned) return;
+              final List<Barcode> barcodes = capture.barcodes;
+              if (barcodes.isNotEmpty) {
+                setState(() => _isScanned = true);
+                Navigator.of(context).pop(barcodes.first.rawValue ?? '');
+              }
+            },
+          ),
+          // Ortada tarama alanı için overlay
+          Center(
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 2.5),
+                borderRadius: BorderRadius.circular(18),
+                color: Colors.transparent,
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 }
