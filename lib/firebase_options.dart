@@ -44,39 +44,39 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'web-api-key-placeholder',
-    appId: '1:123456789:web:placeholder',
-    messagingSenderId: '123456789',
-    projectId: 'cence-app-placeholder',
-    authDomain: 'cence-app-placeholder.firebaseapp.com',
-    storageBucket: 'cence-app-placeholder.appspot.com',
+    apiKey: 'AIzaSyDzCkvf9ZKwvVICRZVj-BUn5kPNg3l6jQw',
+    appId: '1:393031115817:web:e95132b892b0736d2c2838',
+    messagingSenderId: '393031115817',
+    projectId: 'cenceapp',
+    authDomain: 'cenceapp.firebaseapp.com',
+    storageBucket: 'cenceapp.firebasestorage.app',
+    measurementId: 'G-9KDTNNTK0C',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'android-api-key-placeholder',
-    appId: '1:123456789:android:placeholder',
-    messagingSenderId: '123456789',
-    projectId: 'cence-app-placeholder',
-    storageBucket: 'cence-app-placeholder.appspot.com',
+    apiKey: 'AIzaSyAo5vMkQMzB8hyNhQAIEkFW_QtDqYTTYrw',
+    appId: '1:393031115817:android:9e71cd12d1b5e16f2c2838',
+    messagingSenderId: '393031115817',
+    projectId: 'cenceapp',
+    storageBucket: 'cenceapp.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'ios-api-key-placeholder',
-    appId: '1:123456789:ios:placeholder',
-    messagingSenderId: '123456789',
-    projectId: 'cence-app-placeholder',
-    storageBucket: 'cence-app-placeholder.appspot.com',
-    iosClientId: 'ios-client-id-placeholder',
+    apiKey: 'AIzaSyD1LuzfoIseWw73txyd_lD4hhiesxxyZY0',
+    appId: '1:393031115817:ios:14fd76b312836e632c2838',
+    messagingSenderId: '393031115817',
+    projectId: 'cenceapp',
+    storageBucket: 'cenceapp.firebasestorage.app',
     iosBundleId: 'com.example.cenceApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'macos-api-key-placeholder',
-    appId: '1:123456789:ios:placeholder',
-    messagingSenderId: '123456789',
-    projectId: 'cence-app-placeholder',
-    storageBucket: 'cence-app-placeholder.appspot.com',
-    iosClientId: 'macos-client-id-placeholder',
+    apiKey: 'AIzaSyD1LuzfoIseWw73txyd_lD4hhiesxxyZY0',
+    appId: '1:393031115817:ios:14fd76b312836e632c2838',
+    messagingSenderId: '393031115817',
+    projectId: 'cenceapp',
+    storageBucket: 'cenceapp.firebasestorage.app',
     iosBundleId: 'com.example.cenceApp',
   );
+
 }
