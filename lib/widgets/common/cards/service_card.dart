@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/service_history.dart';
-import '../../../screens/service_history_detail_screen.dart';
+import '../../../features/service_history/presentation/screens/service_history_detail_screen.dart';
 
 class ModernServiceCard extends StatelessWidget {
   final ServiceHistory item;

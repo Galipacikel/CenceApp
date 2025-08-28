@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/firestore_paths.dart';
-import '../services/username_auth_service.dart';
+import 'package:cence_app/services/firestore_paths.dart';
+import 'package:cence_app/services/username_auth_service.dart';
 // removed: import '../services/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
+import 'package:cence_app/features/home/presentation/screens/home_page.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -258,8 +258,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 child: ClipOval(
                                   child: Image.asset(
                                     'assets/app_icon/cence_logo.jpeg',
-                                    width: isWide ? 48 : 40,
-                                    height: isWide ? 48 : 40,
+                                    width: isWide ? 180 : 150,
+                                    height: isWide ? 180 : 150,
                                     fit: BoxFit.cover,
                                   ),
                                 ),

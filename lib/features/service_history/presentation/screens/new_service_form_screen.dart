@@ -6,18 +6,19 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';
-import '../services/storage_service.dart';
-import '../models/stock_part.dart';
-import '../models/device.dart';
-import '../models/service_history.dart';
+import 'package:cence_app/services/storage_service.dart';
+import 'package:cence_app/models/stock_part.dart';
+import 'package:cence_app/models/device.dart';
+import 'package:cence_app/models/service_history.dart';
 
-import '../widgets/service/form_sections/device_selection_section.dart';
-import '../widgets/service/form_sections/customer_info_section.dart';
-import '../widgets/service/form_widgets/form_type_chip.dart';
+import 'package:cence_app/widgets/service/form_sections/device_selection_section.dart';
+import 'package:cence_app/widgets/service/form_sections/customer_info_section.dart';
+import 'package:cence_app/widgets/service/form_widgets/form_type_chip.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'package:cence_app/features/stock/providers.dart';
 import 'package:cence_app/features/devices/providers.dart';
 import 'package:cence_app/features/devices/use_cases.dart';
+import 'package:cence_app/features/service_history/presentation/widgets/photo_picker.dart';
 
 class NewServiceFormScreen extends rp.ConsumerStatefulWidget {
   const NewServiceFormScreen({super.key});
@@ -39,17 +40,17 @@ class _NewServiceFormScreenState
   final TextEditingController _technicianController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _customerController = TextEditingController();
-  
+
   // Yeni cihaz bilgileri controller'ları
   final TextEditingController _serialNumberController = TextEditingController();
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _brandController = TextEditingController();
   final TextEditingController _modelController = TextEditingController();
-  
+
   // Yeni müşteri bilgileri controller'ları
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
-  
+
   DateTime? _date;
   late TextEditingController _dateController;
   XFile? _pickedImage;
@@ -115,8 +116,6 @@ class _NewServiceFormScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _technicianController.text = _getTechnicianName();
     });
-
-
   }
 
   @override
@@ -129,7 +128,7 @@ class _NewServiceFormScreenState
     _warrantyDurationController.dispose();
     _otherPartNameController.dispose();
     _otherPartQuantityController.dispose();
-    
+
     // Yeni controller'ları dispose et
     _serialNumberController.dispose();
     _deviceNameController.dispose();
@@ -137,7 +136,7 @@ class _NewServiceFormScreenState
     _modelController.dispose();
     _companyController.dispose();
     _locationController.dispose();
-    
+
     super.dispose();
   }
 
@@ -245,49 +244,6 @@ class _NewServiceFormScreenState
 
   // Garanti başlangıç tarihi artık kullanılmıyor, otomatik hesaplanıyor
 
-  Future<void> _pickImage() async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(
-                Icons.camera_alt_outlined,
-                color: Color(0xFF23408E),
-              ),
-              title: const Text('Kamera ile Çek'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.photo_library_outlined,
-                color: Color(0xFF23408E),
-              ),
-              title: const Text('Galeriden Seç'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (source != null) {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(source: source, imageQuality: 70);
-      if (picked != null) {
-        final bytes = await picked.readAsBytes();
-        setState(() {
-          _pickedImage = picked;
-          _pickedImageBytes = bytes;
-        });
-      }
-    }
-  }
-
   void _addOrUpdateSelectedPart(StockPart part, int adet) {
     // Stok kontrolü yap
     if (adet > part.stokAdedi) {
@@ -393,7 +349,8 @@ class _NewServiceFormScreenState
     final bool isInstallation = _formTipi == 0; // 0: Kurulum
 
     // Firma alanından müşteri alanını senkronize et
-    if (_customerController.text.isEmpty && _companyController.text.isNotEmpty) {
+    if (_customerController.text.isEmpty &&
+        _companyController.text.isNotEmpty) {
       _customerController.text = _companyController.text.trim();
     }
 
@@ -483,8 +440,8 @@ class _NewServiceFormScreenState
         installDate: _dateController.text,
         warrantyStatus:
             warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
-                ? 'Devam Ediyor'
-                : 'Bitti',
+            ? 'Devam Ediyor'
+            : 'Bitti',
         lastMaintenance: _dateController.text,
         warrantyEndDate: warrantyEndDate,
       );
@@ -507,7 +464,8 @@ class _NewServiceFormScreenState
     }
 
     // ServiceHistory için cihaz id'si: Bakım/Arıza -> seçili cihaz id; Kurulum -> girilen seri no / cihaz adı
-    final String historyDeviceId = _selectedDevice?.id ??
+    final String historyDeviceId =
+        _selectedDevice?.id ??
         (_serialNumberController.text.trim().isNotEmpty
             ? _serialNumberController.text.trim()
             : _deviceNameController.text.trim());
@@ -644,7 +602,8 @@ class _NewServiceFormScreenState
     ref.listen(appUserProvider, (previous, next) {
       next.when(
         data: (appUser) {
-          final uname = (appUser?.username ?? appUser?.usernameLowercase ?? '').trim();
+          final uname = (appUser?.username ?? appUser?.usernameLowercase ?? '')
+              .trim();
           if (uname.isNotEmpty) {
             if (_technicianController.text != uname) {
               _technicianController.text = uname;
@@ -769,39 +728,17 @@ class _NewServiceFormScreenState
             // Photo upload area
             Row(
               children: [
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF23408E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: _pickImage,
-                  icon: const Icon(
-                    Icons.camera_alt_outlined,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Fotoğraf Çek',
-                    style: TextStyle(color: Colors.white),
+                Expanded(
+                  child: PhotoPicker(
+                    initialBytes: _pickedImageBytes,
+                    onChanged: (selection) {
+                      setState(() {
+                        _pickedImage = selection?.file;
+                        _pickedImageBytes = selection?.bytes;
+                      });
+                    },
                   ),
                 ),
-                const SizedBox(width: 16),
-                if (_pickedImage != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: (_pickedImageBytes != null)
-                        ? Image.memory(
-                            _pickedImageBytes!,
-                            width: 70,
-                            height: 70,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stack) =>
-                                const SizedBox(width: 70, height: 70),
-                          )
-                        : const SizedBox(width: 70, height: 70),
-                  ),
               ],
             ),
             const SizedBox(height: 18),
@@ -829,7 +766,12 @@ class _NewServiceFormScreenState
                   lastDate: DateTime(now.year + 5),
                   locale: const Locale('tr', 'TR'),
                 );
-                if (picked != null) setState(() => _date = picked);
+                if (picked != null) {
+                  setState(() {
+                    _date = picked;
+                    _updateDateController();
+                  });
+                }
               },
               decoration: InputDecoration(
                 hintText: 'gg.aa.yyyy',
@@ -1508,7 +1450,7 @@ class _NewServiceFormScreenState
                   ),
                   elevation: 0,
                 ),
-                onPressed: _onKaydet,
+                onPressed: _isSaving ? null : _onKaydet,
                 child: const Text(
                   'Kaydet',
                   style: TextStyle(
