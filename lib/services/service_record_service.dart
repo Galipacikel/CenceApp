@@ -35,11 +35,11 @@ class ServiceRecordService {
   ) async {
     // Creates a record with provided id; stock decrease should be handled by Cloud Function onCreate
     final recordRef = _firestore
-        .collection(FirestorePaths.deviceServiceRecords(history.deviceId))
+        .collection(FirestorePaths.deviceServiceRecords(history.serialNumber))
         .doc(recordId);
 
     await recordRef.set({
-      'device_id': history.deviceId,
+      'device_id': history.serialNumber,
       'technician_id': history.technician,
       'service_type': history.status,
       'description': history.description,

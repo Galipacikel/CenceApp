@@ -3,13 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-// removed: import 'package:provider/provider.dart' as provider;
-// removed: import 'providers/app_state_provider.dart';
-
 import 'package:intl/date_symbol_data_local.dart';
-// removed: import 'providers/stock_provider.dart';
-// removed: import 'providers/service_history_provider.dart';
-// removed: import 'providers/device_provider.dart';
 import 'firebase_options.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
@@ -21,7 +15,6 @@ import 'core/providers/firebase_providers.dart';
 import 'package:cence_app/features/home/presentation/screens/home_page.dart';
 import 'package:cence_app/features/auth/presentation/screens/login_screen.dart';
 
-// added: Provider and ChangeNotifier providers
 import 'package:provider/provider.dart' as provider;
 import 'providers/app_state_provider.dart';
 import 'providers/device_provider.dart';

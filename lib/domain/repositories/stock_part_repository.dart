@@ -10,4 +10,7 @@ abstract class StockPartRepositoryV2 {
     String partCode,
     int amount,
   );
+  Future<Result<Unit, app.Failure>> add(StockPart part);
+  Future<Result<Unit, app.Failure>> update(StockPart part);
+  Future<Result<Unit, app.Failure>> delete(String partId);
 }

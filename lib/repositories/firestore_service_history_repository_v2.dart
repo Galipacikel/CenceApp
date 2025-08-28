@@ -57,8 +57,6 @@ class FirestoreServiceHistoryRepositoryV2
           .map((d) => _fromFirestore(d.id, d.data()))
           .toList();
 
-      // Fetch additional historical records from legacy/general 'formlar' collection
-      // We do not assume indexes; keep query simple to avoid index errors.
       final formsSnap = await _firestore.collection(FirestorePaths.forms).get();
       final formsList = formsSnap.docs
           .map((d) => _fromForms(d.id, d.data()))
@@ -81,11 +79,10 @@ class FirestoreServiceHistoryRepositoryV2
     int count = 3,
   }) async {
     try {
-      // Query both sources, merge and then take first N
       final serviceHistorySnap = await _firestore
           .collection(FirestorePaths.serviceHistory)
           .orderBy('created_at', descending: true)
-          .limit(count * 3) // take a bit more before merge to keep variety
+          .limit(count * 3)
           .get();
       final list = serviceHistorySnap.docs
           .map((d) => _fromFirestore(d.id, d.data()))
@@ -110,15 +107,12 @@ class FirestoreServiceHistoryRepositoryV2
     }
   }
 
-  // Map a document from the 'formlar' collection into a ServiceHistory model
   ServiceHistory _fromForms(String id, Map<String, dynamic> data) {
-    // Date parsing with multiple fallbacks
     DateTime when = DateTime.now();
     final dynamic rawTarih = data['TARİH'] ?? data['TARIH'] ?? data['tarih'] ?? data['created_at'] ?? data['date'];
     if (rawTarih is Timestamp) {
       when = rawTarih.toDate();
     } else if (rawTarih is String) {
-      // Try ISO first, then fallback to DateTime.tryParse
       final parsed = DateTime.tryParse(rawTarih);
       if (parsed != null) when = parsed;
     }
@@ -145,11 +139,12 @@ class FirestoreServiceHistoryRepositoryV2
     return ServiceHistory(
       id: id,
       date: when,
-      deviceId: deviceLabel.isNotEmpty ? deviceLabel : id,
+      serialNumber: deviceLabel.isNotEmpty ? deviceLabel : id,
       musteri: musteri,
       description: aciklama,
       technician: teknisyen.isNotEmpty ? teknisyen : '-',
       status: durum.isNotEmpty ? durum : 'Başarılı',
+      location: '',
       kullanilanParcalar: const <StockPart>[],
       photos: const <String>[],
     );
@@ -194,11 +189,12 @@ class FirestoreServiceHistoryRepositoryV2
     required String id,
   }) {
     return {
-      'device_id': history.deviceId,
+      'device_id': history.serialNumber,
       'technician_id': history.technician,
       'technician_name': history.technician,
        'service_type': history.status,
        'description': history.description,
+       'location': history.location,
        'actions_taken': '',
        'images': history.photos ?? <String>[],
        'used_parts': history.kullanilanParcalar
@@ -238,11 +234,12 @@ class FirestoreServiceHistoryRepositoryV2
      return ServiceHistory(
        id: id,
        date: when,
-       deviceId: (data['device_id'] ?? '') as String,
+       serialNumber: (data['device_id'] ?? '') as String,
       musteri: (data['customer_name'] ?? '') as String,
        description: (data['description'] ?? '') as String,
       technician: technicianStr,
        status: (data['service_type'] ?? '') as String,
+       location: (data['location'] ?? '') as String,
        kullanilanParcalar: usedParts,
        photos: (data['images'] as List<dynamic>? ?? []).cast<String>(),
      );

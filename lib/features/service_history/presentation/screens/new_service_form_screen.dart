@@ -1,24 +1,22 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter/foundation.dart';
-// import 'package:path_provider/path_provider.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';
 import 'package:cence_app/services/storage_service.dart';
-import 'package:cence_app/models/stock_part.dart';
 import 'package:cence_app/models/device.dart';
 import 'package:cence_app/models/service_history.dart';
-
+import 'package:cence_app/models/stock_part.dart';
 import 'package:cence_app/widgets/service/form_sections/device_selection_section.dart';
 import 'package:cence_app/widgets/service/form_sections/customer_info_section.dart';
 import 'package:cence_app/widgets/service/form_widgets/form_type_chip.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
-import 'package:cence_app/features/stock/providers.dart';
 import 'package:cence_app/features/devices/providers.dart';
+import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
 import 'package:cence_app/features/devices/use_cases.dart';
 import 'package:cence_app/features/service_history/presentation/widgets/photo_picker.dart';
+import 'package:cence_app/features/service_history/providers.dart';
 
 class NewServiceFormScreen extends rp.ConsumerStatefulWidget {
   const NewServiceFormScreen({super.key});
@@ -36,18 +34,13 @@ class SelectedPart {
 
 class _NewServiceFormScreenState
     extends rp.ConsumerState<NewServiceFormScreen> {
-  int _formTipi = 0; // 0: Kurulum, 1: Bakım, 2: Arıza
+  int _formTipi = 0;
   final TextEditingController _technicianController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _customerController = TextEditingController();
-
-  // Yeni cihaz bilgileri controller'ları
   final TextEditingController _serialNumberController = TextEditingController();
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _brandController = TextEditingController();
   final TextEditingController _modelController = TextEditingController();
-
-  // Yeni müşteri bilgileri controller'ları
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
 
@@ -55,46 +48,37 @@ class _NewServiceFormScreenState
   late TextEditingController _dateController;
   XFile? _pickedImage;
   Uint8List? _pickedImageBytes;
-
-  // Garanti özellikleri
-  final TextEditingController _warrantyDurationController =
-      TextEditingController();
-
-  // Parça seçimi için yeni alanlar
+  final TextEditingController _warrantyDurationController = TextEditingController();
   final TextEditingController _partSearchController = TextEditingController();
   List<StockPart> _allParts = [];
   List<StockPart> _filteredParts = [];
-
-  // Diğer parça seçeneği için
   bool _showOtherPartInput = false;
-  final TextEditingController _otherPartNameController =
-      TextEditingController();
-  final TextEditingController _otherPartQuantityController =
-      TextEditingController();
-
-  // Cihaz seçimi için
+  final TextEditingController _otherPartNameController = TextEditingController();
+  final TextEditingController _otherPartQuantityController = TextEditingController();
   Device? _selectedDevice;
   final TextEditingController _deviceSearchController = TextEditingController();
   List<Device> _allDevices = [];
   List<Device> _filteredDevices = [];
   bool _showDeviceSuggestions = false;
-  // Firestore üzerinden DeviceProvider kullanılacak
-
   final List<SelectedPart> _selectedParts = [];
-  bool _isSaving = false; // Çift kaydetmeyi önlemek için flag
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _dateController = TextEditingController();
     _warrantyDurationController.text = '24';
-    // Async değerleri mevcutsa seed et
-    final partsAsync = ref.read(stockPartsProvider);
-    partsAsync.when(
-      data: (parts) {
+    
+    // Otomatik olarak bugünün tarihini ata
+    _date = DateTime.now();
+    _updateDateController();
+    
+    final inventoryAsync = ref.read(inventoryProvider);
+    inventoryAsync.when(
+      data: (inventory) {
         setState(() {
-          _allParts = parts;
-          _filteredParts = parts;
+          _allParts = inventory.parts;
+          _filteredParts = inventory.parts;
         });
       },
       loading: () {},
@@ -112,7 +96,6 @@ class _NewServiceFormScreenState
       error: (e, st) {},
     );
 
-    // Teknisyen adını otomatik doldur
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _technicianController.text = _getTechnicianName();
     });
@@ -124,7 +107,6 @@ class _NewServiceFormScreenState
     _descriptionController.dispose();
     _dateController.dispose();
     _partSearchController.dispose();
-    _customerController.dispose();
     _warrantyDurationController.dispose();
     _otherPartNameController.dispose();
     _otherPartQuantityController.dispose();
@@ -187,14 +169,11 @@ class _NewServiceFormScreenState
       _selectedDevice = device;
       _deviceSearchController.text = device.modelName;
       _showDeviceSuggestions = false;
-
-      // Otomatik alan doldurma (Bakım/Arıza için)
       _serialNumberController.text = device.serialNumber;
       _deviceNameController.text = device.modelName;
       _brandController.text = device.modelName;
       _modelController.text = device.modelName;
       _companyController.text = device.customer;
-      _customerController.text = device.customer;
 
       // Kurulum tarihi seçili değilse bugünün tarihini ata
       if (_date == null) {
@@ -348,11 +327,8 @@ class _NewServiceFormScreenState
 
     final bool isInstallation = _formTipi == 0; // 0: Kurulum
 
-    // Firma alanından müşteri alanını senkronize et
-    if (_customerController.text.isEmpty &&
-        _companyController.text.isNotEmpty) {
-      _customerController.text = _companyController.text.trim();
-    }
+    // Firma adını müşteri adı olarak kullan
+    final customerName = _companyController.text.trim();
 
     // Bakım/Arıza için cihaz seçimi zorunlu
     if (!isInstallation && _selectedDevice == null) {
@@ -382,10 +358,10 @@ class _NewServiceFormScreenState
       return;
     }
 
-    if (_customerController.text.isEmpty) {
+    if (customerName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Lütfen müşteri/kurum adı girin.'),
+          content: Text('Lütfen firma adı girin.'),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 2),
         ),
@@ -412,15 +388,13 @@ class _NewServiceFormScreenState
     // Açıklama alanı opsiyonel olduğu için kontrol kaldırıldı
     // Kullanılan parçalar artık opsiyonel olduğu için kontrol kaldırıldı
 
-    // Garanti süresini parse et
     int warrantyDuration = 24;
     try {
       warrantyDuration = int.parse(_warrantyDurationController.text);
     } catch (e) {
-      // Hata durumunda varsayılan değer kullan
+      // Default value
     }
 
-    // Garanti bitiş tarihini hesapla (Kurulum tarihi + Garanti süresi)
     DateTime? warrantyEndDate;
     if (_date != null) {
       warrantyEndDate = DateTime(
@@ -430,13 +404,40 @@ class _NewServiceFormScreenState
       );
     }
 
-    // Cihaz bilgilerini güncelle (sadece Bakım/Arıza için)
-    if (!isInstallation && _selectedDevice != null) {
+    String deviceSerialNumber = '';
+    
+    if (isInstallation) {
+      // Kurulum için yeni cihaz oluştur
+      deviceSerialNumber = _serialNumberController.text.trim().isNotEmpty
+          ? _serialNumberController.text.trim()
+          : _deviceNameController.text.trim();
+          
+      final newDevice = Device(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        modelName: _deviceNameController.text.trim().isNotEmpty 
+            ? _deviceNameController.text.trim() 
+            : deviceSerialNumber,
+        serialNumber: deviceSerialNumber,
+        customer: _companyController.text,
+        installDate: _dateController.text,
+        warrantyStatus:
+            warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
+            ? 'Devam Ediyor'
+            : 'Bitti',
+        lastMaintenance: _dateController.text,
+        warrantyEndDate: warrantyEndDate,
+        stockQuantity: 1,
+      );
+      final addDevice = ref.read(addDeviceUseCaseProvider);
+      await addDevice(newDevice);
+    } else if (_selectedDevice != null) {
+      // Bakım/Arıza için mevcut cihazı güncelle
+      deviceSerialNumber = _selectedDevice!.serialNumber;
       final updatedDevice = Device(
         id: _selectedDevice!.id,
         modelName: _selectedDevice!.modelName,
         serialNumber: _selectedDevice!.serialNumber,
-        customer: _customerController.text,
+        customer: _companyController.text,
         installDate: _dateController.text,
         warrantyStatus:
             warrantyEndDate != null && DateTime.now().isBefore(warrantyEndDate)
@@ -449,40 +450,32 @@ class _NewServiceFormScreenState
       await updateDevice(updatedDevice);
     }
 
-    // Fotoğrafı Storage'a yükle ve URL'leri hazırla
     final List<String> photoUrls = [];
-    // Firestore bağımlılığı olmadan benzersiz bir klasör kimliği üret
     final recordFolderId = const Uuid().v4();
     if (_pickedImage != null) {
       final storage = StorageService();
       final fileName = 'img_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final url = await storage.uploadFile(
-        file: _pickedImage!, // XFile veriyoruz
+        file: _pickedImage!,
         storagePath: 'service_images/$recordFolderId/$fileName',
       );
       photoUrls.add(url);
     }
 
-    // ServiceHistory için cihaz id'si: Bakım/Arıza -> seçili cihaz id; Kurulum -> girilen seri no / cihaz adı
-    final String historyDeviceId =
-        _selectedDevice?.id ??
-        (_serialNumberController.text.trim().isNotEmpty
-            ? _serialNumberController.text.trim()
-            : _deviceNameController.text.trim());
+    final String historySerialNumber = deviceSerialNumber;
 
-    // Firestore'a servis kaydı oluştur (stok düşüşü repo/use-case içinde)
-    // Kayıtta kullanıcıya görünen teknisyen ismini kullan
     final technicianName = _technicianController.text.isNotEmpty
         ? _technicianController.text
         : _getTechnicianName();
     final history = ServiceHistory(
       id: recordFolderId,
       date: _date!,
-      deviceId: historyDeviceId,
-      musteri: _customerController.text,
+      serialNumber: historySerialNumber,
+      musteri: customerName,
       description: _descriptionController.text,
       technician: technicianName,
       status: _formTipi == 2 ? 'Arızalı' : 'Başarılı',
+      location: _locationController.text,
       kullanilanParcalar: _selectedParts
           .map(
             (sp) => StockPart(
@@ -497,10 +490,17 @@ class _NewServiceFormScreenState
       photos: photoUrls.isNotEmpty ? photoUrls : null,
     );
 
-    // UI listesine de ekleyelim
     try {
-      final addHistory = ref.read(addServiceHistoryUseCaseProvider);
-      await addHistory(history);
+      // Tüm veritabanı işlemlerini eşzamanlı yap
+      await Future.wait([
+        ref.read(addServiceHistoryUseCaseProvider)(history),
+        _updateStockQuantities(),
+      ]);
+      
+      // Provider'ları güncelle
+      ref.invalidate(serviceHistoryListProvider);
+      ref.invalidate(recentServiceHistoryProvider(3));
+      ref.invalidate(devicesListProvider);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -515,13 +515,11 @@ class _NewServiceFormScreenState
     }
     if (!mounted) return;
 
-    // Riverpod servis geçmişi provider'ları repository güncellemesini yansıtacaktır.
-
     Navigator.of(context).pop({
       'formTipi': _formTipi,
       'date': _date!,
-      'deviceId': historyDeviceId,
-      'customer': _customerController.text,
+      'deviceId': historySerialNumber,
+      'customer': customerName,
       'technician': technicianName,
       'description': _descriptionController.text,
       'warrantyDuration': warrantyDuration,
@@ -545,7 +543,6 @@ class _NewServiceFormScreenState
       ),
     );
 
-    // Flag'i sıfırla
     _isSaving = false;
   }
 
@@ -567,16 +564,41 @@ class _NewServiceFormScreenState
     }
   }
 
+  Future<void> _updateStockQuantities() async {
+    if (_selectedParts.isEmpty) return;
+
+    final updateTasks = _selectedParts
+        .where((selectedPart) => selectedPart.part.id.isNotEmpty)
+        .map((selectedPart) async {
+      final part = selectedPart.part;
+      final usedQuantity = selectedPart.adet;
+      final currentStock = part.stokAdedi;
+      final newStock = currentStock - usedQuantity;
+      final finalStock = newStock < 0 ? 0 : newStock;
+      
+      final updatedPart = StockPart(
+        id: part.id,
+        parcaAdi: part.parcaAdi,
+        parcaKodu: part.parcaKodu,
+        stokAdedi: finalStock,
+        criticalLevel: part.criticalLevel,
+      );
+      
+      return ref.read(inventoryProvider.notifier).updatePart(updatedPart);
+    }).toList();
+
+    await Future.wait(updateTasks);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Provider değişimlerini dinle (Riverpod gereği build içinde)
-    ref.listen(stockPartsProvider, (prev, next) {
+    ref.listen(inventoryProvider, (prev, next) {
       next.when(
-        data: (parts) {
+        data: (inventory) {
           if (!mounted) return;
           setState(() {
-            _allParts = parts;
-            _filteredParts = parts;
+            _allParts = inventory.parts;
+            _filteredParts = inventory.parts;
           });
         },
         loading: () {},
@@ -598,7 +620,6 @@ class _NewServiceFormScreenState
       );
     });
 
-    // AppUser yüklendiğinde kullanıcı adı ile teknisyen alanını güncelle
     ref.listen(appUserProvider, (previous, next) {
       next.when(
         data: (appUser) {

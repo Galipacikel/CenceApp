@@ -99,6 +99,7 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
       'institution_name': device.customer,
       'installation_date': device.installDate,
       'warranty_end_date': device.warrantyEndDate,
+      'stock_quantity': device.stockQuantity,
     };
   }
 
@@ -125,6 +126,7 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
           : 'Bitti',
       lastMaintenance: '',
       warrantyEndDate: warrantyEndDate,
+      stockQuantity: (data['stock_quantity'] ?? 1) as int,
     );
   }
 

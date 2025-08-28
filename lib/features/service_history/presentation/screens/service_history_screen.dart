@@ -52,12 +52,12 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       list = list.where((item) {
-        final deviceId = item.deviceId.toLowerCase();
+        final serialNumber = item.serialNumber.toLowerCase();
         final description = item.description.toLowerCase();
         final technician = item.technician.toLowerCase();
         final musteri = item.musteri.toLowerCase();
 
-        return deviceId.contains(query) ||
+        return serialNumber.contains(query) ||
             description.contains(query) ||
             technician.contains(query) ||
             musteri.contains(query);
@@ -721,7 +721,7 @@ class _ServisKaydiCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          kayit.deviceId,
+                          kayit.serialNumber,
                           style: TextStyle(
                             fontSize: isWide ? 16 : 14,
                             fontWeight: FontWeight.bold,
