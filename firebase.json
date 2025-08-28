@@ -1,14 +1,1 @@
-{
-  "emulators": {
-    "firestore": { "port": 8080 },
-    "auth": { "port": 9099 },
-    "storage": { "port": 9199 },
-    "ui": { "enabled": true, "port": 4000 }
-  },
-  "firestore": {
-    "rules": "firestore.rules"
-  },
-  "storage": {
-    "rules": "storage.rules"
-  }
-}
+{"emulators":{"firestore":{"port":8080},"auth":{"port":9099},"storage":{"port":9199},"ui":{"enabled":true,"port":4000}},"firestore":{"rules":"firestore.rules"},"storage":{"rules":"storage.rules"},"flutter":{"platforms":{"android":{"default":{"projectId":"cenceapp","appId":"1:393031115817:android:9e71cd12d1b5e16f2c2838","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"cenceapp","appId":"1:393031115817:ios:14fd76b312836e632c2838","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"cenceapp","appId":"1:393031115817:ios:14fd76b312836e632c2838","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"cenceapp","configurations":{"android":"1:393031115817:android:9e71cd12d1b5e16f2c2838","ios":"1:393031115817:ios:14fd76b312836e632c2838","macos":"1:393031115817:ios:14fd76b312836e632c2838","web":"1:393031115817:web:e95132b892b0736d2c2838"}}}}}}
