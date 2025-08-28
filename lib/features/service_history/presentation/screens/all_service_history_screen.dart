@@ -102,12 +102,12 @@ class _AllServiceHistoryScreenState
       // Arama filtresi
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
-        final deviceId = item.deviceId.toLowerCase();
+        final serialNumber = item.serialNumber.toLowerCase();
         final description = item.description.toLowerCase();
         final technician = item.technician.toLowerCase();
         final musteri = item.musteri.toLowerCase();
 
-        if (!deviceId.contains(query) &&
+        if (!serialNumber.contains(query) &&
             !description.contains(query) &&
             !technician.contains(query) &&
             !musteri.contains(query)) {

@@ -50,6 +50,61 @@ class FirestoreStockRepositoryV2 implements StockPartRepositoryV2 {
     }
   }
 
+  @override
+  Future<Result<Unit, app.Failure>> add(StockPart part) async {
+    try {
+      await _firestore
+          .collection(FirestorePaths.spareParts)
+          .doc(part.id)
+          .set(_toFirestoreMap(part));
+      return Result.ok(const Unit());
+    } on FirebaseException catch (e) {
+      return Result.err(_toFailure(e));
+    } catch (e) {
+      return Result.err(app.UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<Unit, app.Failure>> update(StockPart part) async {
+    try {
+      await _firestore
+          .collection(FirestorePaths.spareParts)
+          .doc(part.id)
+          .update(_toFirestoreMap(part));
+      return Result.ok(const Unit());
+    } on FirebaseException catch (e) {
+      return Result.err(_toFailure(e));
+    } catch (e) {
+      return Result.err(app.UnknownFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Result<Unit, app.Failure>> delete(String partId) async {
+    try {
+      await _firestore
+          .collection(FirestorePaths.spareParts)
+          .doc(partId)
+          .delete();
+      return Result.ok(const Unit());
+    } on FirebaseException catch (e) {
+      return Result.err(_toFailure(e));
+    } catch (e) {
+      return Result.err(app.UnknownFailure(e.toString()));
+    }
+  }
+
+  Map<String, dynamic> _toFirestoreMap(StockPart part) {
+    return {
+      'part_name': part.parcaAdi,
+      'stock_code': part.parcaKodu,
+      'stock_quantity': part.stokAdedi,
+      'critical_level': part.criticalLevel,
+      'updated_at': FieldValue.serverTimestamp(),
+    };
+  }
+
   StockPart _fromFirestore(String id, Map<String, dynamic> data) {
     final clRaw = data['critical_level'];
     int critical = 0;

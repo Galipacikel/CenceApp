@@ -3,36 +3,38 @@ import 'package:cence_app/models/stock_part.dart';
 class ServiceHistory {
   final String id;
   final DateTime date;
-  final String deviceId; // Artık Device nesnesine referans
+  final String serialNumber;
   final String musteri;
   final String description;
   final String technician;
   final String status;
-  final List<StockPart> kullanilanParcalar; // Kullanılan parçaların listesi
-  final List<String>? photos; // Fotoğrafların yolları
+  final String location;
+  final List<StockPart> kullanilanParcalar;
+  final List<String>? photos;
 
   ServiceHistory({
     required this.id,
     required this.date,
-    required this.deviceId,
+    required this.serialNumber,
     required this.musteri,
     required this.description,
     required this.technician,
     required this.status,
+    this.location = '',
     this.kullanilanParcalar = const [],
     this.photos,
   });
 
-  // Json işlemleri şimdilik basitleştirildi, ileride detaylandırılacak
   factory ServiceHistory.fromJson(Map<String, dynamic> json) {
     return ServiceHistory(
       id: json['id'] ?? '',
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
-      deviceId: json['deviceId'] ?? '',
+      serialNumber: json['serialNumber'] ?? json['deviceId'] ?? '',
       musteri: json['musteri'] ?? '',
       description: json['description'] ?? '',
       technician: json['technician'] ?? '',
       status: json['status'] ?? '',
+      location: json['location'] ?? '',
       kullanilanParcalar: (json['kullanilanParcalar'] as List? ?? [])
           .map((item) => StockPart.fromJson(item))
           .toList(),
@@ -44,11 +46,12 @@ class ServiceHistory {
     return {
       'id': id,
       'date': date.toIso8601String(),
-      'deviceId': deviceId,
+      'serialNumber': serialNumber,
       'musteri': musteri,
       'description': description,
       'technician': technician,
       'status': status,
+      'location': location,
       'kullanilanParcalar': kullanilanParcalar.map((p) => p.toJson()).toList(),
       'photos': photos ?? [],
     };

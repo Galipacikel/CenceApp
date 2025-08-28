@@ -98,7 +98,7 @@ class ServiceHistoryProvider extends BaseProvider<ServiceHistory> {
     final updatedItem = ServiceHistory(
       id: eski.id,
       date: yeni['tarih'] ?? eski.date,
-      deviceId: yeni['cihaz'] ?? eski.deviceId,
+      serialNumber: yeni['cihaz'] ?? eski.serialNumber,
       musteri: yeni['musteri'] ?? eski.musteri,
       description: ((yeni['baslik'] ?? '') + (yeni['aciklama'] ?? '')),
       technician: yeni['kisi'] ?? eski.technician,
