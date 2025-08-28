@@ -24,7 +24,7 @@ class EmptyServiceCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF23408E).withOpacity(0.06),
+            color: const Color(0xFF23408E).withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
             spreadRadius: 0,
@@ -90,7 +90,7 @@ class EmptyServiceCard extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: const Color(0xFF23408E).withOpacity(0.1),
+            color: const Color(0xFF23408E).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(

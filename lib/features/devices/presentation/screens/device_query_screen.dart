@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'dart:async'; // removed unused import
 import 'package:cence_app/features/devices/providers.dart';
-import '../models/device.dart';
-import 'barcode_scanner_screen.dart';
-import '../widgets/common/cards/model_details_card.dart';
-import '../widgets/common/detail_row.dart';
+import 'package:cence_app/models/device.dart';
+import 'package:cence_app/widgets/common/cards/model_details_card.dart';
+import 'package:cence_app/widgets/common/detail_row.dart';
+import 'package:cence_app/features/scanner/presentation/screens/barcode_scanner_screen.dart';
 
 class CihazSorgulaScreen extends ConsumerStatefulWidget {
   const CihazSorgulaScreen({super.key});

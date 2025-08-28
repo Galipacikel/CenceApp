@@ -28,10 +28,7 @@ class AppColors {
   static const Color iconColor = Color(0xFFB0B3C0);
 
   // Özel kullanımlar (deprecated withOpacity yerine withAlpha kullan)
-  static Color primaryBlueWithOpacity(double opacity) =>
-      primaryBlue.withAlpha(((opacity.clamp(0.0, 1.0)) * 255).round());
-  static Color criticalRedWithOpacity(double opacity) =>
-      criticalRed.withAlpha(((opacity.clamp(0.0, 1.0)) * 255).round());
-  static Color criticalTextWithOpacity(double opacity) =>
-      criticalText.withAlpha(((opacity.clamp(0.0, 1.0)) * 255).round());
+  static Color primaryBlueWithOpacity(double opacity) => AppColors.primaryBlue.withValues(alpha: opacity);
+  static Color criticalRedWithOpacity(double opacity) => AppColors.criticalRed.withValues(alpha: opacity);
+  static Color criticalTextWithOpacity(double opacity) => AppColors.criticalText.withValues(alpha: opacity);
 }

@@ -1,46 +1,39 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/common/bottom_nav_bar.dart';
-import '../widgets/common/cards/quick_access_card.dart';
-import '../widgets/common/cards/service_card.dart';
-import '../widgets/common/cards/empty_service_card.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
+import 'package:cence_app/features/home/presentation/providers/home_providers.dart';
+import 'package:cence_app/widgets/common/bottom_nav_bar.dart';
+import 'package:cence_app/widgets/common/cards/quick_access_card.dart';
+// import 'package:cence_app/widgets/common/cards/service_card.dart';
+// import 'package:cence_app/widgets/common/cards/empty_service_card.dart';
 
-import 'device_query_screen.dart';
-import 'new_service_form_screen.dart';
-import 'service_history_screen.dart';
-import 'stock_tracking_screen.dart';
-import 'settings_screen.dart';
-import 'all_service_history_screen.dart';
-import '../models/service_history.dart';
+import 'package:cence_app/features/devices/presentation/screens/device_query_screen.dart';
+import 'package:cence_app/features/service_history/presentation/screens/new_service_form_screen.dart';
+import 'package:cence_app/features/service_history/presentation/screens/service_history_screen.dart';
+import 'package:cence_app/features/stock_tracking/presentation/screens/stock_tracking_screen.dart';
+import 'package:cence_app/features/settings/presentation/screens/settings_screen.dart';
+// import 'package:cence_app/features/service_history/presentation/screens/all_service_history_screen.dart';
+// removed unused: service_history model not needed here
 
 import 'package:provider/provider.dart';
-import '../providers/service_history_provider.dart';
-import '../providers/stock_provider.dart';
-import '../providers/device_provider.dart';
+import 'package:cence_app/providers/service_history_provider.dart';
+import 'package:cence_app/providers/stock_provider.dart';
+import 'package:cence_app/providers/device_provider.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends rp.ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  rp.ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
-
+class _HomePageState extends rp.ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Firestore'dan ilk verileri yükle
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final deviceProvider = Provider.of<DeviceProvider>(
-        context,
-        listen: false,
-      );
-      final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(
-        context,
-        listen: false,
-      );
+      final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
+      final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
       final stockProvider = Provider.of<StockProvider>(context, listen: false);
       await Future.wait([
         deviceProvider.fetchAll(),
@@ -51,14 +44,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const NewServiceFormScreen()));
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NewServiceFormScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
+    final currentIndex = ref.watch(homeCurrentIndexProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: PreferredSize(
@@ -68,7 +62,7 @@ class _HomePageState extends State<HomePage> {
             color: const Color(0xFF23408E),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF23408E).withOpacity(0.2),
+                color: const Color(0xFF23408E).withValues(alpha: 0.2),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -87,7 +81,7 @@ class _HomePageState extends State<HomePage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -131,7 +125,7 @@ class _HomePageState extends State<HomePage> {
                       'Medikal Cihazlar',
                       style: TextStyle(
                         fontSize: isWide ? 14 : 12,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -142,16 +136,10 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      body: _currentIndex == 0
-          ? _buildMainContent(context, isWide)
-          : const SettingsScreen(),
+      body: currentIndex == 0 ? _buildMainContent(context, isWide) : const SettingsScreen(),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        currentIndex: currentIndex,
+        onTap: (index) => ref.read(homeCurrentIndexProvider.notifier).state = index,
       ),
     );
   }
@@ -163,13 +151,12 @@ class _HomePageState extends State<HomePage> {
     final gridCrossAxisCount = width > 1100
         ? 5
         : width > 800
-        ? 4
-        : isWide
-        ? 3
-        : 2;
+            ? 4
+            : isWide
+                ? 3
+                : 2;
     final gridSpacing = isWide ? 24.0 : 12.0;
     final iconColor = const Color(0xFF23408E);
-    final serviceHistoryList = Provider.of<ServiceHistoryProvider>(context).all;
     return Container(
       color: const Color(0xFFF5F6FA),
       child: SingleChildScrollView(
@@ -188,7 +175,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF23408E).withOpacity(0.08),
+                    color: const Color(0xFF23408E).withValues(alpha: 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -202,7 +189,7 @@ class _HomePageState extends State<HomePage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF23408E).withOpacity(0.1),
+                          color: const Color(0xFF23408E).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -301,47 +288,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 36),
-            // Son Servis İşlemleri başlık + buton
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Son Servis İşlemleri',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: Color(0xFF1C1C1C),
-                  ),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF23408E),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => AllServiceHistoryScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('Tümünü Gör'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            if (serviceHistoryList.isEmpty)
-              const EmptyServiceCard()
-            else
-              Column(
-                children: serviceHistoryList
-                    .take(3)
-                    .map((item) => ModernServiceCard(item: item))
-                    .toList(),
-              ),
+            // Son Servis İşlemleri bölümü kaldırıldı (istek üzerine)
 
             const SizedBox(height: 24),
             // Footer
