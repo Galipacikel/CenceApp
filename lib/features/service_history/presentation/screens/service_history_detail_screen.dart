@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/models/service_history.dart';
+import 'package:cence_app/models/device.dart';
+import 'package:cence_app/features/devices/providers.dart';
 import 'package:intl/intl.dart';
 
-class ServiceHistoryDetailScreen extends StatelessWidget {
+class ServiceHistoryDetailScreen extends ConsumerWidget {
   final ServiceHistory serviceHistory;
   const ServiceHistoryDetailScreen({super.key, required this.serviceHistory});
 
@@ -50,9 +53,10 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final dateFormat = DateFormat('dd MMMM yyyy', 'tr_TR');
     final isWide = MediaQuery.of(context).size.width > 600;
+    final devicesAsync = ref.watch(devicesListProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -154,7 +158,7 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          serviceHistory.deviceId,
+                          serviceHistory.serialNumber,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -225,18 +229,105 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Müşteri bilgisi
-                  if (serviceHistory.musteri.isNotEmpty) ...[
-                    _buildInfoRow(
-                      icon: Icons.business,
-                      label: 'Müşteri/Kurum',
-                      value: serviceHistory.musteri,
-                      color: const Color(0xFF23408E),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                  devicesAsync.when(
+                    data: (devices) {
+                      final device = devices.firstWhere(
+                        (d) => d.serialNumber == serviceHistory.serialNumber,
+                        orElse: () => Device(
+                          id: '',
+                          serialNumber: serviceHistory.serialNumber,
+                          modelName: 'Bilinmeyen Cihaz',
+                          customer: '',
+                          installDate: '',
+                          warrantyStatus: '',
+                          lastMaintenance: '',
+                          warrantyEndDate: DateTime.now(),
+                          stockQuantity: 0,
+                        ),
+                      );
+                      
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Cihaz Bilgileri',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1C1C1C),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade200),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(10),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                _buildInfoRow(
+                                  icon: Icons.devices_other,
+                                  label: 'Cihaz Adı',
+                                  value: device.modelName,
+                                  color: const Color(0xFF23408E),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  icon: Icons.qr_code,
+                                  label: 'Seri Numarası',
+                                  value: device.serialNumber,
+                                  color: const Color(0xFF23408E),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  icon: Icons.business,
+                                  label: 'Firma',
+                                  value: device.customer.isNotEmpty ? device.customer : 'Belirtilmemiş',
+                                  color: const Color(0xFF23408E),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  icon: Icons.calendar_today,
+                                  label: 'Kurulum Tarihi',
+                                  value: device.installDate.isNotEmpty ? device.installDate : 'Belirtilmemiş',
+                                  color: const Color(0xFF23408E),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  icon: Icons.verified,
+                                  label: 'Garanti Durumu',
+                                  value: device.warrantyStatus,
+                                  color: device.warrantyStatus == 'Devam Ediyor' 
+                                      ? const Color(0xFF43A047) 
+                                      : const Color(0xFFE53935),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  icon: Icons.location_on,
+                                  label: 'Lokasyon',
+                                  value: serviceHistory.location.isNotEmpty ? serviceHistory.location : 'Belirtilmemiş',
+                                  color: const Color(0xFF23408E),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
 
-                  // Teknisyen bilgisi
                   _buildInfoRow(
                     icon: Icons.person,
                     label: 'Teknisyen',
@@ -245,7 +336,6 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Açıklama
                   if (serviceHistory.description.isNotEmpty) ...[
                     const Text(
                       'Açıklama',
@@ -275,7 +365,6 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                   ],
 
-                  // Kullanılan parçalar
                   if (serviceHistory.kullanilanParcalar.isNotEmpty) ...[
                     const Text(
                       'Kullanılan Parçalar',
@@ -362,7 +451,6 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
               ),
             ),
 
-            // Fotoğraflar bölümü
             if (serviceHistory.photos != null &&
                 serviceHistory.photos!.isNotEmpty) ...[
               const SizedBox(height: 20),
@@ -397,37 +485,55 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         itemCount: serviceHistory.photos!.length,
                         itemBuilder: (context, index) {
-                          return Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child:
-                                  serviceHistory.photos![index].startsWith(
-                                    'http',
-                                  )
-                                  ? Image.network(
-                                      serviceHistory.photos![index],
-                                      width: 120,
-                                      height: 120,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return Container(
-                                              width: 120,
-                                              height: 120,
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey.shade300,
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: const Icon(
-                                                Icons.error,
-                                                color: Colors.grey,
-                                              ),
-                                            );
-                                          },
-                                    )
-                                  : const SizedBox.shrink(),
+                          return GestureDetector(
+                            onTap: () => _showPhotoDialog(context, serviceHistory.photos![index]),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Stack(
+                                  children: [
+                                    serviceHistory.photos![index].startsWith('http')
+                                        ? Image.network(
+                                            serviceHistory.photos![index],
+                                            width: 120,
+                                            height: 120,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Container(
+                                                width: 120,
+                                                height: 120,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey.shade300,
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.error,
+                                                  color: Colors.grey,
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : const SizedBox.shrink(),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withAlpha(100),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Icon(
+                                          Icons.zoom_in,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -484,6 +590,63 @@ class ServiceHistoryDetailScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showPhotoDialog(BuildContext context, String photoUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            // Fotoğraf
+            Center(
+              child: InteractiveViewer(
+                child: Image.network(
+                  photoUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 300,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.error,
+                        color: Colors.grey,
+                        size: 48,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            // Kapatma butonu
+            Positioned(
+              top: 40,
+              right: 20,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(100),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

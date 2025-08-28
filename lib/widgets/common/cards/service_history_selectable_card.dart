@@ -128,7 +128,7 @@ class ServiceHistorySelectableCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.deviceId,
+                          item.serialNumber,
                           style: TextStyle(
                             fontSize: isWide ? 16 : 14,
                             fontWeight: FontWeight.bold,

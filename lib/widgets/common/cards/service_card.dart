@@ -91,7 +91,7 @@ class ModernServiceCard extends StatelessWidget {
               size: 32,
             ),
             title: Text(
-              '${item.deviceId} - ${item.description}',
+              '${item.serialNumber} - ${item.description}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(

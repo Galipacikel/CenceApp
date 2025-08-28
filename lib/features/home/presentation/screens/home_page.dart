@@ -17,7 +17,7 @@ import 'package:cence_app/features/settings/presentation/screens/settings_screen
 
 import 'package:provider/provider.dart';
 import 'package:cence_app/providers/service_history_provider.dart';
-import 'package:cence_app/providers/stock_provider.dart';
+
 import 'package:cence_app/providers/device_provider.dart';
 
 class HomePage extends rp.ConsumerStatefulWidget {
@@ -34,11 +34,9 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
       final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
-      final stockProvider = Provider.of<StockProvider>(context, listen: false);
       await Future.wait([
         deviceProvider.fetchAll(),
         serviceHistoryProvider.fetchAll(),
-        stockProvider.fetchAll(),
       ]);
     });
   }
