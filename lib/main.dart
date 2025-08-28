@@ -32,13 +32,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await initializeDateFormatting('tr_TR', null);
-  if (kIsWeb || defaultTargetPlatform == TargetPlatform.macOS) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } else {
-    await Firebase.initializeApp();
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   if (kUseEmulators) {
     final host = defaultTargetPlatform == TargetPlatform.android
