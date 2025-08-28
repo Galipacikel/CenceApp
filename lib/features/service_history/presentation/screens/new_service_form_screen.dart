@@ -151,12 +151,8 @@ class _NewServiceFormScreenState
         _filteredDevices = _allDevices
             .where(
               (device) =>
-                  device.modelName.toLowerCase().contains(
-                    query.toLowerCase(),
-                  ) ||
-                  device.serialNumber.toLowerCase().contains(
-                    query.toLowerCase(),
-                  ),
+                  device.modelName.toLowerCase().contains(query.toLowerCase()) ||
+                  device.serialNumber.toLowerCase().contains(query.toLowerCase()),
             )
             .toList();
       }
@@ -174,12 +170,6 @@ class _NewServiceFormScreenState
       _brandController.text = device.modelName;
       _modelController.text = device.modelName;
       _companyController.text = device.customer;
-
-      // Kurulum tarihi seçili değilse bugünün tarihini ata
-      if (_date == null) {
-        _date = DateTime.now();
-        _updateDateController();
-      }
     });
   }
 
@@ -221,10 +211,9 @@ class _NewServiceFormScreenState
         : '${_date!.day.toString().padLeft(2, '0')}.${_date!.month.toString().padLeft(2, '0')}.${_date!.year}';
   }
 
-  // Garanti başlangıç tarihi artık kullanılmıyor, otomatik hesaplanıyor
+
 
   void _addOrUpdateSelectedPart(StockPart part, int adet) {
-    // Stok kontrolü yap
     if (adet > part.stokAdedi) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -295,7 +284,6 @@ class _NewServiceFormScreenState
       return;
     }
 
-    // Özel parça için geçici bir StockPart oluştur
     final customPart = StockPart(
       id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
       parcaAdi: _otherPartNameController.text.trim(),
@@ -327,10 +315,8 @@ class _NewServiceFormScreenState
 
     final bool isInstallation = _formTipi == 0; // 0: Kurulum
 
-    // Firma adını müşteri adı olarak kullan
     final customerName = _companyController.text.trim();
 
-    // Bakım/Arıza için cihaz seçimi zorunlu
     if (!isInstallation && _selectedDevice == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -343,7 +329,6 @@ class _NewServiceFormScreenState
       return;
     }
 
-    // Kurulum için en az seri no veya cihaz adı zorunlu
     if (isInstallation &&
         _serialNumberController.text.trim().isEmpty &&
         _deviceNameController.text.trim().isEmpty) {
@@ -382,11 +367,8 @@ class _NewServiceFormScreenState
     }
     // Teknisyen adı otomatik doldurulduğu için kontrol etmeye gerek yok
     if (_technicianController.text.isEmpty) {
-      // Teknisyen adını tekrar doldur
       _technicianController.text = _getTechnicianName();
     }
-    // Açıklama alanı opsiyonel olduğu için kontrol kaldırıldı
-    // Kullanılan parçalar artık opsiyonel olduğu için kontrol kaldırıldı
 
     int warrantyDuration = 24;
     try {
@@ -407,7 +389,6 @@ class _NewServiceFormScreenState
     String deviceSerialNumber = '';
     
     if (isInstallation) {
-      // Kurulum için yeni cihaz oluştur
       deviceSerialNumber = _serialNumberController.text.trim().isNotEmpty
           ? _serialNumberController.text.trim()
           : _deviceNameController.text.trim();
@@ -431,7 +412,6 @@ class _NewServiceFormScreenState
       final addDevice = ref.read(addDeviceUseCaseProvider);
       await addDevice(newDevice);
     } else if (_selectedDevice != null) {
-      // Bakım/Arıza için mevcut cihazı güncelle
       deviceSerialNumber = _selectedDevice!.serialNumber;
       final updatedDevice = Device(
         id: _selectedDevice!.id,
@@ -452,14 +432,27 @@ class _NewServiceFormScreenState
 
     final List<String> photoUrls = [];
     final recordFolderId = const Uuid().v4();
+    
     if (_pickedImage != null) {
-      final storage = StorageService();
-      final fileName = 'img_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final url = await storage.uploadFile(
-        file: _pickedImage!,
-        storagePath: 'service_images/$recordFolderId/$fileName',
-      );
-      photoUrls.add(url);
+      try {
+        final storage = StorageService();
+        final fileName = 'img_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final url = await storage.uploadFile(
+          file: _pickedImage!,
+          storagePath: 'service_images/$recordFolderId/$fileName',
+        );
+        photoUrls.add(url);
+              } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Fotoğraf yüklenemedi, form fotoğrafsız kaydedilecek: $e'),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
     }
 
     final String historySerialNumber = deviceSerialNumber;
@@ -491,13 +484,11 @@ class _NewServiceFormScreenState
     );
 
     try {
-      // Tüm veritabanı işlemlerini eşzamanlı yap
       await Future.wait([
         ref.read(addServiceHistoryUseCaseProvider)(history),
         _updateStockQuantities(),
       ]);
       
-      // Provider'ları güncelle
       ref.invalidate(serviceHistoryListProvider);
       ref.invalidate(recentServiceHistoryProvider(3));
       ref.invalidate(devicesListProvider);
@@ -515,6 +506,8 @@ class _NewServiceFormScreenState
     }
     if (!mounted) return;
 
+    _isSaving = false;
+    
     Navigator.of(context).pop({
       'formTipi': _formTipi,
       'date': _date!,
@@ -535,15 +528,16 @@ class _NewServiceFormScreenState
           )
           .toList(),
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Kayıt başarıyla eklendi!'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    _isSaving = false;
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kayıt başarıyla eklendi!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   String _calculateWarrantyEndDate() {
@@ -730,6 +724,14 @@ class _NewServiceFormScreenState
                   _selectedDevice = null;
                   _deviceSearchController.clear();
                   _showDeviceSuggestions = false;
+                  
+                  // Tüm cihaz bilgilerini temizle
+                  _serialNumberController.clear();
+                  _deviceNameController.clear();
+                  _brandController.clear();
+                  _modelController.clear();
+                  _companyController.clear();
+                  _locationController.clear();
                 });
               },
               onShowSuggestions: () {
@@ -746,7 +748,7 @@ class _NewServiceFormScreenState
             ),
             const SizedBox(height: 18),
 
-            // Photo upload area
+
             Row(
               children: [
                 Expanded(
@@ -763,13 +765,13 @@ class _NewServiceFormScreenState
               ],
             ),
             const SizedBox(height: 18),
-            // Form Details
+
             const Text(
               'Form Detayları',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
             ),
             const SizedBox(height: 8),
-            // Installation Date header
+
             const Text(
               'Kurulum Tarihi',
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
@@ -811,7 +813,7 @@ class _NewServiceFormScreenState
             ),
             const SizedBox(height: 12),
 
-            // Garanti Bilgileri (Sadece Kurulum formunda göster)
+
             if (_formTipi == 0) ...[
               const Text(
                 'Garanti Süresi (Ay)',
@@ -841,7 +843,7 @@ class _NewServiceFormScreenState
               ),
               const SizedBox(height: 8),
 
-              // Garanti Bitiş Tarihi (Otomatik Hesaplanan)
+
               if (_date != null &&
                   _warrantyDurationController.text.isNotEmpty) ...[
                 Container(
@@ -883,7 +885,7 @@ class _NewServiceFormScreenState
               const SizedBox(height: 12),
             ],
 
-            // Technician header
+
             const Text(
               'Teknisyen',
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
@@ -909,13 +911,13 @@ class _NewServiceFormScreenState
               ),
             ),
             const SizedBox(height: 12),
-            // Used Parts header
+
             const Text(
               'Kullanılan Parçalar (Opsiyonel)',
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
             ),
             const SizedBox(height: 4),
-            // Part search box
+
             TextField(
               controller: _partSearchController,
               decoration: InputDecoration(
@@ -946,7 +948,7 @@ class _NewServiceFormScreenState
               onChanged: (val) => _filterParts(val),
             ),
             const SizedBox(height: 8),
-            // Diğer parça seçeneği
+
             Row(
               children: [
                 Expanded(
@@ -1058,7 +1060,7 @@ class _NewServiceFormScreenState
               ),
             ],
             const SizedBox(height: 8),
-            // Modern multi-part selection based on cards
+
             LayoutBuilder(
               builder: (context, constraints) {
                 return Column(
@@ -1434,7 +1436,7 @@ class _NewServiceFormScreenState
               },
             ),
             const SizedBox(height: 12),
-            // Description header
+
             const Text(
               'Açıklama',
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
@@ -1460,7 +1462,7 @@ class _NewServiceFormScreenState
               ),
             ),
             const SizedBox(height: 28),
-            // Save Button
+
             SizedBox(
               height: 48,
               child: ElevatedButton(

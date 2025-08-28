@@ -19,7 +19,7 @@ import 'package:provider/provider.dart' as provider;
 import 'providers/app_state_provider.dart';
 import 'providers/device_provider.dart';
 import 'providers/service_history_provider.dart';
-import 'providers/stock_provider.dart';
+
 import 'repositories/firestore_device_repository_v2.dart';
 import 'repositories/firestore_service_history_repository_v2.dart';
 
@@ -69,9 +69,7 @@ Future<void> main() async {
               repository: FirestoreServiceHistoryRepositoryV2(),
             ),
           ),
-          provider.ChangeNotifierProvider<StockProvider>(
-            create: (_) => StockProvider(),
-          ),
+
         ],
         child: const MyApp(),
       ),
