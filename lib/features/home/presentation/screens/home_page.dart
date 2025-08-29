@@ -82,10 +82,13 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.medical_services_rounded,
-                  color: Colors.white,
-                  size: isWide ? 28 : 24,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/app_icon/cence_logo.jpeg',
+                    width: isWide ? 28 : 24,
+                    height: isWide ? 28 : 24,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
