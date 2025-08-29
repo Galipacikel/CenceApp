@@ -87,6 +87,13 @@ class _NewServiceFormScreenState
   bool _isSaving = false;
   // Her sekme için cihaz alanları state'i
   late Map<int, DeviceFormData> _tabDeviceData;
+  // Her sekme için diğer form state'leri
+  late Map<int, String> _tabDescription;
+  late Map<int, DateTime?> _tabDate;
+  late Map<int, String> _tabWarranty;
+  late Map<int, List<SelectedPart>> _tabSelectedParts;
+  late Map<int, Uint8List?> _tabPhotoBytes;
+  late Map<int, XFile?> _tabPhotoFile;
 
   @override
   void initState() {
@@ -100,10 +107,17 @@ class _NewServiceFormScreenState
       1: DeviceFormData.empty(),
       2: DeviceFormData.empty(),
     };
+    _tabDescription = {0: '', 1: '', 2: ''};
+    _tabDate = {0: null, 1: null, 2: null};
+    _tabWarranty = {0: '24', 1: '24', 2: '24'};
+    _tabSelectedParts = {0: <SelectedPart>[], 1: <SelectedPart>[], 2: <SelectedPart>[]};
+    _tabPhotoBytes = {0: null, 1: null, 2: null};
+    _tabPhotoFile = {0: null, 1: null, 2: null};
     
     // Otomatik olarak bugünün tarihini ata
     _date = DateTime.now();
     _updateDateController();
+    _tabDate[_formTipi] = _date; // aktif sekmeye başlangıç tarihi yaz
     
     final inventoryAsync = ref.read(inventoryProvider);
     inventoryAsync.when(
@@ -131,12 +145,12 @@ class _NewServiceFormScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _technicianController.text = _getTechnicianName();
       // İlk sekmenin state'ini controller'lara yükle
-      _loadCurrentTabDeviceData();
+      _loadCurrentTabAll();
     });
   }
 
-  // Aktif sekmedeki controller içeriklerini sekmeye özgü state'e kaydet
-  void _saveCurrentTabDeviceData() {
+  // Aktif sekmedeki controller içeriklerini sekmeye özgü state'e kaydet (tüm alanlar)
+  void _saveCurrentTabAll() {
     final t = _tabDeviceData[_formTipi]!;
     t.selectedDevice = _selectedDevice;
     t.serialNumber = _serialNumberController.text;
@@ -145,10 +159,19 @@ class _NewServiceFormScreenState
     t.model = _modelController.text;
     t.company = _companyController.text;
     t.location = _locationController.text;
+
+    _tabDescription[_formTipi] = _descriptionController.text;
+    _tabDate[_formTipi] = _date;
+    _tabWarranty[_formTipi] = _warrantyDurationController.text;
+    _tabSelectedParts[_formTipi] = _selectedParts
+        .map((sp) => SelectedPart(part: sp.part, adet: sp.adet))
+        .toList();
+    _tabPhotoBytes[_formTipi] = _pickedImageBytes;
+    _tabPhotoFile[_formTipi] = _pickedImage;
   }
 
-  // Aktif sekme için kayıtlı state'i controller'lara yükle
-  void _loadCurrentTabDeviceData() {
+  // Aktif sekme için kayıtlı state'i controller'lara yükle (tüm alanlar)
+  void _loadCurrentTabAll() {
     final t = _tabDeviceData[_formTipi]!;
     setState(() {
       _selectedDevice = t.selectedDevice;
@@ -159,16 +182,31 @@ class _NewServiceFormScreenState
       _companyController.text = t.company;
       _locationController.text = t.location;
       _showDeviceSuggestions = false;
+
+      _descriptionController.text = _tabDescription[_formTipi] ?? '';
+      _date = _tabDate[_formTipi];
+      _updateDateController();
+      _warrantyDurationController.text = _tabWarranty[_formTipi] ?? '24';
+
+      // seçilen parçaları yükle
+      _selectedParts
+        ..clear()
+        ..addAll((_tabSelectedParts[_formTipi] ?? const <SelectedPart>[])
+            .map((sp) => SelectedPart(part: sp.part, adet: sp.adet)));
+
+      // fotoğraf
+      _pickedImageBytes = _tabPhotoBytes[_formTipi];
+      _pickedImage = _tabPhotoFile[_formTipi];
     });
   }
 
   // Sekme değiştirme: mevcut sekmeyi kaydet, yeni sekmeyi yükle
   void _switchFormType(int newType) {
-    _saveCurrentTabDeviceData();
+    _saveCurrentTabAll();
     setState(() {
       _formTipi = newType;
     });
-    _loadCurrentTabDeviceData();
+    _loadCurrentTabAll();
   }
 
   @override
@@ -316,12 +354,20 @@ class _NewServiceFormScreenState
       } else {
         _selectedParts.add(SelectedPart(part: part, adet: adet));
       }
+      // sekme bazlı parçalar state'ini güncelle
+      _tabSelectedParts[_formTipi] = _selectedParts
+          .map((sp) => SelectedPart(part: sp.part, adet: sp.adet))
+          .toList();
     });
   }
 
   void _removeSelectedPart(StockPart part) {
     setState(() {
       _selectedParts.removeWhere((sp) => sp.part.parcaKodu == part.parcaKodu);
+      // sekme bazlı parçalar state'ini güncelle
+      _tabSelectedParts[_formTipi] = _selectedParts
+          .map((sp) => SelectedPart(part: sp.part, adet: sp.adet))
+          .toList();
     });
   }
 
@@ -377,13 +423,17 @@ class _NewServiceFormScreenState
       _otherPartNameController.clear();
       _otherPartQuantityController.clear();
       _showOtherPartInput = false;
+      // sekme bazlı parçalar state'ini güncelle
+      _tabSelectedParts[_formTipi] = _selectedParts
+          .map((sp) => SelectedPart(part: sp.part, adet: sp.adet))
+          .toList();
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${customPart.parcaAdi} eklendi.'),
         backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -883,6 +933,7 @@ class _NewServiceFormScreenState
                   setState(() {
                     _date = picked;
                     _updateDateController();
+                    _tabDate[_formTipi] = _date; // sekme bazlı tarih güncelle
                   });
                 }
               },
@@ -929,6 +980,7 @@ class _NewServiceFormScreenState
                 onChanged: (value) {
                   // Garanti süresi değiştiğinde otomatik hesaplama yap
                   setState(() {});
+                  _tabWarranty[_formTipi] = value; // sekme bazlı garanti süresi güncelle
                 },
               ),
               const SizedBox(height: 8),
