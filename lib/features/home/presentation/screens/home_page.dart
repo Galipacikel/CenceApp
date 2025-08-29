@@ -54,8 +54,9 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isWide ? 90 : 70),
-        child: Container(
+-        preferredSize: Size.fromHeight(isWide ? 90 : 70),
++        preferredSize: Size.fromHeight(isWide ? 136 : 112),
+         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFF23408E),
             boxShadow: [
@@ -85,8 +86,10 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
                 child: ClipOval(
                   child: Image.asset(
                     'assets/app_icon/cence_logo.jpeg',
-                    width: isWide ? 28 : 24,
-                    height: isWide ? 28 : 24,
+-                    width: isWide ? 28 : 24,
+-                    height: isWide ? 28 : 24,
++                    width: isWide ? 84 : 72,
++                    height: isWide ? 84 : 72,
                     fit: BoxFit.cover,
                   ),
                 ),
