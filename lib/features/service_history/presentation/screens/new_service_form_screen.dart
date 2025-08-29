@@ -1192,86 +1192,84 @@ class _NewServiceFormScreenState
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Row(
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                  part.parcaAdi,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 15,
-                                                    color: isOutOfStock
-                                                        ? Colors.grey
-                                                        : Colors.black,
-                                                  ),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        part.parcaAdi,
+                                                        style: TextStyle(
+                                                          fontWeight: FontWeight.w600,
+                                                          fontSize: 15,
+                                                          color: isOutOfStock
+                                                              ? Colors.grey
+                                                              : Colors.black,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                    if (isOutOfStock)
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 2,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              Colors.red.shade100,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                        child: const Text(
+                                                          'Stokta Yok',
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontSize: 11,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    else if (part.stokAdedi <=
+                                                        part.criticalLevel)
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 2,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: Colors
+                                                              .orange
+                                                              .shade100,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                        child: const Text(
+                                                          'Kritik Seviye',
+                                                          style: TextStyle(
+                                                            color: Colors.orange,
+                                                            fontSize: 11,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                  ],
                                                 ),
-                                                if (isOutOfStock)
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                          left: 8.0,
-                                                        ),
-                                                    child: Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 2,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            Colors.red.shade100,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8,
-                                                            ),
-                                                      ),
-                                                      child: const Text(
-                                                        'Stokta Yok',
-                                                        style: TextStyle(
-                                                          color: Colors.red,
-                                                          fontSize: 11,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                else if (part.stokAdedi <=
-                                                    part.criticalLevel)
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                          left: 8.0,
-                                                        ),
-                                                    child: Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 2,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors
-                                                            .orange
-                                                            .shade100,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8,
-                                                            ),
-                                                      ),
-                                                      child: const Text(
-                                                        'Kritik Seviye',
-                                                        style: TextStyle(
-                                                          color: Colors.orange,
-                                                          fontSize: 11,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
                                               ],
                                             ),
                                             const SizedBox(height: 2),
-                                            Row(
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 4,
                                               children: [
                                                 Container(
                                                   padding:
@@ -1294,7 +1292,6 @@ class _NewServiceFormScreenState
                                                     ),
                                                   ),
                                                 ),
-                                                const SizedBox(width: 8),
                                                 Container(
                                                   padding:
                                                       const EdgeInsets.symmetric(
