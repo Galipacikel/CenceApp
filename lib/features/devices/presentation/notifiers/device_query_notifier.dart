@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:cence_app/models/device.dart';
-import 'package:cence_app/features/forms/use_cases.dart';
+import 'package:cence_app/features/devices/presentation/providers.dart';
 
 class DeviceQueryState {
   final String query;
@@ -78,13 +78,21 @@ class DeviceQueryNotifier extends StateNotifier<DeviceQueryState> {
 
     state = state.copyWith(isLoading: true);
     _debounce = Timer(const Duration(milliseconds: 350), () async {
-      if (q.trim().length < 2) {
+      final input = q.trim();
+      if (input.length < 2) {
         state = state.copyWith(isLoading: false, searchResults: <Device>[]);
         return;
       }
       try {
-        final search = _ref.read(formsSearchUseCaseProvider);
-        final results = await search(q.trim());
+        // Fetch devices from devices collection (via devicesListProvider)
+        final devices = await _ref.read(devicesListProvider.future);
+        final lower = input.toLowerCase();
+        final results = devices
+            .where((d) =>
+                d.modelName.toLowerCase().contains(lower) ||
+                d.serialNumber.toLowerCase().contains(lower) ||
+                d.customer.toLowerCase().contains(lower))
+            .toList();
         state = state.copyWith(searchResults: results, isLoading: false);
       } catch (_) {
         state = state.copyWith(isLoading: false);
@@ -120,9 +128,15 @@ class DeviceQueryNotifier extends StateNotifier<DeviceQueryState> {
   }
 
   Future<List<Device>> searchOnce(String q) async {
-    final search = _ref.read(formsSearchUseCaseProvider);
     try {
-      final results = await search(q.trim());
+      final devices = await _ref.read(devicesListProvider.future);
+      final lower = q.trim().toLowerCase();
+      final results = devices
+          .where((d) =>
+              d.modelName.toLowerCase().contains(lower) ||
+              d.serialNumber.toLowerCase().contains(lower) ||
+              d.customer.toLowerCase().contains(lower))
+          .toList();
       return results;
     } catch (_) {
       return <Device>[];
