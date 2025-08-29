@@ -37,6 +37,8 @@ Future<void> main() async {
   );
 
   if (kUseEmulators) {
+    // Eğer derleme zamanında --dart-define=USE_EMULATORS=true geçilirse
+    // Firebase servisleri yerel emülatörlere yönlenir. Web/Prod’da false bırakın.
     final host = defaultTargetPlatform == TargetPlatform.android
         ? '10.0.2.2'
         : 'localhost';

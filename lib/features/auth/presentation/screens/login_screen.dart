@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cence_app/services/firestore_paths.dart';
 import 'package:cence_app/services/username_auth_service.dart';
-// removed: import '../services/auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/features/home/presentation/screens/home_page.dart';
@@ -49,6 +48,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
