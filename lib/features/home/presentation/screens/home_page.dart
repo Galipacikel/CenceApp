@@ -50,11 +50,16 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
+    // Responsive logo sizing (2x of the original 28/24)
+    final double baseLogoSize = isWide ? 28.0 : 24.0;
+    final double logoSize = baseLogoSize * 2; // 2x enlargement
+    // AppBar height scales with logo size (start from original 90/70 and add the delta)
+    final double appBarHeight = (isWide ? 90.0 : 70.0) + (logoSize - baseLogoSize);
     final currentIndex = ref.watch(homeCurrentIndexProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(isWide ? 136 : 112),
+        preferredSize: Size.fromHeight(appBarHeight),
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFF23408E),
@@ -85,8 +90,8 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
                 child: ClipOval(
                   child: Image.asset(
                     'assets/app_icon/cence_logo.jpeg',
-                    width: isWide ? 84 : 72,
-                    height: isWide ? 84 : 72,
+                    width: logoSize,
+                    height: logoSize,
                     fit: BoxFit.cover,
                   ),
                 ),

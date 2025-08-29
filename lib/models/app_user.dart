@@ -29,7 +29,11 @@ class AppUser {
       email: data['email'] as String?,
       fullName: (data['full_name'] ?? data['fullName']) as String?,
       role: data['role'] as String?,
-      isAdminFlag: data['is_admin'] as bool? ?? data['isAdmin'] as bool?,
+      isAdminFlag: (data['is_admin'] is bool
+              ? data['is_admin'] as bool
+              : (data['isAdmin'] is bool
+                  ? data['isAdmin'] as bool
+                  : (data['admin'] is bool ? data['admin'] as bool : null))),
       createdAt: (data['created_at'] != null)
           ? DateTime.tryParse(data['created_at'].toString())
           : null,
