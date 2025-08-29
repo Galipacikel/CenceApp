@@ -14,7 +14,9 @@ class StorageService {
   }) async {
     final ref = _storage.ref(storagePath);
     final Uint8List bytes = await file.readAsBytes();
-    final task = await ref.putData(bytes);
+    // Ensure contentType is set so images render correctly across platforms
+    final metadata = SettableMetadata(contentType: 'image/jpeg');
+    final task = await ref.putData(bytes, metadata);
     final url = await task.ref.getDownloadURL();
     return url;
   }

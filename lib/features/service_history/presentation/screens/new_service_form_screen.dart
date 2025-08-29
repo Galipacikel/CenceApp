@@ -32,6 +32,29 @@ class SelectedPart {
   SelectedPart({required this.part, this.adet = 1});
 }
 
+// Tab bazlı cihaz alanı state'i için küçük bir veri sınıfı
+class DeviceFormData {
+  Device? selectedDevice;
+  String serialNumber;
+  String deviceName;
+  String brand;
+  String model;
+  String company;
+  String location;
+
+  DeviceFormData({
+    this.selectedDevice,
+    this.serialNumber = '',
+    this.deviceName = '',
+    this.brand = '',
+    this.model = '',
+    this.company = '',
+    this.location = '',
+  });
+
+  factory DeviceFormData.empty() => DeviceFormData();
+}
+
 class _NewServiceFormScreenState
     extends rp.ConsumerState<NewServiceFormScreen> {
   int _formTipi = 0;
@@ -62,12 +85,21 @@ class _NewServiceFormScreenState
   bool _showDeviceSuggestions = false;
   final List<SelectedPart> _selectedParts = [];
   bool _isSaving = false;
+  // Her sekme için cihaz alanları state'i
+  late Map<int, DeviceFormData> _tabDeviceData;
 
   @override
   void initState() {
     super.initState();
     _dateController = TextEditingController();
     _warrantyDurationController.text = '24';
+    
+    // Tab bazlı state'i başlat
+    _tabDeviceData = {
+      0: DeviceFormData.empty(),
+      1: DeviceFormData.empty(),
+      2: DeviceFormData.empty(),
+    };
     
     // Otomatik olarak bugünün tarihini ata
     _date = DateTime.now();
@@ -98,7 +130,45 @@ class _NewServiceFormScreenState
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _technicianController.text = _getTechnicianName();
+      // İlk sekmenin state'ini controller'lara yükle
+      _loadCurrentTabDeviceData();
     });
+  }
+
+  // Aktif sekmedeki controller içeriklerini sekmeye özgü state'e kaydet
+  void _saveCurrentTabDeviceData() {
+    final t = _tabDeviceData[_formTipi]!;
+    t.selectedDevice = _selectedDevice;
+    t.serialNumber = _serialNumberController.text;
+    t.deviceName = _deviceNameController.text;
+    t.brand = _brandController.text;
+    t.model = _modelController.text;
+    t.company = _companyController.text;
+    t.location = _locationController.text;
+  }
+
+  // Aktif sekme için kayıtlı state'i controller'lara yükle
+  void _loadCurrentTabDeviceData() {
+    final t = _tabDeviceData[_formTipi]!;
+    setState(() {
+      _selectedDevice = t.selectedDevice;
+      _serialNumberController.text = t.serialNumber;
+      _deviceNameController.text = t.deviceName;
+      _brandController.text = t.brand;
+      _modelController.text = t.model;
+      _companyController.text = t.company;
+      _locationController.text = t.location;
+      _showDeviceSuggestions = false;
+    });
+  }
+
+  // Sekme değiştirme: mevcut sekmeyi kaydet, yeni sekmeyi yükle
+  void _switchFormType(int newType) {
+    _saveCurrentTabDeviceData();
+    setState(() {
+      _formTipi = newType;
+    });
+    _loadCurrentTabDeviceData();
   }
 
   @override
@@ -170,6 +240,16 @@ class _NewServiceFormScreenState
       _brandController.text = device.modelName;
       _modelController.text = device.modelName;
       _companyController.text = device.customer;
+
+      // Aktif sekmenin state'ini güncelle
+      final t = _tabDeviceData[_formTipi]!;
+      t.selectedDevice = device;
+      t.serialNumber = device.serialNumber;
+      t.deviceName = device.modelName;
+      t.brand = device.modelName;
+      t.model = device.modelName;
+      t.company = device.customer;
+      // location alanını cihazdan türetecek veri yoksa mevcutu koru
     });
   }
 
@@ -311,7 +391,7 @@ class _NewServiceFormScreenState
   void _onKaydet() async {
     // Çift kaydetmeyi önle
     if (_isSaving) return;
-    _isSaving = true;
+    setState(() => _isSaving = true);
 
     final bool isInstallation = _formTipi == 0; // 0: Kurulum
 
@@ -325,7 +405,7 @@ class _NewServiceFormScreenState
           duration: Duration(seconds: 2),
         ),
       );
-      _isSaving = false;
+      setState(() => _isSaving = false);
       return;
     }
 
@@ -339,7 +419,7 @@ class _NewServiceFormScreenState
           duration: Duration(seconds: 2),
         ),
       );
-      _isSaving = false;
+      setState(() => _isSaving = false);
       return;
     }
 
@@ -351,7 +431,7 @@ class _NewServiceFormScreenState
           duration: Duration(seconds: 2),
         ),
       );
-      _isSaving = false;
+      setState(() => _isSaving = false);
       return;
     }
     if (_date == null) {
@@ -362,7 +442,7 @@ class _NewServiceFormScreenState
           duration: Duration(seconds: 2),
         ),
       );
-      _isSaving = false;
+      setState(() => _isSaving = false);
       return;
     }
     // Teknisyen adı otomatik doldurulduğu için kontrol etmeye gerek yok
@@ -501,12 +581,12 @@ class _NewServiceFormScreenState
           duration: const Duration(seconds: 2),
         ),
       );
-      _isSaving = false;
+      setState(() => _isSaving = false);
       return;
     }
     if (!mounted) return;
 
-    _isSaving = false;
+    setState(() => _isSaving = false);
     
     Navigator.of(context).pop({
       'formTipi': _formTipi,
@@ -689,21 +769,21 @@ class _NewServiceFormScreenState
                   label: 'Kurulum',
                   selected: _formTipi == 0,
                   color: const Color(0xFF23408E),
-                  onTap: () => setState(() => _formTipi = 0),
+                  onTap: () => _switchFormType(0),
                 ),
                 const SizedBox(width: 8),
                 FormTypeChip(
                   label: 'Bakım',
                   selected: _formTipi == 1,
                   color: const Color(0xFFFFC107),
-                  onTap: () => setState(() => _formTipi = 1),
+                  onTap: () => _switchFormType(1),
                 ),
                 const SizedBox(width: 8),
                 FormTypeChip(
                   label: 'Arıza',
                   selected: _formTipi == 2,
                   color: const Color(0xFFE53935),
-                  onTap: () => setState(() => _formTipi = 2),
+                  onTap: () => _switchFormType(2),
                 ),
               ],
             ),
@@ -732,6 +812,16 @@ class _NewServiceFormScreenState
                   _modelController.clear();
                   _companyController.clear();
                   _locationController.clear();
+
+                  // Aktif sekmenin state'ini de temizle
+                  final t = _tabDeviceData[_formTipi]!;
+                  t.selectedDevice = null;
+                  t.serialNumber = '';
+                  t.deviceName = '';
+                  t.brand = '';
+                  t.model = '';
+                  t.company = '';
+                  t.location = '';
                 });
               },
               onShowSuggestions: () {
@@ -1474,14 +1564,39 @@ class _NewServiceFormScreenState
                   elevation: 0,
                 ),
                 onPressed: _isSaving ? null : _onKaydet,
-                child: const Text(
-                  'Kaydet',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                child: _isSaving
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Kaydediliyor...',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Text(
+                        'Kaydet',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
               ),
             ),
           ],
