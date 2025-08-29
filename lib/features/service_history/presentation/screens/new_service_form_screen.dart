@@ -1214,7 +1214,10 @@ class _NewServiceFormScreenState
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: Colors.grey.shade200),
                       ),
-                      constraints: const BoxConstraints(maxHeight: 320),
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.4,
+                        minHeight: 200,
+                      ),
                       child: _filteredParts.isEmpty
                           ? const Padding(
                               padding: EdgeInsets.all(20),
@@ -1245,10 +1248,10 @@ class _NewServiceFormScreenState
                                 return AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   margin: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
+                                    horizontal: 8,
+                                    vertical: 6,
                                   ),
-                                  padding: const EdgeInsets.all(12),
+                                  padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     color: isOutOfStock
                                         ? Colors.grey.shade100
@@ -1336,14 +1339,18 @@ class _NewServiceFormScreenState
                                           children: [
                                             Row(
                                               children: [
-                                                Text(
-                                                  part.parcaAdi,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 15,
-                                                    color: isOutOfStock
-                                                        ? Colors.grey
-                                                        : Colors.black,
+                                                Flexible(
+                                                  child: Text(
+                                                    part.parcaAdi,
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: MediaQuery.of(context).size.width < 400 ? 13 : 15,
+                                                      color: isOutOfStock
+                                                          ? Colors.grey
+                                                          : Colors.black,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                    maxLines: 2,
                                                   ),
                                                 ),
                                                 if (isOutOfStock)
@@ -1413,7 +1420,9 @@ class _NewServiceFormScreenState
                                               ],
                                             ),
                                             const SizedBox(height: 2),
-                                            Row(
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 4,
                                               children: [
                                                 Container(
                                                   padding:
@@ -1434,9 +1443,9 @@ class _NewServiceFormScreenState
                                                       fontSize: 12,
                                                       color: Color(0xFF23408E),
                                                     ),
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
                                                 ),
-                                                const SizedBox(width: 8),
                                                 Container(
                                                   padding:
                                                       const EdgeInsets.symmetric(
@@ -1551,23 +1560,32 @@ class _NewServiceFormScreenState
                         padding: const EdgeInsets.only(top: 8.0, left: 2),
                         child: Wrap(
                           spacing: 8,
+                          runSpacing: 4,
                           children: _selectedParts
                               .map(
-                                (sp) => Chip(
-                                  label: Text(
-                                    '${sp.part.parcaAdi} x${sp.adet}',
+                                (sp) => ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 200),
+                                  child: Chip(
+                                    label: Flexible(
+                                      child: Text(
+                                        '${sp.part.parcaAdi} x${sp.adet}',
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    backgroundColor: const Color(0xFFE3F6ED),
+                                    labelStyle: const TextStyle(
+                                      color: Color(0xFF23408E),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                    deleteIcon: const Icon(
+                                      Icons.close,
+                                      size: 18,
+                                      color: Color(0xFF23408E),
+                                    ),
+                                    onDeleted: () => _removeSelectedPart(sp.part),
                                   ),
-                                  backgroundColor: const Color(0xFFE3F6ED),
-                                  labelStyle: const TextStyle(
-                                    color: Color(0xFF23408E),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  deleteIcon: const Icon(
-                                    Icons.close,
-                                    size: 18,
-                                    color: Color(0xFF23408E),
-                                  ),
-                                  onDeleted: () => _removeSelectedPart(sp.part),
                                 ),
                               )
                               .toList(),
