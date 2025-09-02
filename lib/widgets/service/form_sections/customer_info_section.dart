@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class CustomerInfoSection extends StatelessWidget {
   final TextEditingController companyController;
   final TextEditingController locationController;
+  final ValueChanged<String>? onCompanyChanged;
+  final ValueChanged<String>? onLocationChanged;
 
   const CustomerInfoSection({
     super.key,
     required this.companyController,
     required this.locationController,
+    this.onCompanyChanged,
+    this.onLocationChanged,
   });
 
   @override
@@ -30,6 +34,7 @@ class CustomerInfoSection extends StatelessWidget {
         TextField(
           controller: companyController,
           keyboardType: TextInputType.text,
+          onChanged: onCompanyChanged,
           decoration: InputDecoration(
             hintText: 'Firma adını girin',
             filled: true,
@@ -55,6 +60,7 @@ class CustomerInfoSection extends StatelessWidget {
         TextField(
           controller: locationController,
           keyboardType: TextInputType.text,
+          onChanged: onLocationChanged,
           decoration: InputDecoration(
             hintText: 'Lokasyon bilgisini girin',
             filled: true,

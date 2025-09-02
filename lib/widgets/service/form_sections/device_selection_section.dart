@@ -15,6 +15,11 @@ import '../../../models/device.dart';
     final VoidCallback onClearDevice;
     final VoidCallback onShowSuggestions;
     final bool isInstallation;
+    // New optional callbacks to notify field changes upward
+    final ValueChanged<String>? onSerialChanged;
+    final ValueChanged<String>? onDeviceNameChanged;
+    final ValueChanged<String>? onBrandChanged;
+    final ValueChanged<String>? onModelChanged;
 
     const DeviceSelectionSection({
       super.key,
@@ -31,6 +36,10 @@ import '../../../models/device.dart';
       required this.onClearDevice,
       required this.onShowSuggestions,
       this.isInstallation = false,
+      this.onSerialChanged,
+      this.onDeviceNameChanged,
+      this.onBrandChanged,
+      this.onModelChanged,
     });
 
   @override
@@ -133,7 +142,8 @@ import '../../../models/device.dart';
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
                 const SizedBox(height: 6),
-                Text('Model: ${selectedDevice!.modelName}'),
+                Text('Model: ${selectedDevice!.modelName}')
+                ,
                 Text('Seri No: ${selectedDevice!.serialNumber}'),
               ],
             ),
@@ -168,6 +178,7 @@ import '../../../models/device.dart';
         TextField(
           controller: serialNumberController,
           keyboardType: TextInputType.text,
+          onChanged: onSerialChanged,
           decoration: InputDecoration(
             hintText: 'Cihaz seri numarasını girin',
             filled: true,
@@ -193,6 +204,7 @@ import '../../../models/device.dart';
         TextField(
           controller: deviceNameController,
           keyboardType: TextInputType.text,
+          onChanged: onDeviceNameChanged,
           decoration: InputDecoration(
             hintText: 'Cihaz adını girin',
             filled: true,
@@ -218,6 +230,7 @@ import '../../../models/device.dart';
         TextField(
           controller: brandController,
           keyboardType: TextInputType.text,
+          onChanged: onBrandChanged,
           decoration: InputDecoration(
             hintText: 'Cihaz markasını girin',
             filled: true,
@@ -243,6 +256,7 @@ import '../../../models/device.dart';
         TextField(
           controller: modelController,
           keyboardType: TextInputType.text,
+          onChanged: onModelChanged,
           decoration: InputDecoration(
             hintText: 'Cihaz modelini girin',
             filled: true,

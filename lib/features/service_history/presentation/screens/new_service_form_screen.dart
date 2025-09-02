@@ -10,13 +10,17 @@ import 'package:cence_app/models/service_history.dart';
 import 'package:cence_app/models/stock_part.dart';
 import 'package:cence_app/widgets/service/form_sections/device_selection_section.dart';
 import 'package:cence_app/widgets/service/form_sections/customer_info_section.dart';
-import 'package:cence_app/widgets/service/form_widgets/form_type_chip.dart';
+import 'package:cence_app/widgets/service/form_widgets/form_type_selection.dart';
+import 'package:cence_app/widgets/service/form_widgets/submit_button.dart';
+import 'package:cence_app/features/service_history/application/new_service_form_notifier.dart';
+import 'package:cence_app/features/service_history/presentation/providers/new_service_form_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'package:cence_app/features/devices/providers.dart';
 import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
 import 'package:cence_app/features/devices/use_cases.dart';
 import 'package:cence_app/features/service_history/presentation/widgets/photo_picker.dart';
 import 'package:cence_app/features/service_history/providers.dart';
+import 'package:cence_app/widgets/service/form_sections/used_parts_section.dart';
 
 class NewServiceFormScreen extends rp.ConsumerStatefulWidget {
   const NewServiceFormScreen({super.key});
@@ -26,11 +30,7 @@ class NewServiceFormScreen extends rp.ConsumerStatefulWidget {
       _NewServiceFormScreenState();
 }
 
-class SelectedPart {
-  final StockPart part;
-  int adet;
-  SelectedPart({required this.part, this.adet = 1});
-}
+// Removed local SelectedPart; using provider SelectedPart from new_service_form_state.dart
 
 // Tab bazlı cihaz alanı state'i için küçük bir veri sınıfı
 class DeviceFormData {
@@ -72,26 +72,23 @@ class _NewServiceFormScreenState
   XFile? _pickedImage;
   Uint8List? _pickedImageBytes;
   final TextEditingController _warrantyDurationController = TextEditingController();
-  final TextEditingController _partSearchController = TextEditingController();
-  List<StockPart> _allParts = [];
-  List<StockPart> _filteredParts = [];
-  bool _showOtherPartInput = false;
-  final TextEditingController _otherPartNameController = TextEditingController();
-  final TextEditingController _otherPartQuantityController = TextEditingController();
+  // final TextEditingController _partSearchController = TextEditingController();
+  // List<StockPart> _allParts = [];
+  // List<StockPart> _filteredParts = [];
+  // bool _showOtherPartInput = false;
+  // final TextEditingController _otherPartNameController = TextEditingController();
+  // final TextEditingController _otherPartQuantityController = TextEditingController();
   Device? _selectedDevice;
   final TextEditingController _deviceSearchController = TextEditingController();
   List<Device> _allDevices = [];
   List<Device> _filteredDevices = [];
   bool _showDeviceSuggestions = false;
-  final List<SelectedPart> _selectedParts = [];
-  bool _isSaving = false;
   // Her sekme için cihaz alanları state'i
   late Map<int, DeviceFormData> _tabDeviceData;
   // Her sekme için diğer form state'leri
   late Map<int, String> _tabDescription;
   late Map<int, DateTime?> _tabDate;
   late Map<int, String> _tabWarranty;
-  late Map<int, List<SelectedPart>> _tabSelectedParts;
   late Map<int, Uint8List?> _tabPhotoBytes;
   late Map<int, XFile?> _tabPhotoFile;
 
@@ -100,6 +97,12 @@ class _NewServiceFormScreenState
     super.initState();
     _dateController = TextEditingController();
     _warrantyDurationController.text = '24';
+    // Provider state'ine başlangıç garanti süresini de yaz
+    try {
+      ref
+          .read(newServiceFormProvider.notifier)
+          .updateWarranty(_warrantyDurationController.text);
+    } catch (_) {}
     
     // Tab bazlı state'i başlat
     _tabDeviceData = {
@@ -110,7 +113,6 @@ class _NewServiceFormScreenState
     _tabDescription = {0: '', 1: '', 2: ''};
     _tabDate = {0: null, 1: null, 2: null};
     _tabWarranty = {0: '24', 1: '24', 2: '24'};
-    _tabSelectedParts = {0: <SelectedPart>[], 1: <SelectedPart>[], 2: <SelectedPart>[]};
     _tabPhotoBytes = {0: null, 1: null, 2: null};
     _tabPhotoFile = {0: null, 1: null, 2: null};
     
@@ -118,18 +120,14 @@ class _NewServiceFormScreenState
     _date = DateTime.now();
     _updateDateController();
     _tabDate[_formTipi] = _date; // aktif sekmeye başlangıç tarihi yaz
+    // Provider state'ini de güncelle
+    try {
+      if (_date != null) {
+        ref.read(newServiceFormProvider.notifier).updateDate(_date!);
+      }
+    } catch (_) {}
     
-    final inventoryAsync = ref.read(inventoryProvider);
-    inventoryAsync.when(
-      data: (inventory) {
-        setState(() {
-          _allParts = inventory.parts;
-          _filteredParts = inventory.parts;
-        });
-      },
-      loading: () {},
-      error: (e, st) {},
-    );
+
     final devicesAsync = ref.read(devicesListProvider);
     devicesAsync.when(
       data: (devices) {
@@ -144,6 +142,13 @@ class _NewServiceFormScreenState
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _technicianController.text = _getTechnicianName();
+      // Notifier state'ine teknisyen adını yaz
+      try {
+        final tech = _technicianController.text.trim();
+        if (tech.isNotEmpty) {
+          ref.read(newServiceFormProvider.notifier).setTechnicianName(tech);
+        }
+      } catch (_) {}
       // İlk sekmenin state'ini controller'lara yükle
       _loadCurrentTabAll();
     });
@@ -163,9 +168,6 @@ class _NewServiceFormScreenState
     _tabDescription[_formTipi] = _descriptionController.text;
     _tabDate[_formTipi] = _date;
     _tabWarranty[_formTipi] = _warrantyDurationController.text;
-    _tabSelectedParts[_formTipi] = _selectedParts
-        .map((sp) => SelectedPart(part: sp.part, adet: sp.adet))
-        .toList();
     _tabPhotoBytes[_formTipi] = _pickedImageBytes;
     _tabPhotoFile[_formTipi] = _pickedImage;
   }
@@ -188,16 +190,32 @@ class _NewServiceFormScreenState
       _updateDateController();
       _warrantyDurationController.text = _tabWarranty[_formTipi] ?? '24';
 
-      // seçilen parçaları yükle
-      _selectedParts
-        ..clear()
-        ..addAll((_tabSelectedParts[_formTipi] ?? const <SelectedPart>[])
-            .map((sp) => SelectedPart(part: sp.part, adet: sp.adet)));
-
       // fotoğraf
       _pickedImageBytes = _tabPhotoBytes[_formTipi];
       _pickedImage = _tabPhotoFile[_formTipi];
     });
+
+    // Provider ile senkronize et
+    try {
+      // Fotoğraf
+      ref.read(newServiceFormProvider.notifier).updatePhoto(
+            bytes: _pickedImageBytes,
+            file: _pickedImage,
+          );
+    } catch (_) {}
+    try {
+      // Tarih
+      if (_date != null) {
+        ref.read(newServiceFormProvider.notifier).updateDate(_date!);
+      }
+    } catch (_) {}
+    try {
+      // Garanti süresi
+      final w = _warrantyDurationController.text.trim();
+      if (w.isNotEmpty) {
+        ref.read(newServiceFormProvider.notifier).updateWarranty(w);
+      }
+    } catch (_) {}
   }
 
   // Sekme değiştirme: mevcut sekmeyi kaydet, yeni sekmeyi yükle
@@ -206,6 +224,9 @@ class _NewServiceFormScreenState
     setState(() {
       _formTipi = newType;
     });
+    try {
+      ref.read(newServiceFormProvider.notifier).setFormType(newType);
+    } catch (_) {}
     _loadCurrentTabAll();
   }
 
@@ -214,10 +235,10 @@ class _NewServiceFormScreenState
     _technicianController.dispose();
     _descriptionController.dispose();
     _dateController.dispose();
-    _partSearchController.dispose();
+    // _partSearchController.dispose(); // moved into UsedPartsSection
     _warrantyDurationController.dispose();
-    _otherPartNameController.dispose();
-    _otherPartQuantityController.dispose();
+    // _otherPartNameController.dispose(); // moved into UsedPartsSection
+    // _otherPartQuantityController.dispose(); // moved into UsedPartsSection
 
     // Yeni controller'ları dispose et
     _serialNumberController.dispose();
@@ -230,26 +251,6 @@ class _NewServiceFormScreenState
     super.dispose();
   }
 
-  void _filterParts(String query) {
-    setState(() {
-      List<StockPart> baseParts = _allParts;
-
-      if (query.isEmpty) {
-        _filteredParts = baseParts;
-      } else {
-        _filteredParts = baseParts
-            .where(
-              (part) =>
-                  part.parcaAdi.toLowerCase().contains(query.toLowerCase()) ||
-                  part.parcaKodu.toLowerCase().contains(query.toLowerCase()),
-            )
-            .toList();
-      }
-      _filteredParts.sort((a, b) {
-        return a.parcaAdi.compareTo(b.parcaAdi);
-      });
-    });
-  }
 
   void _filterDevices(String query) {
     setState(() {
@@ -289,6 +290,10 @@ class _NewServiceFormScreenState
       t.company = device.customer;
       // location alanını cihazdan türetecek veri yoksa mevcutu koru
     });
+    // Provider state'ini de güncelle
+    try {
+      ref.read(newServiceFormProvider.notifier).setSelectedDevice(device);
+    } catch (_) {}
   }
 
   // Kullanıcı profilinden teknisyen adını al
@@ -331,118 +336,9 @@ class _NewServiceFormScreenState
 
 
 
-  void _addOrUpdateSelectedPart(StockPart part, int adet) {
-    if (adet > part.stokAdedi) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.',
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
+  // Legacy _addOtherPart removed; functionality is handled by UsedPartsSection.
 
-    setState(() {
-      final idx = _selectedParts.indexWhere(
-        (sp) => sp.part.parcaKodu == part.parcaKodu,
-      );
-      if (idx >= 0) {
-        _selectedParts[idx].adet = adet;
-      } else {
-        _selectedParts.add(SelectedPart(part: part, adet: adet));
-      }
-      // sekme bazlı parçalar state'ini güncelle
-      _tabSelectedParts[_formTipi] = _selectedParts
-          .map((sp) => SelectedPart(part: sp.part, adet: sp.adet))
-          .toList();
-    });
-  }
-
-  void _removeSelectedPart(StockPart part) {
-    setState(() {
-      _selectedParts.removeWhere((sp) => sp.part.parcaKodu == part.parcaKodu);
-      // sekme bazlı parçalar state'ini güncelle
-      _tabSelectedParts[_formTipi] = _selectedParts
-          .map((sp) => SelectedPart(part: sp.part, adet: sp.adet))
-          .toList();
-    });
-  }
-
-  void _addOtherPart() {
-    if (_otherPartNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen parça adını girin.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    int quantity = 1;
-    try {
-      if (_otherPartQuantityController.text.isNotEmpty) {
-        quantity = int.parse(_otherPartQuantityController.text);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Geçerli bir miktar girin.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    if (quantity <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Miktar 0\'dan büyük olmalıdır.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    final customPart = StockPart(
-      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
-      parcaAdi: _otherPartNameController.text.trim(),
-      parcaKodu: 'ÖZEL',
-      stokAdedi: quantity,
-      criticalLevel: 0,
-    );
-
-    setState(() {
-      _selectedParts.add(SelectedPart(part: customPart, adet: quantity));
-      _otherPartNameController.clear();
-      _otherPartQuantityController.clear();
-      _showOtherPartInput = false;
-      // sekme bazlı parçalar state'ini güncelle
-      _tabSelectedParts[_formTipi] = _selectedParts
-          .map((sp) => SelectedPart(part: sp.part, adet: sp.adet))
-          .toList();
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${customPart.parcaAdi} eklendi.'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _onKaydet() async {
-    // Çift kaydetmeyi önle
-    if (_isSaving) return;
-    setState(() => _isSaving = true);
-
+  Future<void> _onKaydet() async {
     final bool isInstallation = _formTipi == 0; // 0: Kurulum
 
     final customerName = _companyController.text.trim();
@@ -455,7 +351,6 @@ class _NewServiceFormScreenState
           duration: Duration(seconds: 2),
         ),
       );
-      setState(() => _isSaving = false);
       return;
     }
 
@@ -469,7 +364,6 @@ class _NewServiceFormScreenState
           duration: Duration(seconds: 2),
         ),
       );
-      setState(() => _isSaving = false);
       return;
     }
 
@@ -481,7 +375,6 @@ class _NewServiceFormScreenState
           duration: Duration(seconds: 2),
         ),
       );
-      setState(() => _isSaving = false);
       return;
     }
     if (_date == null) {
@@ -492,13 +385,9 @@ class _NewServiceFormScreenState
           duration: Duration(seconds: 2),
         ),
       );
-      setState(() => _isSaving = false);
       return;
     }
-    // Teknisyen adı otomatik doldurulduğu için kontrol etmeye gerek yok
-    if (_technicianController.text.isEmpty) {
-      _technicianController.text = _getTechnicianName();
-    }
+    // Teknisyen adı ref.listen ile otomatik dolduruluyor
 
     int warrantyDuration = 24;
     try {
@@ -560,36 +449,42 @@ class _NewServiceFormScreenState
       await updateDevice(updatedDevice);
     }
 
+    // Provider state'inden fotoğrafı al
+    final providerState = ref.read(newServiceFormProvider);
+    final xfile = providerState.activeTabData.photoFile;
+
     final List<String> photoUrls = [];
     final recordFolderId = const Uuid().v4();
     
-    if (_pickedImage != null) {
+    if (xfile != null) {
       try {
         final storage = StorageService();
         final fileName = 'img_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final url = await storage.uploadFile(
-          file: _pickedImage!,
+          file: xfile,
           storagePath: 'service_images/$recordFolderId/$fileName',
         );
         photoUrls.add(url);
-              } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Fotoğraf yüklenemedi, form fotoğrafsız kaydedilecek: $e'),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Fotoğraf yüklenemedi, form fotoğrafsız kaydedilecek: $e'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
         }
+      }
     }
 
     final String historySerialNumber = deviceSerialNumber;
 
-    final technicianName = _technicianController.text.isNotEmpty
-        ? _technicianController.text
-        : _getTechnicianName();
+    // Teknisyen adını provider state'inden al
+    final technicianName = providerState.technicianName.isNotEmpty
+        ? providerState.technicianName
+        : _technicianController.text;
+
     final history = ServiceHistory(
       id: recordFolderId,
       date: _date!,
@@ -599,7 +494,7 @@ class _NewServiceFormScreenState
       technician: technicianName,
       status: _formTipi == 2 ? 'Arızalı' : 'Başarılı',
       location: _locationController.text,
-      kullanilanParcalar: _selectedParts
+      kullanilanParcalar: providerState.activeTabData.selectedParts
           .map(
             (sp) => StockPart(
               id: sp.part.id,
@@ -631,12 +526,9 @@ class _NewServiceFormScreenState
           duration: const Duration(seconds: 2),
         ),
       );
-      setState(() => _isSaving = false);
       return;
     }
     if (!mounted) return;
-
-    setState(() => _isSaving = false);
     
     Navigator.of(context).pop({
       'formTipi': _formTipi,
@@ -648,7 +540,7 @@ class _NewServiceFormScreenState
       'warrantyDuration': warrantyDuration,
       'warrantyStartDate': _date,
       'warrantyEndDate': warrantyEndDate,
-      'usedParts': _selectedParts
+      'usedParts': providerState.activeTabData.selectedParts
           .map(
             (sp) => {
               'partCode': sp.part.parcaKodu,
@@ -689,9 +581,10 @@ class _NewServiceFormScreenState
   }
 
   Future<void> _updateStockQuantities() async {
-    if (_selectedParts.isEmpty) return;
+    final providerParts = ref.read(newServiceFormProvider).activeTabData.selectedParts;
+    if (providerParts.isEmpty) return;
 
-    final updateTasks = _selectedParts
+    final updateTasks = providerParts
         .where((selectedPart) => selectedPart.part.id.isNotEmpty)
         .map((selectedPart) async {
       final part = selectedPart.part;
@@ -716,20 +609,6 @@ class _NewServiceFormScreenState
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(inventoryProvider, (prev, next) {
-      next.when(
-        data: (inventory) {
-          if (!mounted) return;
-          setState(() {
-            _allParts = inventory.parts;
-            _filteredParts = inventory.parts;
-          });
-        },
-        loading: () {},
-        error: (e, st) {},
-      );
-    });
-
     ref.listen(devicesListProvider, (prev, next) {
       next.when(
         data: (devices) {
@@ -753,11 +632,22 @@ class _NewServiceFormScreenState
             if (_technicianController.text != uname) {
               _technicianController.text = uname;
             }
+            // Notifier state'ine teknisyen adını yansıt
+            try {
+              ref.read(newServiceFormProvider.notifier).setTechnicianName(uname);
+            } catch (_) {}
           }
         },
         loading: () {},
         error: (_, __) {},
       );
+    });
+
+    // Provider tabanlı form tipi değişimini dinle ve ekran state'i ile senkronize et
+    ref.listen(newServiceFormProvider, (prev, next) {
+      if (prev?.formTipi != next.formTipi) {
+        _switchFormType(next.formTipi);
+      }
     });
 
     _updateDateController();
@@ -813,30 +703,7 @@ class _NewServiceFormScreenState
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
             ),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                FormTypeChip(
-                  label: 'Kurulum',
-                  selected: _formTipi == 0,
-                  color: const Color(0xFF23408E),
-                  onTap: () => _switchFormType(0),
-                ),
-                const SizedBox(width: 8),
-                FormTypeChip(
-                  label: 'Bakım',
-                  selected: _formTipi == 1,
-                  color: const Color(0xFFFFC107),
-                  onTap: () => _switchFormType(1),
-                ),
-                const SizedBox(width: 8),
-                FormTypeChip(
-                  label: 'Arıza',
-                  selected: _formTipi == 2,
-                  color: const Color(0xFFE53935),
-                  onTap: () => _switchFormType(2),
-                ),
-              ],
-            ),
+            const FormTypeSelection(),
             const SizedBox(height: 22),
             DeviceSelectionSection(
               deviceSearchController: _deviceSearchController,
@@ -873,6 +740,10 @@ class _NewServiceFormScreenState
                   t.company = '';
                   t.location = '';
                 });
+                // Provider state'ini temizle
+                try {
+                  ref.read(newServiceFormProvider.notifier).setSelectedDevice(null);
+                } catch (_) {}
               },
               onShowSuggestions: () {
                 setState(() {
@@ -880,11 +751,41 @@ class _NewServiceFormScreenState
                 });
               },
               isInstallation: _formTipi == 0,
+              onSerialChanged: (v) {
+                try {
+                  ref.read(newServiceFormProvider.notifier).updateDeviceFields(serialNumber: v);
+                } catch (_) {}
+              },
+              onDeviceNameChanged: (v) {
+                try {
+                  ref.read(newServiceFormProvider.notifier).updateDeviceFields(deviceName: v);
+                } catch (_) {}
+              },
+              onBrandChanged: (v) {
+                try {
+                  ref.read(newServiceFormProvider.notifier).updateDeviceFields(brand: v);
+                } catch (_) {}
+              },
+              onModelChanged: (v) {
+                try {
+                  ref.read(newServiceFormProvider.notifier).updateDeviceFields(model: v);
+                } catch (_) {}
+              },
             ),
             const SizedBox(height: 22),
             CustomerInfoSection(
               companyController: _companyController,
               locationController: _locationController,
+              onCompanyChanged: (v) {
+                try {
+                  ref.read(newServiceFormProvider.notifier).updateDeviceFields(company: v);
+                } catch (_) {}
+              },
+              onLocationChanged: (v) {
+                try {
+                  ref.read(newServiceFormProvider.notifier).updateDeviceFields(location: v);
+                } catch (_) {}
+              },
             ),
             const SizedBox(height: 18),
 
@@ -899,6 +800,13 @@ class _NewServiceFormScreenState
                         _pickedImage = selection?.file;
                         _pickedImageBytes = selection?.bytes;
                       });
+                      // Provider state'ine de yaz
+                      try {
+                        ref.read(newServiceFormProvider.notifier).updatePhoto(
+                          bytes: selection?.bytes,
+                          file: selection?.file,
+                        );
+                      } catch (_) {}
                     },
                   ),
                 ),
@@ -935,6 +843,10 @@ class _NewServiceFormScreenState
                     _updateDateController();
                     _tabDate[_formTipi] = _date; // sekme bazlı tarih güncelle
                   });
+                  // Provider state'i güncelle
+                  try {
+                    ref.read(newServiceFormProvider.notifier).updateDate(picked);
+                  } catch (_) {}
                 }
               },
               decoration: InputDecoration(
@@ -981,6 +893,10 @@ class _NewServiceFormScreenState
                   // Garanti süresi değiştiğinde otomatik hesaplama yap
                   setState(() {});
                   _tabWarranty[_formTipi] = value; // sekme bazlı garanti süresi güncelle
+                  // Provider state'i güncelle
+                  try {
+                    ref.read(newServiceFormProvider.notifier).updateWarranty(value);
+                  } catch (_) {}
                 },
               ),
               const SizedBox(height: 8),
@@ -1060,541 +976,7 @@ class _NewServiceFormScreenState
             ),
             const SizedBox(height: 4),
 
-            TextField(
-              controller: _partSearchController,
-              decoration: InputDecoration(
-                hintText: 'Parça adı veya kodu ile ara...',
-                prefixIcon: Icon(Icons.search, color: Color(0xFF23408E)),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                suffixIcon: _partSearchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Color(0xFF23408E)),
-                        onPressed: () {
-                          setState(() {
-                            _partSearchController.clear();
-                            _filterParts('');
-                          });
-                        },
-                      )
-                    : null,
-              ),
-              onChanged: (val) => _filterParts(val),
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        _showOtherPartInput = !_showOtherPartInput;
-                        if (!_showOtherPartInput) {
-                          _otherPartNameController.clear();
-                          _otherPartQuantityController.clear();
-                        }
-                      });
-                    },
-                    icon: Icon(
-                      _showOtherPartInput ? Icons.remove : Icons.add,
-                      color: Color(0xFF23408E),
-                    ),
-                    label: Text(
-                      _showOtherPartInput ? 'İptal' : 'Diğer Parça Ekle',
-                      style: TextStyle(color: Color(0xFF23408E)),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Color(0xFF23408E)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (_showOtherPartInput) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Özel Parça Ekle',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Color(0xFF23408E),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _otherPartNameController,
-                      decoration: InputDecoration(
-                        hintText: 'Parça adını girin...',
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _otherPartQuantityController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              hintText: 'Miktar (varsayılan: 1)',
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 12,
-                                horizontal: 12,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: _addOtherPart,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF23408E),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            'Ekle',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: 8),
-
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.4,
-                        minHeight: 200,
-                      ),
-                      child: _filteredParts.isEmpty
-                          ? const Padding(
-                              padding: EdgeInsets.all(20),
-                              child: Center(
-                                child: Text(
-                                  'Aramanıza uygun parça bulunamadı',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                              ),
-                            )
-                          : ListView.separated(
-                              shrinkWrap: true,
-                              itemCount: _filteredParts.length,
-                              separatorBuilder: (_, __) => Divider(
-                                height: 1,
-                                color: Colors.grey.shade100,
-                              ),
-                              itemBuilder: (context, index) {
-                                final part = _filteredParts[index];
-                                final selected = _selectedParts.firstWhere(
-                                  (sp) => sp.part.parcaKodu == part.parcaKodu,
-                                  orElse: () =>
-                                      SelectedPart(part: part, adet: 0),
-                                );
-                                final isSelected = selected.adet > 0;
-                                final isOutOfStock = part.stokAdedi == 0;
-                                // final isCriticalLevel = part.stokAdedi <= part.criticalLevel && part.stokAdedi > 0;
-                                return AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 6,
-                                  ),
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: isOutOfStock
-                                        ? Colors.grey.shade100
-                                        : isSelected
-                                        ? const Color(0xFFE3F6ED)
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? const Color(0xFF43A047)
-                                          : isOutOfStock
-                                          ? Colors.grey.shade300
-                                          : Colors.grey.shade200,
-                                      width: isSelected ? 2 : 1,
-                                    ),
-                                    boxShadow: [
-                                      if (isSelected)
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFF43A047,
-                                          ).withAlpha(20),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      GestureDetector(
-                                        onTap: isOutOfStock
-                                            ? () {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      '${part.parcaAdi} stokta bulunmuyor.',
-                                                    ),
-                                                    backgroundColor: Colors.red,
-                                                    duration: const Duration(
-                                                      seconds: 2,
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                            : () {
-                                                if (isSelected) {
-                                                  _removeSelectedPart(part);
-                                                } else {
-                                                  _addOrUpdateSelectedPart(
-                                                    part,
-                                                    1,
-                                                  );
-                                                }
-                                              },
-                                        child: Container(
-                                          width: 28,
-                                          height: 28,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: isSelected
-                                                  ? const Color(0xFF43A047)
-                                                  : Colors.grey.shade400,
-                                              width: 2,
-                                            ),
-                                            color: isSelected
-                                                ? const Color(0xFF43A047)
-                                                : Colors.white,
-                                          ),
-                                          child: isSelected
-                                              ? const Icon(
-                                                  Icons.check,
-                                                  color: Colors.white,
-                                                  size: 18,
-                                                )
-                                              : null,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Flexible(
-                                                  child: Text(
-                                                    part.parcaAdi,
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: MediaQuery.of(context).size.width < 400 ? 13 : 15,
-                                                      color: isOutOfStock
-                                                          ? Colors.grey
-                                                          : Colors.black,
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
-                                                    maxLines: 2,
-                                                  ),
-                                                ),
-                                                if (isOutOfStock)
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                          left: 8.0,
-                                                        ),
-                                                    child: Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 2,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            Colors.red.shade100,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8,
-                                                            ),
-                                                      ),
-                                                      child: const Text(
-                                                        'Stokta Yok',
-                                                        style: TextStyle(
-                                                          color: Colors.red,
-                                                          fontSize: 11,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                else if (part.stokAdedi <=
-                                                    part.criticalLevel)
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                          left: 8.0,
-                                                        ),
-                                                    child: Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 8,
-                                                            vertical: 2,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors
-                                                            .orange
-                                                            .shade100,
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8,
-                                                            ),
-                                                      ),
-                                                      child: const Text(
-                                                        'Kritik Seviye',
-                                                        style: TextStyle(
-                                                          color: Colors.orange,
-                                                          fontSize: 11,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Wrap(
-                                              spacing: 8,
-                                              runSpacing: 4,
-                                              children: [
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 7,
-                                                        vertical: 2,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey.shade100,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    'Kod: ${part.parcaKodu}',
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Color(0xFF23408E),
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 7,
-                                                        vertical: 2,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: part.stokAdedi == 0
-                                                        ? Colors.red.shade100
-                                                        : part.stokAdedi <=
-                                                              part.criticalLevel
-                                                        ? Colors.orange.shade100
-                                                        : Colors.grey.shade100,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    'Stok: ${part.stokAdedi}',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: part.stokAdedi == 0
-                                                          ? Colors.red
-                                                          : part.stokAdedi <=
-                                                                part.criticalLevel
-                                                          ? Colors.orange
-                                                          : const Color(
-                                                              0xFF23408E,
-                                                            ),
-                                                      fontWeight:
-                                                          part.stokAdedi == 0 ||
-                                                              part.stokAdedi <=
-                                                                  part.criticalLevel
-                                                          ? FontWeight.bold
-                                                          : FontWeight.normal,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (!isOutOfStock && isSelected)
-                                        Row(
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.remove_circle_outline,
-                                                size: 24,
-                                                color: Color(0xFF23408E),
-                                              ),
-                                              splashRadius: 20,
-                                              onPressed: selected.adet > 1
-                                                  ? () =>
-                                                        _addOrUpdateSelectedPart(
-                                                          part,
-                                                          selected.adet - 1,
-                                                        )
-                                                  : null,
-                                            ),
-                                            Text(
-                                              '${selected.adet}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.add_circle_outline,
-                                                size: 24,
-                                                color: Color(0xFF23408E),
-                                              ),
-                                              splashRadius: 20,
-                                              onPressed:
-                                                  part.stokAdedi > selected.adet
-                                                  ? () =>
-                                                        _addOrUpdateSelectedPart(
-                                                          part,
-                                                          selected.adet + 1,
-                                                        )
-                                                  : () {
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            'Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.',
-                                                          ),
-                                                          backgroundColor:
-                                                              Colors.red,
-                                                          duration:
-                                                              const Duration(
-                                                                seconds: 2,
-                                                              ),
-                                                        ),
-                                                      );
-                                                    },
-                                            ),
-                                          ],
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                    if (_selectedParts.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0, left: 2),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: _selectedParts
-                              .map(
-                                (sp) => ConstrainedBox(
-                                  constraints: const BoxConstraints(maxWidth: 200),
-                                  child: Chip(
-                                    label: Flexible(
-                                      child: Text(
-                                        '${sp.part.parcaAdi} x${sp.adet}',
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                    backgroundColor: const Color(0xFFE3F6ED),
-                                    labelStyle: const TextStyle(
-                                      color: Color(0xFF23408E),
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12,
-                                    ),
-                                    deleteIcon: const Icon(
-                                      Icons.close,
-                                      size: 18,
-                                      color: Color(0xFF23408E),
-                                    ),
-                                    onDeleted: () => _removeSelectedPart(sp.part),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
+            const UsedPartsSection(),
             const SizedBox(height: 12),
 
             const Text(
@@ -1604,6 +986,11 @@ class _NewServiceFormScreenState
             const SizedBox(height: 4),
             TextField(
               controller: _descriptionController,
+              onChanged: (value) {
+                try {
+                  ref.read(newServiceFormProvider.notifier).updateDescription(value);
+                } catch (_) {}
+              },
               keyboardType: TextInputType.text,
               minLines: 3,
               maxLines: 5,
@@ -1623,52 +1010,7 @@ class _NewServiceFormScreenState
             ),
             const SizedBox(height: 28),
 
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF23408E),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                onPressed: _isSaving ? null : _onKaydet,
-                child: _isSaving
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Text(
-                            'Kaydediliyor...',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      )
-                    : const Text(
-                        'Kaydet',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-              ),
-            ),
+            SubmitButton(onSubmit: _onKaydet),
           ],
         ),
       ),
