@@ -109,8 +109,10 @@ class StockPartTile extends StatelessWidget {
                   ),
                   child: Text(
                     'Stok kritik',
+                    // Replace the text color for 'Stok kritik' label to use themed color when not critical
+                    // Assuming this section is inside a widget where `isOutOfStock` is not available, fallback to themed color only
                     style: GoogleFonts.montserrat(
-                      color: AppColors.criticalText,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),

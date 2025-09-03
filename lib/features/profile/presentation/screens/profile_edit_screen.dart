@@ -276,7 +276,7 @@ class _ProfileInfoField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color textColor = const Color(0xFF232946);
+    final Color textColor = Theme.of(context).colorScheme.onSurface;
     final Color subtitleColor = const Color(0xFF4A4A4A);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -121,7 +121,7 @@ class StokTakibiScreen extends ConsumerWidget {
         ),
         indicatorSize: TabBarIndicatorSize.tab,
           labelColor: Colors.white,
-        unselectedLabelColor: AppColors.textColor.withAlpha(179),
+        unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withAlpha(179),
         labelStyle: GoogleFonts.montserrat(
           fontWeight: FontWeight.w600,
           fontSize: 15,

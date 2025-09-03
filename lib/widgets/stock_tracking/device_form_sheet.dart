@@ -83,7 +83,7 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
                 style: GoogleFonts.montserrat(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 20),
