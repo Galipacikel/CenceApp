@@ -266,7 +266,7 @@ class NewServiceFormScreen extends HookConsumerWidget {
               decoration: InputDecoration(
                 hintText: 'Teknisyen adı otomatik doldurulur',
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(
                   vertical: 16,
                   horizontal: 14,
