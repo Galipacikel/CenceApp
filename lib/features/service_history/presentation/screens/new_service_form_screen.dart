@@ -199,8 +199,10 @@ class NewServiceFormScreen extends HookConsumerWidget {
               TextField(
                 controller: warrantyController,
                 keyboardType: TextInputType.number,
+                style: const TextStyle(color: Colors.black87),
                 decoration: InputDecoration(
                   hintText: '24',
+                  hintStyle: const TextStyle(color: Colors.black54),
                   filled: true,
                   fillColor: Colors.white,
                   contentPadding: const EdgeInsets.symmetric(
@@ -263,8 +265,10 @@ class NewServiceFormScreen extends HookConsumerWidget {
               controller: useTextEditingController(text: formState.technicianName),
               readOnly: true,
               keyboardType: TextInputType.text,
+              style: const TextStyle(color: Colors.black87),
               decoration: InputDecoration(
                 hintText: 'Teknisyen adı otomatik doldurulur',
+                hintStyle: const TextStyle(color: Colors.black54),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(
@@ -300,8 +304,10 @@ class NewServiceFormScreen extends HookConsumerWidget {
               keyboardType: TextInputType.text,
               minLines: 3,
               maxLines: 5,
+              style: const TextStyle(color: Colors.black87),
               decoration: InputDecoration(
                 hintText: 'Yapılan işlemi ve notlarınızı buraya yazın...',
+                hintStyle: const TextStyle(color: Colors.black54),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(
