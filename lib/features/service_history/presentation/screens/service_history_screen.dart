@@ -35,30 +35,60 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
   }
 
   void _updateSuccessfulRecords() async {
-    final serviceHistoryAsync = ref.read(serviceHistoryListProvider);
-    serviceHistoryAsync.whenData((list) async {
-      for (var history in list) {
-        if (history.status == 'Başarılı') {
-          final updatedHistory = ServiceHistory(
-            id: history.id,
-            date: history.date,
-            serialNumber: history.serialNumber,
-            musteri: history.musteri,
-            description: history.description,
-            technician: history.technician,
-            status: 'Kurulum',
-            location: history.location,
-            kullanilanParcalar: history.kullanilanParcalar,
-            photos: history.photos,
-          );
-          
-          final update = ref.read(updateServiceHistoryUseCaseProvider);
-          await update(history.id, updatedHistory);
+    try {
+      final serviceHistoryAsync = ref.read(serviceHistoryListProvider);
+      await serviceHistoryAsync.whenData((list) async {
+        int updatedCount = 0;
+        for (var history in list) {
+          if (history.status == 'Başarılı') {
+            final updatedHistory = ServiceHistory(
+              id: history.id,
+              date: history.date,
+              serialNumber: history.serialNumber,
+              musteri: history.musteri,
+              description: history.description,
+              technician: history.technician,
+              status: 'Kurulum',
+              location: history.location,
+              kullanilanParcalar: history.kullanilanParcalar,
+              photos: history.photos,
+            );
+            
+            final update = ref.read(updateServiceHistoryUseCaseProvider);
+            await update(history.id, updatedHistory);
+            updatedCount++;
+          }
         }
+        // Listeyi yenile
+        ref.invalidate(serviceHistoryListProvider);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$updatedCount kayıt güncellendi'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Güncelleme sırasında hata: $e'),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
       }
-      // Listeyi yenile
-      ref.invalidate(serviceHistoryListProvider);
-    });
+    }
   }
 
   // Sıralama seçenekleri
@@ -299,6 +329,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
+    final isAdmin = ref.watch(isAdminProvider);
     final asyncList = ref.watch(serviceHistoryListProvider);
 
     return Scaffold(
@@ -346,7 +377,17 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                   ),
                 ),
               ),
-              if (!_isSelectionMode)
+              if (!_isSelectionMode) ...[  
+                if (isAdmin)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.update_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    onPressed: _updateSuccessfulRecords,
+                    tooltip: 'Başarılı kayıtları Kurulum olarak güncelle',
+                  ),
                 IconButton(
                   icon: const Icon(
                     Icons.select_all,
@@ -356,6 +397,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                   onPressed: _toggleSelectionMode,
                   tooltip: 'Toplu Seçim',
                 ),
+              ],
               if (_isSelectionMode) ...[
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.white, size: 24),
