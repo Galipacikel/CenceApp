@@ -61,7 +61,7 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
         (
           controller: _companyController,
           keyboardType: TextInputType.text,
-          style: const TextStyle(color: Colors.black87),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           onChanged: (v) {
             try {
               ref.read(newServiceFormProvider.notifier).updateDeviceFields(company: v);
@@ -69,9 +69,9 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
           },
           decoration: InputDecoration(
             hintText: 'Firma adını girin',
-            hintStyle: const TextStyle(color: Colors.black54),
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(
               vertical: 16,
               horizontal: 14,
@@ -93,7 +93,7 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
         TextField(
           controller: _locationController,
           keyboardType: TextInputType.text,
-          style: const TextStyle(color: Colors.black87),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           onChanged: (v) {
             try {
               ref.read(newServiceFormProvider.notifier).updateDeviceFields(location: v);
@@ -101,9 +101,9 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
           },
           decoration: InputDecoration(
             hintText: 'Lokasyon bilgisini girin',
-            hintStyle: const TextStyle(color: Colors.black54),
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(
               vertical: 16,
               horizontal: 14,
