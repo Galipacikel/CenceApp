@@ -20,17 +20,10 @@ class FormTypeSelection extends ConsumerWidget {
         ),
         const SizedBox(width: 8),
         _FormTypeChip(
-          label: 'Bakım',
-          selected: formType == 1,
-          color: const Color(0xFFFFC107),
-          onTap: () => notifier.setFormType(1),
-        ),
-        const SizedBox(width: 8),
-        _FormTypeChip(
           label: 'Arıza',
-          selected: formType == 2,
+          selected: formType != 0, // only two types now: kurulum or arıza
           color: const Color(0xFFE53935),
-          onTap: () => notifier.setFormType(2),
+          onTap: () => notifier.setFormType(1),
         ),
       ],
     );
