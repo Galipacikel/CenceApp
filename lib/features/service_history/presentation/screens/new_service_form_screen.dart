@@ -11,6 +11,9 @@ import 'package:cence_app/features/service_history/application/new_service_form_
 import 'package:cence_app/features/service_history/presentation/widgets/photo_picker.dart';
 import 'package:cence_app/widgets/service/form_sections/used_parts_section.dart';
 import 'package:cence_app/features/service_history/presentation/providers/new_service_form_state.dart';
+import 'package:cence_app/models/service_history.dart';
+import 'package:cence_app/models/stock_part.dart';
+import 'package:cence_app/features/home/presentation/screens/home_page.dart';
 
 class NewServiceFormScreen extends HookConsumerWidget {
   const NewServiceFormScreen({super.key});
@@ -322,7 +325,78 @@ class NewServiceFormScreen extends HookConsumerWidget {
             ),
             const SizedBox(height: 28),
 
-            const SubmitButton(),
+            SubmitButton(
+              onSubmit: () async {
+                final t = ref.read(newServiceFormProvider).activeTabData;
+                final form = ref.read(newServiceFormProvider);
+                
+                final musteri = (t.company ?? '').trim();
+                final deviceLabel = [
+                  (t.deviceName ?? '').trim(),
+                  (t.serialNumber ?? '').trim(),
+                ].where((e) => e.isNotEmpty).join(' ').trim();
+                
+                if (musteri.isEmpty || deviceLabel.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lütfen Firma ve Cihaz bilgilerini doldurun.'),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                  return;
+                }
+                
+                final parts = t.selectedParts
+                    .map((sp) => StockPart(
+                          id: sp.part.id,
+                          parcaAdi: sp.part.parcaAdi,
+                          parcaKodu: sp.part.parcaKodu,
+                          stokAdedi: sp.adet,
+                          criticalLevel: sp.part.criticalLevel,
+                        ))
+                    .toList();
+                
+                final history = ServiceHistory(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  date: t.date ?? DateTime.now(),
+                  serialNumber: deviceLabel,
+                  musteri: musteri,
+                  description: ((t.description ?? '').trim().isEmpty)
+                      ? '-'
+                      : (t.description ?? '').trim(),
+                  technician: (form.technicianName.trim().isEmpty)
+                      ? '-'
+                      : form.technicianName.trim(),
+                  status: form.formTipi == 0 ? 'Kurulum' : 'Arıza',
+                  location: (t.location ?? ''),
+                  kullanilanParcalar: parts,
+                  photos: const [],
+                );
+                
+                try {
+                  await notifier.saveHistoryAndDeductStock(history);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Kayıt başarılı'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const HomePage()),
+                    (route) => false,
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Kayıt başarısız: $e'),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+            ),
           ],
         ),
       ),

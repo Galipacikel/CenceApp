@@ -9,7 +9,7 @@ class HelpCenterScreen extends StatelessWidget {
     final Color primaryBlue = const Color(0xFF23408E);
     final Color background = const Color(0xFFF7F9FC);
     final Color cardColor = Colors.white;
-    final Color textColor = const Color(0xFF232946);
+    final Color textColor = Theme.of(context).colorScheme.onSurface;
     final Color subtitleColor = const Color(0xFF4A4A4A);
     final double cardRadius = 18;
     final isWide = MediaQuery.of(context).size.width > 600;
