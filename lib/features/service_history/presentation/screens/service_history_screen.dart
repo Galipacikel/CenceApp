@@ -632,11 +632,11 @@ class _ServisKaydiCard extends StatelessWidget {
   Color getStatusBgColor(String status) {
     switch (status) {
       case 'Kurulum':
-        return const Color(0xFF43A047);
+        return Colors.green.shade800;
       case 'Arıza':
-        return const Color(0xFFE53935);
+        return Colors.red.shade800;
       default:
-        return const Color(0xFF43A047);
+        return Colors.grey.shade800;
     }
   }
 

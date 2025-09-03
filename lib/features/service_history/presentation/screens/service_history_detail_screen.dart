@@ -81,14 +81,12 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
 
   Color getStatusBgColor(String status) {
     switch (status) {
-      case 'Başarılı':
-        return const Color(0xFF43A047);
-      case 'Beklemede':
-        return const Color(0xFFFFC107);
-      case 'Arızalı':
-        return const Color(0xFFE53935);
+      case 'Kurulum':
+        return Colors.green.shade800;
+      case 'Arıza':
+        return Colors.red.shade800;
       default:
-        return const Color(0xFF43A047);
+        return Colors.grey.shade800;
     }
   }
 
@@ -98,12 +96,10 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
 
   String getStatusLabel(String status) {
     switch (status) {
-      case 'Başarılı':
-        return 'Başarılı';
-      case 'Beklemede':
-        return 'Beklemede';
-      case 'Arızalı':
-        return 'Arızalı';
+      case 'Kurulum':
+        return 'Kurulum';
+      case 'Arıza':
+        return 'Arıza';
       default:
         return status;
     }
