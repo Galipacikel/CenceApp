@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:cence_app/features/devices/presentation/providers.dart';
+import 'package:cence_app/models/device.dart';
 import 'package:cence_app/features/service_history/application/new_service_form_notifier.dart';
 import 'package:cence_app/features/service_history/presentation/providers/new_service_form_state.dart';
 
@@ -12,7 +13,6 @@ class DeviceSelectionSection extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final formState = ref.watch(newServiceFormProvider);
     final notifier = ref.read(newServiceFormProvider.notifier);
-    final isInstallation = formState.formTipi == 0;
 
     // Hooks-based controllers
     final deviceSearchController = useTextEditingController();
@@ -25,8 +25,31 @@ class DeviceSelectionSection extends HookConsumerWidget {
 
     // Device search query and results
     final query = deviceSearchController.text;
-    final filteredDevices = ref.watch(devicesSearchProvider(query));
+    // Watch all devices to build a more flexible suggestion logic
+    final asyncDevices = ref.watch(devicesListProvider);
     final selectedDevice = formState.activeTabData.selectedDevice;
+    final filteredDevices = asyncDevices.maybeWhen(
+      data: (devices) {
+        final q = query.trim().toLowerCase();
+        // If no query, show all devices
+        if (q.isEmpty) return devices;
+        // If a device is already selected and the query equals that selection's model or serial,
+        // show all devices again so that the user can easily change their selection.
+        if (selectedDevice != null &&
+            (q == selectedDevice.modelName.toLowerCase() ||
+             q == selectedDevice.serialNumber.toLowerCase())) {
+          return devices;
+        }
+        return devices
+            .where(
+              (d) => d.modelName.toLowerCase().contains(q) ||
+                  d.serialNumber.toLowerCase().contains(q) ||
+                  d.customer.toLowerCase().contains(q),
+            )
+            .toList();
+      },
+      orElse: () => const <Device>[],
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,21 +60,20 @@ class DeviceSelectionSection extends HookConsumerWidget {
         ),
         const SizedBox(height: 16),
 
-        if (!isInstallation) ...[
-          const Text(
+        const Text(
             'Cihaz Seç',
             style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
           ),
           const SizedBox(height: 4),
-        ],
-        if (!isInstallation)
-          TextField(
+        TextField(
             controller: deviceSearchController,
             keyboardType: TextInputType.text,
+            style: const TextStyle(color: Colors.black87),
             onTap: () => showDeviceSuggestions.value = true,
             onChanged: (_) => showDeviceSuggestions.value = true,
             decoration: InputDecoration(
               hintText: 'Cihaz ara (model veya seri no)',
+              hintStyle: const TextStyle(color: Colors.black54),
               filled: true,
               fillColor: Colors.white,
               contentPadding: const EdgeInsets.symmetric(
@@ -67,7 +89,7 @@ class DeviceSelectionSection extends HookConsumerWidget {
                       icon: const Icon(Icons.clear),
                       onPressed: () {
                         deviceSearchController.clear();
-                        showDeviceSuggestions.value = false;
+                        showDeviceSuggestions.value = true; // yeniden listeyi göster
                         serialNumberController.clear();
                         deviceNameController.clear();
                         brandController.clear();
@@ -78,9 +100,9 @@ class DeviceSelectionSection extends HookConsumerWidget {
                   : null,
             ),
           ),
-        if (!isInstallation) const SizedBox(height: 8),
+        const SizedBox(height: 8),
 
-        if (!isInstallation && showDeviceSuggestions.value)
+        if (showDeviceSuggestions.value)
           Container(
             constraints: const BoxConstraints(maxHeight: 220),
             decoration: BoxDecoration(
@@ -107,8 +129,8 @@ class DeviceSelectionSection extends HookConsumerWidget {
                       final d = filteredDevices[index];
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        title: Text(d.modelName),
-                        subtitle: Text(d.serialNumber),
+                        title: Text(d.modelName, style: const TextStyle(color: Colors.black87)),
+                        subtitle: Text(d.serialNumber, style: const TextStyle(color: Colors.black87)),
                         onTap: () {
                           notifier.setSelectedDevice(d);
                           deviceSearchController.text = d.modelName;
@@ -123,7 +145,7 @@ class DeviceSelectionSection extends HookConsumerWidget {
                   ),
           ),
 
-        if (!isInstallation && selectedDevice != null) ...[
+        if (selectedDevice != null) ...[
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
@@ -141,26 +163,9 @@ class DeviceSelectionSection extends HookConsumerWidget {
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
                 const SizedBox(height: 6),
-                Text('Model: ${selectedDevice.modelName}'),
-                Text('Seri No: ${selectedDevice.serialNumber}'),
+                Text('Model: ${selectedDevice.modelName}', style: const TextStyle(color: Colors.black87)),
+                Text('Seri No: ${selectedDevice.serialNumber}', style: const TextStyle(color: Colors.black87)),
               ],
-            ),
-          ),
-        ],
-
-        if (isInstallation) ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEF5FF),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFD0E2FF)),
-            ),
-            child: const Text(
-              'Kurulum formu: Mevcut cihaz seçmeden aşağıdaki alanları doldurun.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF23408E)),
             ),
           ),
         ],
@@ -175,9 +180,11 @@ class DeviceSelectionSection extends HookConsumerWidget {
         TextField(
           controller: serialNumberController,
           keyboardType: TextInputType.text,
+          style: const TextStyle(color: Colors.black87),
           onChanged: (v) => notifier.updateDeviceFields(serialNumber: v),
           decoration: InputDecoration(
             hintText: 'Cihaz seri numarasını girin',
+            hintStyle: const TextStyle(color: Colors.black54),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(
@@ -200,9 +207,11 @@ class DeviceSelectionSection extends HookConsumerWidget {
         TextField(
           controller: deviceNameController,
           keyboardType: TextInputType.text,
+          style: const TextStyle(color: Colors.black87),
           onChanged: (v) => notifier.updateDeviceFields(deviceName: v),
           decoration: InputDecoration(
             hintText: 'Cihaz adını girin',
+            hintStyle: const TextStyle(color: Colors.black54),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(
@@ -225,9 +234,11 @@ class DeviceSelectionSection extends HookConsumerWidget {
         TextField(
           controller: brandController,
           keyboardType: TextInputType.text,
+          style: const TextStyle(color: Colors.black87),
           onChanged: (v) => notifier.updateDeviceFields(brand: v),
           decoration: InputDecoration(
             hintText: 'Cihaz markasını girin',
+            hintStyle: const TextStyle(color: Colors.black54),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(
@@ -250,9 +261,11 @@ class DeviceSelectionSection extends HookConsumerWidget {
         TextField(
           controller: modelController,
           keyboardType: TextInputType.text,
+          style: const TextStyle(color: Colors.black87),
           onChanged: (v) => notifier.updateDeviceFields(model: v),
           decoration: InputDecoration(
             hintText: 'Cihaz modelini girin',
+            hintStyle: const TextStyle(color: Colors.black54),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(
