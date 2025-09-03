@@ -12,23 +12,16 @@ class ModernServiceCard extends StatelessWidget {
 
   Map<String, dynamic> getStatusData(String status) {
     switch (status) {
-      case 'Başarılı':
+      case 'Kurulum':
         return {
-          'label': 'Başarılı',
-          'color': Colors.blue.shade800,
-          'bgColor': Colors.blue.shade100,
+          'label': 'Kurulum',
+          'color': Colors.green.shade800,
+          'bgColor': Colors.green.shade100,
           'icon': Icons.check_circle_rounded,
         };
-      case 'Beklemede':
+      case 'Arıza':
         return {
-          'label': 'Beklemede',
-          'color': Colors.amber.shade800,
-          'bgColor': Colors.amber.shade200,
-          'icon': Icons.hourglass_bottom_rounded,
-        };
-      case 'Arızalı':
-        return {
-          'label': 'Arızalı',
+          'label': 'Arıza',
           'color': Colors.red.shade800,
           'bgColor': Colors.red.shade100,
           'icon': Icons.error_rounded,

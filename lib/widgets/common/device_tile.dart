@@ -70,7 +70,7 @@ class DeviceTile extends StatelessWidget {
             style: GoogleFonts.montserrat(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: AppColors.textColor,
             ),
           ),
           subtitle: Text(

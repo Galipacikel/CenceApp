@@ -322,7 +322,9 @@ mixin _$FormTabData {
   String get warranty => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError; // Fotoğraf
   Uint8List? get photoBytes => throw _privateConstructorUsedError;
-  XFile? get photoFile => throw _privateConstructorUsedError; // Parçalar
+  XFile? get photoFile => throw _privateConstructorUsedError;
+  List<String> get uploadedPhotos =>
+      throw _privateConstructorUsedError; // Parçalar
   List<SelectedPart> get selectedParts => throw _privateConstructorUsedError;
 
   /// Create a copy of FormTabData
@@ -352,6 +354,7 @@ abstract class $FormTabDataCopyWith<$Res> {
     String? description,
     Uint8List? photoBytes,
     XFile? photoFile,
+    List<String> uploadedPhotos,
     List<SelectedPart> selectedParts,
   });
 }
@@ -383,6 +386,7 @@ class _$FormTabDataCopyWithImpl<$Res, $Val extends FormTabData>
     Object? description = freezed,
     Object? photoBytes = freezed,
     Object? photoFile = freezed,
+    Object? uploadedPhotos = null,
     Object? selectedParts = null,
   }) {
     return _then(
@@ -435,6 +439,10 @@ class _$FormTabDataCopyWithImpl<$Res, $Val extends FormTabData>
                 ? _value.photoFile
                 : photoFile // ignore: cast_nullable_to_non_nullable
                       as XFile?,
+            uploadedPhotos: null == uploadedPhotos
+                ? _value.uploadedPhotos
+                : uploadedPhotos // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
             selectedParts: null == selectedParts
                 ? _value.selectedParts
                 : selectedParts // ignore: cast_nullable_to_non_nullable
@@ -467,6 +475,7 @@ abstract class _$$FormTabDataImplCopyWith<$Res>
     String? description,
     Uint8List? photoBytes,
     XFile? photoFile,
+    List<String> uploadedPhotos,
     List<SelectedPart> selectedParts,
   });
 }
@@ -497,6 +506,7 @@ class __$$FormTabDataImplCopyWithImpl<$Res>
     Object? description = freezed,
     Object? photoBytes = freezed,
     Object? photoFile = freezed,
+    Object? uploadedPhotos = null,
     Object? selectedParts = null,
   }) {
     return _then(
@@ -549,6 +559,10 @@ class __$$FormTabDataImplCopyWithImpl<$Res>
             ? _value.photoFile
             : photoFile // ignore: cast_nullable_to_non_nullable
                   as XFile?,
+        uploadedPhotos: null == uploadedPhotos
+            ? _value._uploadedPhotos
+            : uploadedPhotos // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
         selectedParts: null == selectedParts
             ? _value._selectedParts
             : selectedParts // ignore: cast_nullable_to_non_nullable
@@ -574,8 +588,10 @@ class _$FormTabDataImpl implements _FormTabData {
     this.description,
     this.photoBytes,
     this.photoFile,
+    final List<String> uploadedPhotos = const <String>[],
     final List<SelectedPart> selectedParts = const <SelectedPart>[],
-  }) : _selectedParts = selectedParts;
+  }) : _uploadedPhotos = uploadedPhotos,
+       _selectedParts = selectedParts;
 
   // Cihaz ve Müşteri Bilgileri
   @override
@@ -605,6 +621,15 @@ class _$FormTabDataImpl implements _FormTabData {
   final Uint8List? photoBytes;
   @override
   final XFile? photoFile;
+  final List<String> _uploadedPhotos;
+  @override
+  @JsonKey()
+  List<String> get uploadedPhotos {
+    if (_uploadedPhotos is EqualUnmodifiableListView) return _uploadedPhotos;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_uploadedPhotos);
+  }
+
   // Parçalar
   final List<SelectedPart> _selectedParts;
   // Parçalar
@@ -618,7 +643,7 @@ class _$FormTabDataImpl implements _FormTabData {
 
   @override
   String toString() {
-    return 'FormTabData(selectedDevice: $selectedDevice, serialNumber: $serialNumber, deviceName: $deviceName, brand: $brand, model: $model, company: $company, location: $location, date: $date, warranty: $warranty, description: $description, photoBytes: $photoBytes, photoFile: $photoFile, selectedParts: $selectedParts)';
+    return 'FormTabData(selectedDevice: $selectedDevice, serialNumber: $serialNumber, deviceName: $deviceName, brand: $brand, model: $model, company: $company, location: $location, date: $date, warranty: $warranty, description: $description, photoBytes: $photoBytes, photoFile: $photoFile, uploadedPhotos: $uploadedPhotos, selectedParts: $selectedParts)';
   }
 
   @override
@@ -649,6 +674,10 @@ class _$FormTabDataImpl implements _FormTabData {
             (identical(other.photoFile, photoFile) ||
                 other.photoFile == photoFile) &&
             const DeepCollectionEquality().equals(
+              other._uploadedPhotos,
+              _uploadedPhotos,
+            ) &&
+            const DeepCollectionEquality().equals(
               other._selectedParts,
               _selectedParts,
             ));
@@ -669,6 +698,7 @@ class _$FormTabDataImpl implements _FormTabData {
     description,
     const DeepCollectionEquality().hash(photoBytes),
     photoFile,
+    const DeepCollectionEquality().hash(_uploadedPhotos),
     const DeepCollectionEquality().hash(_selectedParts),
   );
 
@@ -695,6 +725,7 @@ abstract class _FormTabData implements FormTabData {
     final String? description,
     final Uint8List? photoBytes,
     final XFile? photoFile,
+    final List<String> uploadedPhotos,
     final List<SelectedPart> selectedParts,
   }) = _$FormTabDataImpl;
 
@@ -722,7 +753,9 @@ abstract class _FormTabData implements FormTabData {
   @override
   Uint8List? get photoBytes;
   @override
-  XFile? get photoFile; // Parçalar
+  XFile? get photoFile;
+  @override
+  List<String> get uploadedPhotos; // Parçalar
   @override
   List<SelectedPart> get selectedParts;
 

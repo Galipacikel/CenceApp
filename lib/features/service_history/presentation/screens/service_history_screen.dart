@@ -21,9 +21,8 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
   String _selectedStatus = 'Tümü';
   final List<String> _statusOptions = [
     'Tümü',
-    'Başarılı',
-    'Arızalı',
-    'Beklemede',
+    'Kurulum',
+    'Arıza',
   ];
 
   // Sıralama seçenekleri
@@ -632,11 +631,9 @@ class _ServisKaydiCard extends StatelessWidget {
 
   Color getStatusBgColor(String status) {
     switch (status) {
-      case 'Başarılı':
+      case 'Kurulum':
         return const Color(0xFF43A047);
-      case 'Beklemede':
-        return const Color(0xFFFFC107);
-      case 'Arızalı':
+      case 'Arıza':
         return const Color(0xFFE53935);
       default:
         return const Color(0xFF43A047);
@@ -649,12 +646,10 @@ class _ServisKaydiCard extends StatelessWidget {
 
   String getStatusLabel(String status) {
     switch (status) {
-      case 'Başarılı':
-        return 'Başarılı';
-      case 'Beklemede':
-        return 'Beklemede';
-      case 'Arızalı':
-        return 'Arızalı';
+      case 'Kurulum':
+        return 'Kurulum';
+      case 'Arıza':
+        return 'Arıza';
       default:
         return status;
     }
@@ -662,11 +657,9 @@ class _ServisKaydiCard extends StatelessWidget {
 
   IconData getStatusIcon(String status) {
     switch (status) {
-      case 'Başarılı':
+      case 'Kurulum':
         return Icons.check_circle_rounded;
-      case 'Beklemede':
-        return Icons.hourglass_bottom_rounded;
-      case 'Arızalı':
+      case 'Arıza':
         return Icons.error_rounded;
       default:
         return Icons.info_outline_rounded;

@@ -9,6 +9,7 @@ import 'package:cence_app/features/service_history/use_cases.dart';
 import 'package:cence_app/features/service_history/providers.dart';
 import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
 import 'package:cence_app/features/devices/presentation/providers.dart';
+import 'package:cence_app/services/storage_service.dart';
 
 class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   @override
@@ -97,10 +98,37 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   }
 
   // Fotoğraf güncelle
-  void updatePhoto({Uint8List? bytes, XFile? file}) {
-    _updateStateWithNewTabData(
-      state.activeTabData.copyWith(photoBytes: bytes, photoFile: file),
-    );
+  Future<void> updatePhoto({Uint8List? bytes, XFile? file}) async {
+    if (file == null) {
+      _updateStateWithNewTabData(
+        state.activeTabData.copyWith(photoBytes: bytes, photoFile: file),
+      );
+      return;
+    }
+
+    try {
+      final storageService = StorageService();
+      final storagePath = 'service_photos/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+      final downloadUrl = await storageService.uploadFile(
+        file: file,
+        storagePath: storagePath,
+      );
+
+      final currentPhotos = state.activeTabData.uploadedPhotos;
+      final updatedPhotos = List<String>.from(currentPhotos)..add(downloadUrl);
+
+      _updateStateWithNewTabData(
+        state.activeTabData.copyWith(
+          photoBytes: bytes,
+          photoFile: file,
+          uploadedPhotos: updatedPhotos,
+        ),
+      );
+    } catch (e) {
+      _updateStateWithNewTabData(
+        state.activeTabData.copyWith(photoBytes: bytes, photoFile: file),
+      );
+    }
   }
 
   // Parça ekle/güncelle

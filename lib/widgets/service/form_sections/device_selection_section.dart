@@ -23,38 +23,6 @@ class DeviceSelectionSection extends HookConsumerWidget {
 
     final showDeviceSuggestions = useState<bool>(false);
 
-    // Sekme değişimlerinde veya state güncellemelerinde controller'ları aktif sekmenin verisi ile senkronize et
-    ref.listen(newServiceFormProvider, (prev, next) {
-      final nt = next.activeTabData;
-      if (serialNumberController.text != (nt.serialNumber ?? '')) {
-        serialNumberController.text = nt.serialNumber ?? '';
-      }
-      if (deviceNameController.text != (nt.deviceName ?? '')) {
-        deviceNameController.text = nt.deviceName ?? '';
-      }
-      if (brandController.text != (nt.brand ?? '')) {
-        brandController.text = nt.brand ?? '';
-      }
-      if (modelController.text != (nt.model ?? '')) {
-        modelController.text = nt.model ?? '';
-      }
-  
-      final prevSel = prev?.activeTabData.selectedDevice;
-      final nextSel = nt.selectedDevice;
-      final tabChanged = prev?.formTipi != next.formTipi;
-      // Sekme değiştiyse veya seçili cihaz değiştiyse arama alanını güncelle
-      if (tabChanged || (prevSel?.serialNumber != nextSel?.serialNumber)) {
-        deviceSearchController.text = nextSel?.modelName ?? '';
-        if (nextSel != null) {
-          showDeviceSuggestions.value = false;
-        } else {
-          // Sekme değişiminde önceki sekmeden kalan query görünmesin
-          if (tabChanged) {
-            showDeviceSuggestions.value = false;
-          }
-        }
-      }
-    });
     // Device search query and results
     final query = deviceSearchController.text;
     // Watch all devices to build a more flexible suggestion logic
@@ -213,7 +181,6 @@ class DeviceSelectionSection extends HookConsumerWidget {
           controller: serialNumberController,
           keyboardType: TextInputType.text,
           style: const TextStyle(color: Colors.black87),
-          readOnly: formState.formTipi == 0 && selectedDevice != null,
           onChanged: (v) => notifier.updateDeviceFields(serialNumber: v),
           decoration: InputDecoration(
             hintText: 'Cihaz seri numarasını girin',
@@ -241,7 +208,6 @@ class DeviceSelectionSection extends HookConsumerWidget {
           controller: deviceNameController,
           keyboardType: TextInputType.text,
           style: const TextStyle(color: Colors.black87),
-          readOnly: formState.formTipi == 0 && selectedDevice != null,
           onChanged: (v) => notifier.updateDeviceFields(deviceName: v),
           decoration: InputDecoration(
             hintText: 'Cihaz adını girin',
@@ -269,7 +235,6 @@ class DeviceSelectionSection extends HookConsumerWidget {
           controller: brandController,
           keyboardType: TextInputType.text,
           style: const TextStyle(color: Colors.black87),
-          readOnly: formState.formTipi == 0 && selectedDevice != null,
           onChanged: (v) => notifier.updateDeviceFields(brand: v),
           decoration: InputDecoration(
             hintText: 'Cihaz markasını girin',
@@ -297,7 +262,6 @@ class DeviceSelectionSection extends HookConsumerWidget {
           controller: modelController,
           keyboardType: TextInputType.text,
           style: const TextStyle(color: Colors.black87),
-          readOnly: formState.formTipi == 0 && selectedDevice != null,
           onChanged: (v) => notifier.updateDeviceFields(model: v),
           decoration: InputDecoration(
             hintText: 'Cihaz modelini girin',

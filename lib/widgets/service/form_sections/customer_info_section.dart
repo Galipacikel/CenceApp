@@ -69,7 +69,7 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
           },
           decoration: InputDecoration(
             hintText: 'Firma adını girin',
-            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(153)),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(
@@ -101,7 +101,7 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
           },
           decoration: InputDecoration(
             hintText: 'Lokasyon bilgisini girin',
-            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(153)),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(

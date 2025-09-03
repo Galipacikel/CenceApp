@@ -54,16 +54,6 @@ class NewServiceFormScreen extends HookConsumerWidget {
       text: formState.activeTabData.warranty,
     );
 
-    // Sekme değişimlerinde controller'ları aktif sekmenin verisi ile senkronize et
-    ref.listen(newServiceFormProvider, (prev, next) {
-      final nt = next.activeTabData;
-      if (descriptionController.text != (nt.description ?? '')) {
-        descriptionController.text = nt.description ?? '';
-      }
-      if (warrantyController.text != nt.warranty) {
-        warrantyController.text = nt.warranty;
-      }
-    });
     // App user -> teknisyen adını state'e yansıt
     ref.listen(appUserProvider, (previous, next) {
       next.when(
@@ -340,11 +330,11 @@ class NewServiceFormScreen extends HookConsumerWidget {
                 final t = ref.read(newServiceFormProvider).activeTabData;
                 final form = ref.read(newServiceFormProvider);
                 
-                final musteri = (t.company ?? '').trim();
+                final musteri = t.company?.trim() ?? '';
                 final deviceLabel = [
-                  (t.deviceName ?? '').trim(),
-                  (t.serialNumber ?? '').trim(),
-                ].where((e) => e.isNotEmpty).join(' ').trim();
+                    t.deviceName?.trim() ?? '',
+                    t.serialNumber?.trim() ?? '',
+                  ].where((e) => e.isNotEmpty).join(' ').trim();
                 
                 if (musteri.isEmpty || deviceLabel.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -357,14 +347,16 @@ class NewServiceFormScreen extends HookConsumerWidget {
                 }
                 
                 final parts = t.selectedParts
-                    .map((sp) => StockPart(
-                          id: sp.part.id,
-                          parcaAdi: sp.part.parcaAdi,
-                          parcaKodu: sp.part.parcaKodu,
-                          stokAdedi: sp.adet,
-                          criticalLevel: sp.part.criticalLevel,
-                        ))
-                    .toList();
+                      .map((sp) => StockPart(
+                            id: sp.part.id,
+                            parcaAdi: sp.part.parcaAdi,
+                            parcaKodu: sp.part.parcaKodu,
+                            stokAdedi: sp.adet,
+                            criticalLevel: sp.part.criticalLevel,
+                          ))
+                      .toList();
+                
+                final photos = t.uploadedPhotos;
                 
                 final history = ServiceHistory(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -378,9 +370,9 @@ class NewServiceFormScreen extends HookConsumerWidget {
                       ? '-'
                       : form.technicianName.trim(),
                   status: form.formTipi == 0 ? 'Kurulum' : 'Arıza',
-                  location: (t.location ?? ''),
+                  location: t.location ?? '',
                   kullanilanParcalar: parts,
-                  photos: const [],
+                  photos: photos,
                 );
                 
                 try {

@@ -42,6 +42,7 @@ class FormTabData with _$FormTabData {
     // Fotoğraf
     Uint8List? photoBytes,
     XFile? photoFile,
+    @Default(<String>[]) List<String> uploadedPhotos,
 
     // Parçalar
     @Default(<SelectedPart>[]) List<SelectedPart> selectedParts,
