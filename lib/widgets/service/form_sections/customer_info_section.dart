@@ -61,6 +61,7 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
         (
           controller: _companyController,
           keyboardType: TextInputType.text,
+          style: const TextStyle(color: Colors.black87),
           onChanged: (v) {
             try {
               ref.read(newServiceFormProvider.notifier).updateDeviceFields(company: v);
@@ -68,6 +69,7 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
           },
           decoration: InputDecoration(
             hintText: 'Firma adını girin',
+            hintStyle: const TextStyle(color: Colors.black54),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(
@@ -91,6 +93,7 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
         TextField(
           controller: _locationController,
           keyboardType: TextInputType.text,
+          style: const TextStyle(color: Colors.black87),
           onChanged: (v) {
             try {
               ref.read(newServiceFormProvider.notifier).updateDeviceFields(location: v);
@@ -98,6 +101,7 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
           },
           decoration: InputDecoration(
             hintText: 'Lokasyon bilgisini girin',
+            hintStyle: const TextStyle(color: Colors.black54),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(
