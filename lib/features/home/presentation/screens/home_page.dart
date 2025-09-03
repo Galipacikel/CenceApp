@@ -15,10 +15,10 @@ import 'package:cence_app/features/settings/presentation/screens/settings_screen
 // import 'package:cence_app/features/service_history/presentation/screens/all_service_history_screen.dart';
 // removed unused: service_history model not needed here
 
-import 'package:provider/provider.dart';
-import 'package:cence_app/providers/service_history_provider.dart';
+// import 'package:provider/provider.dart';
+// import 'package:cence_app/providers/service_history_provider.dart';
 
-import 'package:cence_app/providers/device_provider.dart';
+// import 'package:cence_app/providers/device_provider.dart';
 
 class HomePage extends rp.ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -31,14 +31,7 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final deviceProvider = Provider.of<DeviceProvider>(context, listen: false);
-      final serviceHistoryProvider = Provider.of<ServiceHistoryProvider>(context, listen: false);
-      await Future.wait([
-        deviceProvider.fetchAll(),
-        serviceHistoryProvider.fetchAll(),
-      ]);
-    });
+    // Remove legacy provider prefetch; Riverpod providers load lazily on watch
   }
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {

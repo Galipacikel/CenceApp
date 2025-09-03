@@ -22,8 +22,10 @@ dependencies:
   # State management (Riverpod)
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
+  # Hooks for stateful-less widgets
+  flutter_hooks: ^0.20.5
+  hooks_riverpod: ^2.5.1
   # Provider (for ChangeNotifier based legacy screens)
-  provider: ^6.1.2
 
   # Local storage & utils
   hive: ^2.2.3
