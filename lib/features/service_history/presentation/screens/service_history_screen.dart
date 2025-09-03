@@ -65,12 +65,19 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('$updatedCount kayıt güncellendi'),
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text('$updatedCount kayıt başarıyla Kurulum olarak güncellendi'),
+                ],
+              ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
+              duration: const Duration(seconds: 3),
             ),
           );
         }
@@ -79,12 +86,19 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Güncelleme sırasında hata: $e'),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Güncelleme sırasında hata: $e')),
+              ],
+            ),
             backgroundColor: Colors.red.shade600,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
