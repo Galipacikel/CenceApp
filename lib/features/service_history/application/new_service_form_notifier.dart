@@ -4,6 +4,11 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'package:cence_app/models/stock_part.dart';
 import 'package:cence_app/models/device.dart';
+import 'package:cence_app/models/service_history.dart';
+import 'package:cence_app/features/service_history/use_cases.dart';
+import 'package:cence_app/features/service_history/providers.dart';
+import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
+import 'package:cence_app/features/devices/presentation/providers.dart';
 
 class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   @override
@@ -139,6 +144,50 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
       state = state.copyWith(isSaving: false, lastSubmitSuccess: true);
       return true;
     } catch (_) {
+      state = state.copyWith(isSaving: false, lastSubmitSuccess: false);
+      rethrow;
+    }
+  }
+
+  // ServiceHistory kaydet ve stok düş: submit akışını merkezi hale getirir
+  Future<void> saveHistoryAndDeductStock(ServiceHistory history) async {
+    state = state.copyWith(isSaving: true, lastSubmitSuccess: false);
+    try {
+      // 1) Servis kaydını ekle
+      await ref.read(addServiceHistoryUseCaseProvider)(history);
+
+      // 2) Stok düş
+      final providerParts = state.activeTabData.selectedParts;
+      if (providerParts.isNotEmpty) {
+        final updateTasks = providerParts
+            .where((selectedPart) => selectedPart.part.id.isNotEmpty)
+            .map((selectedPart) async {
+          final part = selectedPart.part;
+          final usedQuantity = selectedPart.adet;
+          final currentStock = part.stokAdedi;
+          final newStock = currentStock - usedQuantity;
+          final finalStock = newStock < 0 ? 0 : newStock;
+
+          final updatedPart = StockPart(
+            id: part.id,
+            parcaAdi: part.parcaAdi,
+            parcaKodu: part.parcaKodu,
+            stokAdedi: finalStock,
+            criticalLevel: part.criticalLevel,
+          );
+
+          return ref.read(inventoryProvider.notifier).updatePart(updatedPart);
+        }).toList();
+        await Future.wait(updateTasks);
+      }
+
+      // 3) Liste sağlayıcılarını tazele
+      ref.invalidate(serviceHistoryListProvider);
+      ref.invalidate(recentServiceHistoryProvider(3));
+      ref.invalidate(devicesListProvider);
+
+      state = state.copyWith(isSaving: false, lastSubmitSuccess: true);
+    } catch (e) {
       state = state.copyWith(isSaving: false, lastSubmitSuccess: false);
       rethrow;
     }

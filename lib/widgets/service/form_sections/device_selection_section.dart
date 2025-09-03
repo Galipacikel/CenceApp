@@ -1,49 +1,33 @@
 import 'package:flutter/material.dart';
-import '../../../models/device.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:cence_app/features/devices/presentation/providers.dart';
+import 'package:cence_app/features/service_history/application/new_service_form_notifier.dart';
+import 'package:cence_app/features/service_history/presentation/providers/new_service_form_state.dart';
 
-  class DeviceSelectionSection extends StatelessWidget {
-    final TextEditingController deviceSearchController;
-    final TextEditingController serialNumberController;
-    final TextEditingController deviceNameController;
-    final TextEditingController brandController;
-    final TextEditingController modelController;
-    final Device? selectedDevice;
-    final List<Device> filteredDevices;
-    final bool showDeviceSuggestions;
-    final Function(String) onFilterDevices;
-    final Function(Device) onSelectDevice;
-    final VoidCallback onClearDevice;
-    final VoidCallback onShowSuggestions;
-    final bool isInstallation;
-    // New optional callbacks to notify field changes upward
-    final ValueChanged<String>? onSerialChanged;
-    final ValueChanged<String>? onDeviceNameChanged;
-    final ValueChanged<String>? onBrandChanged;
-    final ValueChanged<String>? onModelChanged;
-
-    const DeviceSelectionSection({
-      super.key,
-      required this.deviceSearchController,
-      required this.serialNumberController,
-      required this.deviceNameController,
-      required this.brandController,
-      required this.modelController,
-      required this.selectedDevice,
-      required this.filteredDevices,
-      required this.showDeviceSuggestions,
-      required this.onFilterDevices,
-      required this.onSelectDevice,
-      required this.onClearDevice,
-      required this.onShowSuggestions,
-      this.isInstallation = false,
-      this.onSerialChanged,
-      this.onDeviceNameChanged,
-      this.onBrandChanged,
-      this.onModelChanged,
-    });
+class DeviceSelectionSection extends HookConsumerWidget {
+  const DeviceSelectionSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formState = ref.watch(newServiceFormProvider);
+    final notifier = ref.read(newServiceFormProvider.notifier);
+    final isInstallation = formState.formTipi == 0;
+
+    // Hooks-based controllers
+    final deviceSearchController = useTextEditingController();
+    final serialNumberController = useTextEditingController(text: formState.activeTabData.serialNumber ?? '');
+    final deviceNameController = useTextEditingController(text: formState.activeTabData.deviceName ?? '');
+    final brandController = useTextEditingController(text: formState.activeTabData.brand ?? '');
+    final modelController = useTextEditingController(text: formState.activeTabData.model ?? '');
+
+    final showDeviceSuggestions = useState<bool>(false);
+
+    // Device search query and results
+    final query = deviceSearchController.text;
+    final filteredDevices = ref.watch(devicesSearchProvider(query));
+    final selectedDevice = formState.activeTabData.selectedDevice;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -53,7 +37,6 @@ import '../../../models/device.dart';
         ),
         const SizedBox(height: 16),
 
-        // Cihaz Seç (Arama) - Kurulumda gizle
         if (!isInstallation) ...[
           const Text(
             'Cihaz Seç',
@@ -65,8 +48,8 @@ import '../../../models/device.dart';
           TextField(
             controller: deviceSearchController,
             keyboardType: TextInputType.text,
-            onTap: onShowSuggestions,
-            onChanged: onFilterDevices,
+            onTap: () => showDeviceSuggestions.value = true,
+            onChanged: (_) => showDeviceSuggestions.value = true,
             decoration: InputDecoration(
               hintText: 'Cihaz ara (model veya seri no)',
               filled: true,
@@ -82,14 +65,22 @@ import '../../../models/device.dart';
               suffixIcon: (selectedDevice != null || deviceSearchController.text.isNotEmpty)
                   ? IconButton(
                       icon: const Icon(Icons.clear),
-                      onPressed: onClearDevice,
+                      onPressed: () {
+                        deviceSearchController.clear();
+                        showDeviceSuggestions.value = false;
+                        serialNumberController.clear();
+                        deviceNameController.clear();
+                        brandController.clear();
+                        modelController.clear();
+                        notifier.setSelectedDevice(null);
+                      },
                     )
                   : null,
             ),
           ),
         if (!isInstallation) const SizedBox(height: 8),
 
-        if (!isInstallation && showDeviceSuggestions)
+        if (!isInstallation && showDeviceSuggestions.value)
           Container(
             constraints: const BoxConstraints(maxHeight: 220),
             decoration: BoxDecoration(
@@ -118,7 +109,15 @@ import '../../../models/device.dart';
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         title: Text(d.modelName),
                         subtitle: Text(d.serialNumber),
-                        onTap: () => onSelectDevice(d),
+                        onTap: () {
+                          notifier.setSelectedDevice(d);
+                          deviceSearchController.text = d.modelName;
+                          showDeviceSuggestions.value = false;
+                          serialNumberController.text = d.serialNumber;
+                          deviceNameController.text = d.modelName;
+                          brandController.text = d.modelName;
+                          modelController.text = d.modelName;
+                        },
                       );
                     },
                   ),
@@ -142,9 +141,8 @@ import '../../../models/device.dart';
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
                 const SizedBox(height: 6),
-                Text('Model: ${selectedDevice!.modelName}')
-                ,
-                Text('Seri No: ${selectedDevice!.serialNumber}'),
+                Text('Model: ${selectedDevice.modelName}'),
+                Text('Seri No: ${selectedDevice.serialNumber}'),
               ],
             ),
           ),
@@ -169,7 +167,6 @@ import '../../../models/device.dart';
 
         const SizedBox(height: 16),
 
-        // Seri No
         const Text(
           'Seri No',
           style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
@@ -178,7 +175,7 @@ import '../../../models/device.dart';
         TextField(
           controller: serialNumberController,
           keyboardType: TextInputType.text,
-          onChanged: onSerialChanged,
+          onChanged: (v) => notifier.updateDeviceFields(serialNumber: v),
           decoration: InputDecoration(
             hintText: 'Cihaz seri numarasını girin',
             filled: true,
@@ -195,7 +192,6 @@ import '../../../models/device.dart';
         ),
         const SizedBox(height: 12),
 
-        // Cihaz Adı
         const Text(
           'Cihaz Adı',
           style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
@@ -204,7 +200,7 @@ import '../../../models/device.dart';
         TextField(
           controller: deviceNameController,
           keyboardType: TextInputType.text,
-          onChanged: onDeviceNameChanged,
+          onChanged: (v) => notifier.updateDeviceFields(deviceName: v),
           decoration: InputDecoration(
             hintText: 'Cihaz adını girin',
             filled: true,
@@ -221,7 +217,6 @@ import '../../../models/device.dart';
         ),
         const SizedBox(height: 12),
 
-        // Marka
         const Text(
           'Marka',
           style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
@@ -230,7 +225,7 @@ import '../../../models/device.dart';
         TextField(
           controller: brandController,
           keyboardType: TextInputType.text,
-          onChanged: onBrandChanged,
+          onChanged: (v) => notifier.updateDeviceFields(brand: v),
           decoration: InputDecoration(
             hintText: 'Cihaz markasını girin',
             filled: true,
@@ -247,16 +242,15 @@ import '../../../models/device.dart';
         ),
         const SizedBox(height: 12),
 
-        // Model
         const Text(
           'Model',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black),
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         TextField(
           controller: modelController,
           keyboardType: TextInputType.text,
-          onChanged: onModelChanged,
+          onChanged: (v) => notifier.updateDeviceFields(model: v),
           decoration: InputDecoration(
             hintText: 'Cihaz modelini girin',
             filled: true,

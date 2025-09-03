@@ -15,13 +15,15 @@ import 'core/providers/firebase_providers.dart';
 import 'package:cence_app/features/home/presentation/screens/home_page.dart';
 import 'package:cence_app/features/auth/presentation/screens/login_screen.dart';
 
-import 'package:provider/provider.dart' as provider;
-import 'providers/app_state_provider.dart';
-import 'providers/device_provider.dart';
-import 'providers/service_history_provider.dart';
+// removed: legacy provider imports and change notifier providers
+// import 'package:provider/provider.dart' as provider;
+// import 'providers/app_state_provider.dart';
+// import 'providers/device_provider.dart';
+// import 'providers/service_history_provider.dart';
 
-import 'repositories/firestore_device_repository_v2.dart';
-import 'repositories/firestore_service_history_repository_v2.dart';
+// removed: legacy repository direct imports
+// import 'repositories/firestore_device_repository_v2.dart';
+// import 'repositories/firestore_service_history_repository_v2.dart';
 
 const bool kUseEmulators = bool.fromEnvironment(
   'USE_EMULATORS',
@@ -51,26 +53,8 @@ Future<void> main() async {
     persistenceEnabled: true,
   );
   runApp(
-    rp.ProviderScope(
-      child: provider.MultiProvider(
-        providers: [
-          provider.ChangeNotifierProvider<AppStateProvider>(
-            create: (_) => AppStateProvider(),
-          ),
-          provider.ChangeNotifierProvider<DeviceProvider>(
-            create: (_) => DeviceProvider(
-              repository: FirestoreDeviceRepositoryV2(),
-            ),
-          ),
-          provider.ChangeNotifierProvider<ServiceHistoryProvider>(
-            create: (_) => ServiceHistoryProvider(
-              repository: FirestoreServiceHistoryRepositoryV2(),
-            ),
-          ),
-
-        ],
-        child: const MyApp(),
-      ),
+    const rp.ProviderScope(
+      child: MyApp(),
     ),
   );
 }
