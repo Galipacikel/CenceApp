@@ -25,6 +25,42 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
     'Arıza',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Başarılı durumundaki kayıtları Kurulum olarak güncelle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateSuccessfulRecords();
+    });
+  }
+
+  void _updateSuccessfulRecords() async {
+    final serviceHistoryAsync = ref.read(serviceHistoryListProvider);
+    serviceHistoryAsync.whenData((list) async {
+      for (var history in list) {
+        if (history.status == 'Başarılı') {
+          final updatedHistory = ServiceHistory(
+            id: history.id,
+            date: history.date,
+            serialNumber: history.serialNumber,
+            musteri: history.musteri,
+            description: history.description,
+            technician: history.technician,
+            status: 'Kurulum',
+            location: history.location,
+            kullanilanParcalar: history.kullanilanParcalar,
+            photos: history.photos,
+          );
+          
+          final update = ref.read(updateServiceHistoryUseCaseProvider);
+          await update(history.id, updatedHistory);
+        }
+      }
+      // Listeyi yenile
+      ref.invalidate(serviceHistoryListProvider);
+    });
+  }
+
   // Sıralama seçenekleri
   String _selectedSortBy = 'En Yeni';
   final List<String> _sortOptions = ['En Yeni', 'En Eski'];
@@ -32,11 +68,6 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
   // Toplu işlemler için
   bool _isSelectionMode = false;
   final Set<String> _selectedItems = {};
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   // Apply filters and sorting to given list
   List<ServiceHistory> _applyFilters(List<ServiceHistory> source) {
