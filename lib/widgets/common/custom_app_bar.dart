@@ -72,12 +72,67 @@ class CustomAppBar extends ConsumerWidget {
                 ],
               ),
               const SizedBox(width: 8),
-              const CircleAvatar(
-                radius: 18,
-                backgroundImage: AssetImage(
-                  'assets/images/profile_placeholder.png',
-                ),
-                backgroundColor: Colors.white,
+              Consumer(
+                builder: (context, ref, child) {
+                  final prefsAsync = ref.watch(sharedPreferencesProvider);
+                  
+                  return prefsAsync.when(
+                    data: (prefs) {
+                      final profileImageUrl = prefs.getString('profile_image_url');
+                      return CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.white,
+                    child: ClipOval(
+                      child: profileImageUrl != null
+                          ? Image.network(
+                              profileImageUrl,
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF23408E),
+                                    strokeWidth: 2,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person,
+                                  color: Color(0xFF23408E),
+                                  size: 20,
+                                );
+                              },
+                            )
+                          : const Icon(
+                              Icons.person,
+                              color: Color(0xFF23408E),
+                              size: 20,
+                            ),
+                    ),
+                      );
+                    },
+                    loading: () => const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.white,
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF23408E),
+                        strokeWidth: 2,
+                      ),
+                    ),
+                    error: (_, __) => const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.person,
+                        color: Color(0xFF23408E),
+                        size: 20,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),

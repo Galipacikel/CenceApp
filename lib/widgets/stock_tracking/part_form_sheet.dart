@@ -8,7 +8,10 @@ import 'package:cence_app/features/stock_tracking/application/inventory_notifier
 class PartFormSheet extends ConsumerStatefulWidget {
   final StockPart? part; // null ise yeni ekleme, değilse düzenleme
 
-  const PartFormSheet({super.key, this.part});
+  const PartFormSheet({
+    super.key,
+    this.part,
+  });
 
   @override
   ConsumerState<PartFormSheet> createState() => _PartFormSheetState();
@@ -30,9 +33,7 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
       parcaAdiCtrl = TextEditingController(text: part.parcaAdi);
       parcaKoduCtrl = TextEditingController(text: part.parcaKodu);
       stokAdediCtrl = TextEditingController(text: part.stokAdedi.toString());
-      criticalLevelCtrl = TextEditingController(
-        text: part.criticalLevel.toString(),
-      );
+      criticalLevelCtrl = TextEditingController(text: part.criticalLevel.toString());
     } else {
       // Yeni ekleme modu
       parcaAdiCtrl = TextEditingController();
@@ -54,7 +55,7 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.part != null;
-
+    
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -74,13 +75,19 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
                 style: GoogleFonts.montserrat(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: AppColors.textColor,
                 ),
               ),
               const SizedBox(height: 20),
-              _buildTextField(controller: parcaAdiCtrl, label: 'Parça Adı'),
+              _buildTextField(
+                controller: parcaAdiCtrl,
+                label: 'Parça Adı',
+              ),
               const SizedBox(height: 16),
-              _buildTextField(controller: parcaKoduCtrl, label: 'Parça Kodu'),
+              _buildTextField(
+                controller: parcaKoduCtrl,
+                label: 'Parça Kodu',
+              ),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: stokAdediCtrl,
@@ -148,12 +155,13 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
         filled: true,
         fillColor: Colors.grey[50],
       ),
-      validator:
-          validator ?? (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
+      validator: validator ?? (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
     );
   }
 
@@ -161,7 +169,7 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
     if (!formKey.currentState!.validate()) return;
 
     final isEditing = widget.part != null;
-
+    
     if (isEditing) {
       // Düzenleme
       final updatedPart = StockPart(
@@ -171,10 +179,8 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
         stokAdedi: int.parse(stokAdediCtrl.text),
         criticalLevel: int.parse(criticalLevelCtrl.text),
       );
-
-      final success = await ref
-          .read(inventoryProvider.notifier)
-          .updatePart(updatedPart);
+      
+      final success = await ref.read(inventoryProvider.notifier).updatePart(updatedPart);
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -194,10 +200,8 @@ class _PartFormSheetState extends ConsumerState<PartFormSheet> {
         stokAdedi: int.parse(stokAdediCtrl.text),
         criticalLevel: int.parse(criticalLevelCtrl.text),
       );
-
-      final success = await ref
-          .read(inventoryProvider.notifier)
-          .addPart(newPart);
+      
+      final success = await ref.read(inventoryProvider.notifier).addPart(newPart);
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

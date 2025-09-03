@@ -29,11 +29,14 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: scheme.surface,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
       ),
-      textTheme: GoogleFonts.montserratTextTheme(
-        base.textTheme,
-      ).apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
+      textTheme: GoogleFonts.montserratTextTheme(base.textTheme).apply(
+        bodyColor: scheme.onSurface,
+        displayColor: scheme.onSurface,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: scheme.primary,
@@ -64,17 +67,12 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: scheme.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 12,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
       iconTheme: IconThemeData(color: scheme.onSurfaceVariant),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: scheme.inverseSurface,
-        contentTextStyle: GoogleFonts.montserrat(
-          color: scheme.onInverseSurface,
-        ),
+        contentTextStyle: GoogleFonts.montserrat(color: scheme.onInverseSurface),
         behavior: SnackBarBehavior.floating,
       ),
       dividerColor: scheme.outlineVariant,
@@ -115,11 +113,14 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: scheme.surface,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
       ),
-      textTheme: GoogleFonts.montserratTextTheme(
-        base.textTheme,
-      ).apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
+      textTheme: GoogleFonts.montserratTextTheme(base.textTheme).apply(
+        bodyColor: scheme.onSurface,
+        displayColor: scheme.onSurface,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: scheme.primary,
@@ -150,17 +151,12 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: scheme.error),
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 12,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
       iconTheme: IconThemeData(color: scheme.onSurfaceVariant),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: scheme.inverseSurface,
-        contentTextStyle: GoogleFonts.montserrat(
-          color: scheme.onInverseSurface,
-        ),
+        contentTextStyle: GoogleFonts.montserrat(color: scheme.onInverseSurface),
         behavior: SnackBarBehavior.floating,
       ),
       dividerColor: scheme.outlineVariant,

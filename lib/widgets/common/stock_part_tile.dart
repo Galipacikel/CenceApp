@@ -65,9 +65,7 @@ class StockPartTile extends StatelessWidget {
             ),
             child: Icon(
               isCritical ? Icons.warning_amber_rounded : Icons.memory_rounded,
-              color: isCritical
-                  ? AppColors.criticalText
-                  : AppColors.primaryBlue,
+              color: isCritical ? AppColors.criticalText : AppColors.primaryBlue,
               size: 22,
             ),
           ),
@@ -86,10 +84,7 @@ class StockPartTile extends StatelessWidget {
               if (part.stokAdedi == 0)
                 Container(
                   margin: const EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.criticalTextWithOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -107,20 +102,15 @@ class StockPartTile extends StatelessWidget {
               else if (isCritical)
                 Container(
                   margin: const EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: AppColors.criticalTextWithOpacity(0.10),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     'Stok kritik',
-                    // Replace the text color for 'Stok kritik' label to use themed color when not critical
-                    // Assuming this section is inside a widget where `isOutOfStock` is not available, fallback to themed color only
                     style: GoogleFonts.montserrat(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: part.stokAdedi == 0 ? AppColors.criticalRed : Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                     ),

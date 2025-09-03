@@ -64,11 +64,9 @@ class _AllServiceHistoryScreenState
 
   Color getStatusBgColor(String status) {
     switch (status) {
-      case 'Başarılı':
+      case 'Kurulum':
         return const Color(0xFF43A047);
-      case 'Beklemede':
-        return const Color(0xFFFFC107);
-      case 'Arızalı':
+      case 'Arıza':
         return const Color(0xFFE53935);
       default:
         return const Color(0xFF43A047);
@@ -81,11 +79,9 @@ class _AllServiceHistoryScreenState
 
   IconData getStatusIcon(String status) {
     switch (status) {
-      case 'Başarılı':
+      case 'Kurulum':
         return Icons.check_circle_rounded;
-      case 'Beklemede':
-        return Icons.hourglass_bottom_rounded;
-      case 'Arızalı':
+      case 'Arıza':
         return Icons.error_rounded;
       default:
         return Icons.info_outline_rounded;

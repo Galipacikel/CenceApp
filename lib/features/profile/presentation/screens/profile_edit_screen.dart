@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
+import 'package:cence_app/services/storage_service.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
@@ -18,20 +18,24 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   XFile? _profileImage;
   Uint8List? _profileImageBytes;
   final _formKey = GlobalKey<FormState>();
-  String? _savedProfileImagePath;
+  String? _profileImageUrl;
+  final StorageService _storageService = StorageService();
 
   @override
   void initState() {
     super.initState();
-    _loadSavedProfileImagePath();
+    _loadSavedProfileData();
   }
 
-  Future<void> _loadSavedProfileImagePath() async {
+  Future<void> _loadSavedProfileData() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
-      setState(() {
-        _savedProfileImagePath = prefs.getString('profile_image_path');
-      });
+      final savedUrl = prefs.getString('profile_image_url');
+      if (mounted) {
+        setState(() {
+          _profileImageUrl = savedUrl;
+        });
+      }
     }
   }
 
@@ -165,26 +169,41 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                         CircleAvatar(
                           radius: 38,
                           backgroundColor: primaryBlue,
-                          backgroundImage: _profileImageBytes != null
-                              ? null
-                              : (_savedProfileImagePath != null
-                                    ? FileImage(File(_savedProfileImagePath!))
-                                    : null),
                           child: ClipOval(
-                            child: (_profileImageBytes != null)
+                            child: _profileImageBytes != null
                                 ? Image.memory(
                                     _profileImageBytes!,
                                     width: 76,
                                     height: 76,
                                     fit: BoxFit.cover,
                                   )
-                                : (_savedProfileImagePath == null
-                                      ? Icon(
-                                          Icons.person,
-                                          color: Colors.white,
-                                          size: 38,
-                                        )
-                                      : null),
+                                : _profileImageUrl != null
+                                    ? Image.network(
+                                        _profileImageUrl!,
+                                        width: 76,
+                                        height: 76,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return const Center(
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                            ),
+                                          );
+                                        },
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Icon(
+                                            Icons.person,
+                                            color: Colors.white,
+                                            size: 38,
+                                          );
+                                        },
+                                      )
+                                    : const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 38,
+                                      ),
                           ),
                         ),
                         Container(
@@ -205,11 +224,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  _ProfileInfoField(label: 'Ad', value: name),
+                  profileInfoField(context: context, label: 'Ad', value: name),
                   const SizedBox(height: 16),
-                  _ProfileInfoField(label: 'Soyad', value: surname),
+                  profileInfoField(context: context, label: 'Soyad', value: surname),
                   const SizedBox(height: 16),
-                  _ProfileInfoField(label: 'Unvan', value: titleStr),
+                  profileInfoField(context: context, label: 'Unvan', value: titleStr),
                   const SizedBox(height: 28),
                   if (_profileImage != null) ...[
                     SizedBox(
@@ -225,27 +244,44 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: () async {
-                          final prefs = await SharedPreferences.getInstance();
                           if (_profileImage != null) {
-                            await prefs.setString(
-                              'profile_image_path',
-                              _profileImage!.path,
-                            );
-                            if (mounted) {
-                              setState(() {
-                                _savedProfileImagePath = _profileImage!.path;
-                              });
-                            }
-                            if (!context.mounted) return;
-                            final messenger = ScaffoldMessenger.of(context);
-                            messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Profil fotoğrafı başarıyla güncellendi!',
+                            try {
+                              final user = ref.read(appUserProvider).value;
+                              if (user == null) return;
+                              
+                              final storagePath = 'profile_images/${user.uid}.jpg';
+                              final imageUrl = await _storageService.uploadFile(
+                                file: _profileImage!,
+                                storagePath: storagePath,
+                              );
+
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setString('profile_image_path', _profileImage!.path);
+                              await prefs.setString('profile_image_url', imageUrl);
+
+                              if (mounted) {
+                                await prefs.setString('profile_image_path', _profileImage!.path);
+                                setState(() {
+                                  _profileImageUrl = imageUrl;
+                                });
+                              }
+
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Profil fotoğrafı başarıyla güncellendi!'),
                                 ),
-                              ),
-                            );
-                            Navigator.pop(context);
+                              );
+                              Navigator.pop(context);
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Fotoğraf yüklenirken bir hata oluştu: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           }
                         },
                         child: Text(
@@ -268,14 +304,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 }
 
-class _ProfileInfoField extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _ProfileInfoField({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
+Widget profileInfoField({required BuildContext context, required String label, required String value}) {
     final Color textColor = Theme.of(context).colorScheme.onSurface;
     final Color subtitleColor = const Color(0xFF4A4A4A);
     return Column(
@@ -308,4 +337,3 @@ class _ProfileInfoField extends StatelessWidget {
       ],
     );
   }
-}

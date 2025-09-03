@@ -9,6 +9,76 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
   final ServiceHistory serviceHistory;
   const ServiceHistoryDetailScreen({super.key, required this.serviceHistory});
 
+  void _showFullScreenPhoto(BuildContext context, String photoUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            // Photo with InteractiveViewer
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.network(
+                  photoUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: Colors.black54,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 300,
+                      height: 300,
+                      color: Colors.black54,
+                      child: const Center(
+                        child: Icon(
+                          Icons.error_outline,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            // Close button
+            Positioned(
+              top: 40,
+              right: 20,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(100),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Color getStatusBgColor(String status) {
     switch (status) {
       case 'Başarılı':
@@ -41,11 +111,9 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
 
   IconData getStatusIcon(String status) {
     switch (status) {
-      case 'Başarılı':
+      case 'Kurulum':
         return Icons.check_circle_rounded;
-      case 'Beklemede':
-        return Icons.hourglass_bottom_rounded;
-      case 'Arızalı':
+      case 'Arıza':
         return Icons.error_rounded;
       default:
         return Icons.info_outline_rounded;
@@ -200,6 +268,66 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
+
+                  // Fotoğraflar
+                  if (serviceHistory.photos != null && serviceHistory.photos!.isNotEmpty) ...[                    
+                    const Text(
+                      'Fotoğraflar',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1C1C1C),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 120,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: serviceHistory.photos!.length,
+                        itemBuilder: (context, index) {
+                          return GestureDetector(
+                            onTap: () => _showFullScreenPhoto(context, serviceHistory.photos![index]),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  serviceHistory.photos![index],
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      width: 120,
+                                      height: 120,
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 120,
+                                      height: 120,
+                                      color: Colors.grey[200],
+                                      child: const Icon(
+                                        Icons.error_outline,
+                                        color: Colors.grey,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
 
                   // Tarih
                   Container(
@@ -486,35 +614,33 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                         itemCount: serviceHistory.photos!.length,
                         itemBuilder: (context, index) {
                           return GestureDetector(
-                            onTap: () => _showPhotoDialog(context, serviceHistory.photos![index]),
+                            onTap: () => _showFullScreenPhoto(context, serviceHistory.photos![index]),
                             child: Container(
                               margin: const EdgeInsets.only(right: 12),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: Stack(
                                   children: [
-                                    serviceHistory.photos![index].startsWith('http')
-                                        ? Image.network(
-                                            serviceHistory.photos![index],
-                                            width: 120,
-                                            height: 120,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Container(
-                                                width: 120,
-                                                height: 120,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey.shade300,
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.error,
-                                                  color: Colors.grey,
-                                                ),
-                                              );
-                                            },
-                                          )
-                                        : const SizedBox.shrink(),
+                                    Image.network(
+                                      serviceHistory.photos![index],
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          width: 120,
+                                          height: 120,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade300,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.error,
+                                            color: Colors.grey,
+                                          ),
+                                        );
+                                      },
+                                    ),
                                     Positioned(
                                       top: 8,
                                       right: 8,
@@ -593,60 +719,4 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _showPhotoDialog(BuildContext context, String photoUrl) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Stack(
-          children: [
-            // Fotoğraf
-            Center(
-              child: InteractiveViewer(
-                child: Image.network(
-                  photoUrl,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 300,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.error,
-                        color: Colors.grey,
-                        size: 48,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            // Kapatma butonu
-            Positioned(
-              top: 40,
-              right: 20,
-              child: GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha(100),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
