@@ -8,10 +8,7 @@ import 'package:cence_app/features/stock_tracking/application/inventory_notifier
 class DeviceFormSheet extends ConsumerStatefulWidget {
   final Device? device; // null ise yeni ekleme, değilse düzenleme
 
-  const DeviceFormSheet({
-    super.key,
-    this.device,
-  });
+  const DeviceFormSheet({super.key, this.device});
 
   @override
   ConsumerState<DeviceFormSheet> createState() => _DeviceFormSheetState();
@@ -33,13 +30,17 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
       final device = widget.device!;
       final modelNameParts = device.modelName.split(' ');
       final marka = modelNameParts.isNotEmpty ? modelNameParts.first : '';
-      final model = modelNameParts.length > 1 ? modelNameParts.sublist(1).join(' ') : '';
-      
+      final model = modelNameParts.length > 1
+          ? modelNameParts.sublist(1).join(' ')
+          : '';
+
       serialNumberCtrl = TextEditingController(text: device.serialNumber);
       cihazAdiCtrl = TextEditingController(text: device.customer);
       markaCtrl = TextEditingController(text: marka);
       modelCtrl = TextEditingController(text: model);
-      stokAdediCtrl = TextEditingController(text: device.stockQuantity.toString());
+      stokAdediCtrl = TextEditingController(
+        text: device.stockQuantity.toString(),
+      );
     } else {
       // Yeni ekleme modu
       serialNumberCtrl = TextEditingController();
@@ -63,7 +64,7 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.device != null;
-    
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -92,20 +93,11 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
                 label: 'Seri Numarası',
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: cihazAdiCtrl,
-                label: 'Cihaz Adı',
-              ),
+              _buildTextField(controller: cihazAdiCtrl, label: 'Cihaz Adı'),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: markaCtrl,
-                label: 'Marka',
-              ),
+              _buildTextField(controller: markaCtrl, label: 'Marka'),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: modelCtrl,
-                label: 'Model',
-              ),
+              _buildTextField(controller: modelCtrl, label: 'Model'),
               const SizedBox(height: 16),
               _buildTextField(
                 controller: stokAdediCtrl,
@@ -160,13 +152,12 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         filled: true,
         fillColor: Colors.grey[50],
       ),
-      validator: validator ?? (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
+      validator:
+          validator ?? (v) => v!.isEmpty ? 'Bu alan boş bırakılamaz' : null,
     );
   }
 
@@ -174,7 +165,7 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
     if (!formKey.currentState!.validate()) return;
 
     final isEditing = widget.device != null;
-    
+
     if (isEditing) {
       // Düzenleme
       final updatedDevice = widget.device!.copyWith(
@@ -183,8 +174,10 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
         customer: cihazAdiCtrl.text,
         stockQuantity: int.parse(stokAdediCtrl.text),
       );
-      
-      final success = await ref.read(inventoryProvider.notifier).updateDevice(updatedDevice);
+
+      final success = await ref
+          .read(inventoryProvider.notifier)
+          .updateDevice(updatedDevice);
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -208,8 +201,10 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
         warrantyEndDate: DateTime.now().add(const Duration(days: 365)),
         stockQuantity: int.parse(stokAdediCtrl.text),
       );
-      
-      final success = await ref.read(inventoryProvider.notifier).addDevice(newDevice);
+
+      final success = await ref
+          .read(inventoryProvider.notifier)
+          .addDevice(newDevice);
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

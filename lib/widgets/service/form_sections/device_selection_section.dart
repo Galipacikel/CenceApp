@@ -213,6 +213,7 @@ class DeviceSelectionSection extends HookConsumerWidget {
           controller: serialNumberController,
           keyboardType: TextInputType.text,
           style: const TextStyle(color: Colors.black87),
+          readOnly: formState.formTipi == 0 && selectedDevice != null,
           onChanged: (v) => notifier.updateDeviceFields(serialNumber: v),
           decoration: InputDecoration(
             hintText: 'Cihaz seri numarasını girin',
@@ -240,6 +241,7 @@ class DeviceSelectionSection extends HookConsumerWidget {
           controller: deviceNameController,
           keyboardType: TextInputType.text,
           style: const TextStyle(color: Colors.black87),
+          readOnly: formState.formTipi == 0 && selectedDevice != null,
           onChanged: (v) => notifier.updateDeviceFields(deviceName: v),
           decoration: InputDecoration(
             hintText: 'Cihaz adını girin',
@@ -267,6 +269,7 @@ class DeviceSelectionSection extends HookConsumerWidget {
           controller: brandController,
           keyboardType: TextInputType.text,
           style: const TextStyle(color: Colors.black87),
+          readOnly: formState.formTipi == 0 && selectedDevice != null,
           onChanged: (v) => notifier.updateDeviceFields(brand: v),
           decoration: InputDecoration(
             hintText: 'Cihaz markasını girin',
@@ -294,6 +297,7 @@ class DeviceSelectionSection extends HookConsumerWidget {
           controller: modelController,
           keyboardType: TextInputType.text,
           style: const TextStyle(color: Colors.black87),
+          readOnly: formState.formTipi == 0 && selectedDevice != null,
           onChanged: (v) => notifier.updateDeviceFields(model: v),
           decoration: InputDecoration(
             hintText: 'Cihaz modelini girin',

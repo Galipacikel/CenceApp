@@ -49,7 +49,11 @@ class StokTakibiScreen extends ConsumerWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, WidgetRef ref, int selectedIndex) {
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    WidgetRef ref,
+    int selectedIndex,
+  ) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(70),
       child: AppBar(
@@ -84,8 +88,15 @@ class StokTakibiScreen extends ConsumerWidget {
                     color: Colors.white,
                     size: 32,
                   ),
-                  tooltip: selectedIndex == 0 ? 'Yeni Cihaz Ekle' : 'Yeni Parça Ekle',
-                  onPressed: () => _handleAddButtonPress(context, ref, selectedIndex, isAdmin),
+                  tooltip: selectedIndex == 0
+                      ? 'Yeni Cihaz Ekle'
+                      : 'Yeni Parça Ekle',
+                  onPressed: () => _handleAddButtonPress(
+                    context,
+                    ref,
+                    selectedIndex,
+                    isAdmin,
+                  ),
                 );
               },
             ),
@@ -101,10 +112,7 @@ class StokTakibiScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.grey.withAlpha(20),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withAlpha(20), width: 1),
       ),
       child: TabBar(
         onTap: (i) => ref.read(inventoryProvider.notifier).setTab(i),
@@ -120,18 +128,20 @@ class StokTakibiScreen extends ConsumerWidget {
           ],
         ),
         indicatorSize: TabBarIndicatorSize.tab,
-          labelColor: Colors.white,
-        unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withAlpha(179),
+        labelColor: Colors.white,
+        unselectedLabelColor: Theme.of(
+          context,
+        ).colorScheme.onSurface.withAlpha(179),
         labelStyle: GoogleFonts.montserrat(
           fontWeight: FontWeight.w600,
           fontSize: 15,
         ),
-          unselectedLabelStyle: GoogleFonts.montserrat(
+        unselectedLabelStyle: GoogleFonts.montserrat(
           fontWeight: FontWeight.w500,
           fontSize: 15,
-          ),
-          tabs: const [
-            Tab(text: 'Cihazlar'),
+        ),
+        tabs: const [
+          Tab(text: 'Cihazlar'),
           Tab(text: 'Yedek Parça'),
         ],
       ),
@@ -140,10 +150,8 @@ class StokTakibiScreen extends ConsumerWidget {
 
   Widget _buildDevicesTab(BuildContext context, WidgetRef ref, bool isWide) {
     return Center(
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: isWide ? 600 : double.infinity,
-              ),
+      child: Container(
+        constraints: BoxConstraints(maxWidth: isWide ? 600 : double.infinity),
         child: Consumer(
           builder: (context, ref, _) {
             final devicesAsync = ref.watch(filteredDevicesProvider);
@@ -154,7 +162,9 @@ class StokTakibiScreen extends ConsumerWidget {
                   children: [
                     _buildSearchField(
                       hintText: 'Model ile ara...',
-                      onChanged: (value) => ref.read(inventoryProvider.notifier).setDeviceSearch(value),
+                      onChanged: (value) => ref
+                          .read(inventoryProvider.notifier)
+                          .setDeviceSearch(value),
                     ),
                     const SizedBox(height: 16),
                     if (devices.isEmpty)
@@ -170,50 +180,67 @@ class StokTakibiScreen extends ConsumerWidget {
                             final device = devices[index];
                             return DeviceTile(
                               device: device,
-                              onEdit: () => _showDeviceFormSheet(context, ref, device),
-                              onDelete: () => _showDeleteDeviceDialog(context, ref, device),
+                              onEdit: () =>
+                                  _showDeviceFormSheet(context, ref, device),
+                              onDelete: () =>
+                                  _showDeleteDeviceDialog(context, ref, device),
                             );
                           },
                         ),
                       ),
-                    ],
+                  ],
                 ),
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => const Center(child: Text('Hata oluştu')),
-                  );
-                },
-              ),
-            ),
+            );
+          },
+        ),
+      ),
     );
   }
 
-  Widget _buildPartsTab(BuildContext context, WidgetRef ref, bool isWide, bool showOnlyCritical) {
+  Widget _buildPartsTab(
+    BuildContext context,
+    WidgetRef ref,
+    bool isWide,
+    bool showOnlyCritical,
+  ) {
     return Center(
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: isWide ? 600 : double.infinity,
-              ),
+      child: Container(
+        constraints: BoxConstraints(maxWidth: isWide ? 600 : double.infinity),
         child: Consumer(
           builder: (context, ref, _) {
             final partsAsync = ref.watch(filteredPartsProvider);
             return partsAsync.when(
               data: (parts) {
-                final criticalParts = parts.where((p) => p.stokAdedi <= p.criticalLevel).toList();
+                final criticalParts = parts
+                    .where((p) => p.stokAdedi <= p.criticalLevel)
+                    .toList();
 
-                  return Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
                       child: _buildSearchField(
                         hintText: 'Parça adı veya kodu ile ara...',
-                        onChanged: (value) => ref.read(inventoryProvider.notifier).setPartSearch(value),
+                        onChanged: (value) => ref
+                            .read(inventoryProvider.notifier)
+                            .setPartSearch(value),
                       ),
                     ),
-                    _buildCriticalWarningBanner(context, ref, showOnlyCritical, criticalParts),
+                    _buildCriticalWarningBanner(
+                      context,
+                      ref,
+                      showOnlyCritical,
+                      criticalParts,
+                    ),
                     Expanded(
                       child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 18,
+                        ),
                         children: [
                           Text(
                             'Tüm Parçalar',
@@ -228,7 +255,8 @@ class StokTakibiScreen extends ConsumerWidget {
                             (p) => StockPartTile(
                               part: p,
                               onEdit: () => _showPartFormSheet(context, ref, p),
-                              onDelete: () => _showDeletePartDialog(context, ref, p),
+                              onDelete: () =>
+                                  _showDeletePartDialog(context, ref, p),
                             ),
                           ),
                         ],
@@ -251,134 +279,161 @@ class StokTakibiScreen extends ConsumerWidget {
     required ValueChanged<String> onChanged,
   }) {
     return TextField(
-                          decoration: InputDecoration(
+      decoration: InputDecoration(
         hintText: hintText,
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
+        prefixIcon: const Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
       onChanged: onChanged,
     );
   }
 
-  Widget _buildCriticalWarningBanner(BuildContext context, WidgetRef ref, bool showOnlyCritical, List<StockPart> criticalParts) {
+  Widget _buildCriticalWarningBanner(
+    BuildContext context,
+    WidgetRef ref,
+    bool showOnlyCritical,
+    List<StockPart> criticalParts,
+  ) {
     final hasCriticalParts = criticalParts.isNotEmpty;
-    
+
     return GestureDetector(
-                                onTap: () {
+      onTap: () {
         if (hasCriticalParts) {
           ref.read(inventoryProvider.notifier).toggleShowOnlyCritical();
         }
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 350),
-                                  curve: Curves.easeInOut,
-                                  margin: const EdgeInsets.only(bottom: 16),
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  decoration: BoxDecoration(
-          color: hasCriticalParts 
+        decoration: BoxDecoration(
+          color: hasCriticalParts
               ? AppColors.criticalRed.withAlpha(33)
               : Colors.grey.withAlpha(33),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-            color: hasCriticalParts 
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: hasCriticalParts
                 ? AppColors.criticalRed.withAlpha(77)
                 : Colors.grey.withAlpha(77),
-                                      width: 1.2,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-              color: hasCriticalParts 
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: hasCriticalParts
                   ? AppColors.criticalRed.withAlpha(26)
                   : Colors.grey.withAlpha(26),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Icon(
-              hasCriticalParts ? Icons.warning_amber_rounded : Icons.check_circle_outline,
-              color: hasCriticalParts ? AppColors.criticalRed : Colors.grey[600],
-                                        size: 22,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
+          children: [
+            Icon(
+              hasCriticalParts
+                  ? Icons.warning_amber_rounded
+                  : Icons.check_circle_outline,
+              color: hasCriticalParts
+                  ? AppColors.criticalRed
+                  : Colors.grey[600],
+              size: 22,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                        hasCriticalParts ? 'Kritik Seviye Uyarısı' : 'Stok Durumu',
-                                                  style: GoogleFonts.montserrat(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 15,
-                          color: hasCriticalParts ? AppColors.criticalRed : Colors.grey[600],
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                  decoration: BoxDecoration(
-                          color: hasCriticalParts 
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        hasCriticalParts
+                            ? 'Kritik Seviye Uyarısı'
+                            : 'Stok Durumu',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: hasCriticalParts
+                              ? AppColors.criticalRed
+                              : Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: hasCriticalParts
                               ? AppColors.criticalRed.withAlpha(46)
                               : Colors.grey.withAlpha(46),
                           borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Text(
-                                                    '${criticalParts.length}',
+                        ),
+                        child: Text(
+                          '${criticalParts.length}',
                           style: GoogleFonts.montserrat(
                             fontWeight: FontWeight.bold,
-                            color: hasCriticalParts ? AppColors.criticalRed : Colors.grey[600],
+                            color: hasCriticalParts
+                                ? AppColors.criticalRed
+                                : Colors.grey[600],
                             fontSize: 12,
-                                                        ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
                     hasCriticalParts
                         ? (showOnlyCritical
-                                                  ? 'Kritik seviyedekiler gösteriliyor'
-                            : 'Stokta kritik seviyeye düşen parçalarınız var!')
+                              ? 'Kritik seviyedekiler gösteriliyor'
+                              : 'Stokta kritik seviyeye düşen parçalarınız var!')
                         : 'Tüm parçalar normal seviyede',
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: 13,
-                      color: hasCriticalParts ? AppColors.criticalRed : Colors.grey[600],
-                                              ),
-                                            ),
+                    style: GoogleFonts.montserrat(
+                      fontSize: 13,
+                      color: hasCriticalParts
+                          ? AppColors.criticalRed
+                          : Colors.grey[600],
+                    ),
+                  ),
                   if (hasCriticalParts)
-                                            Padding(
+                    Padding(
                       padding: const EdgeInsets.only(top: 6.0),
-                                              child: Text(
-                        showOnlyCritical ? 'Tüm parçaları göster' : 'Kritik seviyeleri gör',
-                                                style: GoogleFonts.montserrat(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppColors.criticalRed,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                      child: Text(
+                        showOnlyCritical
+                            ? 'Tüm parçaları göster'
+                            : 'Kritik seviyeleri gör',
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.criticalRed,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  void _handleAddButtonPress(BuildContext context, WidgetRef ref, int selectedIndex, bool isAdmin) {
-                                  if (!isAdmin) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+  void _handleAddButtonPress(
+    BuildContext context,
+    WidgetRef ref,
+    int selectedIndex,
+    bool isAdmin,
+  ) {
+    if (!isAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
           content: Text('Ekleme yetkisi sadece admin kullanıcılar içindir.'),
           backgroundColor: AppColors.criticalRed,
           behavior: SnackBarBehavior.floating,
@@ -386,7 +441,7 @@ class StokTakibiScreen extends ConsumerWidget {
       );
       return;
     }
-    
+
     if (selectedIndex == 0) {
       _showDeviceFormSheet(context, ref, null);
     } else {
@@ -394,18 +449,26 @@ class StokTakibiScreen extends ConsumerWidget {
     }
   }
 
-  void _showDeviceFormSheet(BuildContext context, WidgetRef ref, Device? device) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-    ),
+  void _showDeviceFormSheet(
+    BuildContext context,
+    WidgetRef ref,
+    Device? device,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
       builder: (ctx) => DeviceFormSheet(device: device),
     );
   }
 
-  void _showPartFormSheet(BuildContext context, WidgetRef ref, StockPart? part) {
+  void _showPartFormSheet(
+    BuildContext context,
+    WidgetRef ref,
+    StockPart? part,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -416,7 +479,11 @@ class StokTakibiScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showDeleteDeviceDialog(BuildContext context, WidgetRef ref, Device device) async {
+  Future<void> _showDeleteDeviceDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Device device,
+  ) async {
     final isAdmin = ref.read(isAdminProvider);
     if (!isAdmin) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -433,25 +500,32 @@ class StokTakibiScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => ConfirmationDialog(
         title: 'Cihazı Sil',
-        message: '"${device.modelName}" cihazını silmek istediğinize emin misiniz?',
+        message:
+            '"${device.modelName}" cihazını silmek istediğinize emin misiniz?',
       ),
     );
 
     if (confirmed == true && context.mounted) {
-      final success = await ref.read(inventoryProvider.notifier).deleteDevice(device.id);
+      final success = await ref
+          .read(inventoryProvider.notifier)
+          .deleteDevice(device.id);
       if (success && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Cihaz başarıyla silindi'),
             backgroundColor: AppColors.primaryBlue,
             behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-}
+          ),
+        );
+      }
+    }
   }
 
-  Future<void> _showDeletePartDialog(BuildContext context, WidgetRef ref, StockPart part) async {
+  Future<void> _showDeletePartDialog(
+    BuildContext context,
+    WidgetRef ref,
+    StockPart part,
+  ) async {
     final isAdmin = ref.read(isAdminProvider);
     if (!isAdmin) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -468,22 +542,24 @@ class StokTakibiScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => ConfirmationDialog(
         title: 'Parçayı Sil',
-        message: '"${part.parcaAdi}" parçasını silmek istediğinize emin misiniz?',
+        message:
+            '"${part.parcaAdi}" parçasını silmek istediğinize emin misiniz?',
       ),
     );
 
     if (confirmed == true && context.mounted) {
-      final success = await ref.read(inventoryProvider.notifier).deletePart(part.id);
+      final success = await ref
+          .read(inventoryProvider.notifier)
+          .deletePart(part.id);
       if (success && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Parça başarıyla silindi'),
             backgroundColor: AppColors.primaryBlue,
             behavior: SnackBarBehavior.floating,
-      ),
-    );
+          ),
+        );
+      }
+    }
   }
 }
-  }
-}
-

@@ -34,9 +34,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await initializeDateFormatting('tr_TR', null);
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   if (kUseEmulators) {
     // Eğer derleme zamanında --dart-define=USE_EMULATORS=true geçilirse
@@ -52,11 +50,7 @@ Future<void> main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
-  runApp(
-    const rp.ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const rp.ProviderScope(child: MyApp()));
 }
 
 class MyApp extends rp.ConsumerWidget {
