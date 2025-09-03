@@ -35,9 +35,9 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
   }
 
   Future<void> _addServiceHistoryFromForm(BuildContext context) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const NewServiceFormScreen()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const NewServiceFormScreen()));
   }
 
   @override
@@ -47,7 +47,8 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
     final double baseLogoSize = isWide ? 28.0 : 24.0;
     final double logoSize = baseLogoSize * 2; // 2x enlargement
     // AppBar height scales with logo size (start from original 90/70 and add the delta)
-    final double appBarHeight = (isWide ? 90.0 : 70.0) + (logoSize - baseLogoSize);
+    final double appBarHeight =
+        (isWide ? 90.0 : 70.0) + (logoSize - baseLogoSize);
     final currentIndex = ref.watch(homeCurrentIndexProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -135,10 +136,13 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
           ),
         ),
       ),
-      body: currentIndex == 0 ? _buildMainContent(context, isWide) : const SettingsScreen(),
+      body: currentIndex == 0
+          ? _buildMainContent(context, isWide)
+          : const SettingsScreen(),
       bottomNavigationBar: BottomNavBar(
         currentIndex: currentIndex,
-        onTap: (index) => ref.read(homeCurrentIndexProvider.notifier).state = index,
+        onTap: (index) =>
+            ref.read(homeCurrentIndexProvider.notifier).state = index,
       ),
     );
   }
@@ -150,10 +154,10 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
     final gridCrossAxisCount = width > 1100
         ? 5
         : width > 800
-            ? 4
-            : isWide
-                ? 3
-                : 2;
+        ? 4
+        : isWide
+        ? 3
+        : 2;
     final gridSpacing = isWide ? 24.0 : 12.0;
     final iconColor = const Color(0xFF23408E);
     return Container(
@@ -287,8 +291,8 @@ class _HomePageState extends rp.ConsumerState<HomePage> {
               ),
             ),
             const SizedBox(height: 36),
-            // Son Servis İşlemleri bölümü kaldırıldı (istek üzerine)
 
+            // Son Servis İşlemleri bölümü kaldırıldı (istek üzerine)
             const SizedBox(height: 24),
             // Footer
             Center(

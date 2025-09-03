@@ -31,9 +31,16 @@ class ThemeSettingsScreen extends ConsumerWidget {
             fontSize: 22,
           ),
         ),
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary, size: 28),
+        iconTheme: IconThemeData(
+          color: Theme.of(context).colorScheme.onPrimary,
+          size: 28,
+        ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Theme.of(context).colorScheme.onPrimary, size: 28),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Theme.of(context).colorScheme.onPrimary,
+            size: 28,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -158,7 +165,9 @@ class _ThemeOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? primaryBlue.withAlpha(20) : Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(30),
+      color: selected
+          ? primaryBlue.withAlpha(20)
+          : Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(30),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -168,7 +177,13 @@ class _ThemeOption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: [
-              Icon(icon, color: selected ? primaryBlue : Theme.of(context).colorScheme.onSurfaceVariant, size: 26),
+              Icon(
+                icon,
+                color: selected
+                    ? primaryBlue
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                size: 26,
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
@@ -176,7 +191,9 @@ class _ThemeOption extends StatelessWidget {
                   style: GoogleFonts.montserrat(
                     fontWeight: FontWeight.w500,
                     fontSize: 15,
-                    color: selected ? primaryBlue : Theme.of(context).colorScheme.onSurface,
+                    color: selected
+                        ? primaryBlue
+                        : Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
