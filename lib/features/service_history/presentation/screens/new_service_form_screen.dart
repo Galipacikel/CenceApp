@@ -54,6 +54,16 @@ class NewServiceFormScreen extends HookConsumerWidget {
       text: formState.activeTabData.warranty,
     );
 
+    // Sekme değişimlerinde controller'ları aktif sekmenin verisi ile senkronize et
+    ref.listen(newServiceFormProvider, (prev, next) {
+      final nt = next.activeTabData;
+      if (descriptionController.text != (nt.description ?? '')) {
+        descriptionController.text = nt.description ?? '';
+      }
+      if (warrantyController.text != nt.warranty) {
+        warrantyController.text = nt.warranty;
+      }
+    });
     // App user -> teknisyen adını state'e yansıt
     ref.listen(appUserProvider, (previous, next) {
       next.when(
