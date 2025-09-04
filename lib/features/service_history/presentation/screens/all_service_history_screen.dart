@@ -23,8 +23,8 @@ class _AllServiceHistoryScreenState
   String _selectedStatus = 'Tümü';
   final List<String> _statusOptions = [
     'Tümü',
-    'Başarılı',
-    'Arızalı',
+    'Kurulum',
+    'Arıza',
     'Beklemede',
   ];
 
@@ -38,8 +38,8 @@ class _AllServiceHistoryScreenState
 
   String getStatusLabel(String status) {
     switch (status) {
-      case 'Başarılı':
-        return 'Başarılı';
+      case 'Kurulum':
+        return 'Kurulum';
       case 'Beklemede':
         return 'Beklemede';
       case 'Arızalı':
@@ -51,7 +51,7 @@ class _AllServiceHistoryScreenState
 
   Color getStatusColor(String status) {
     switch (status) {
-      case 'Başarılı':
+      case 'Kurulum':
         return const Color(0xFF43A047);
       case 'Beklemede':
         return const Color.fromARGB(255, 223, 238, 20);
