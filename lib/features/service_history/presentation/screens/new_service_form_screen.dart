@@ -53,8 +53,39 @@ class NewServiceFormScreen extends HookConsumerWidget {
     final warrantyController = useTextEditingController(
       text: formState.activeTabData.warranty,
     );
+    final technicianController = useMemoized(() => TextEditingController());
+    
+    // Teknisyen controller'ını güncelle
+    useEffect(() {
+      technicianController.text = formState.technicianName;
+      return null;
+    }, [formState.technicianName]);
+    
+    // Controller'ı dispose et
+    useEffect(() {
+      return () => technicianController.dispose();
+    }, []);
 
-    // App user -> teknisyen adını state'e yansıt
+    // Sayfa açıldığında teknisyen adını yükle
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final appUserAsync = ref.read(appUserProvider);
+        appUserAsync.when(
+          data: (appUser) {
+            final uname = (appUser?.username ?? appUser?.usernameLowercase ?? '')
+                .trim();
+            if (uname.isNotEmpty) {
+              notifier.setTechnicianName(uname);
+            }
+          },
+          loading: () {},
+          error: (_, __) {},
+        );
+      });
+      return null;
+    }, []);
+
+    // App user -> teknisyen adını state'e yansıt (değişiklikleri dinle)
     ref.listen(appUserProvider, (previous, next) {
       next.when(
         data: (appUser) {
@@ -265,7 +296,7 @@ class NewServiceFormScreen extends HookConsumerWidget {
             ),
             const SizedBox(height: 4),
             TextField(
-              controller: useTextEditingController(text: formState.technicianName),
+              controller: technicianController,
               readOnly: true,
               keyboardType: TextInputType.text,
               style: const TextStyle(color: Colors.black87),
@@ -361,7 +392,7 @@ class NewServiceFormScreen extends HookConsumerWidget {
                 final history = ServiceHistory(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   date: t.date ?? DateTime.now(),
-                  serialNumber: deviceLabel,
+                  serialNumber: t.serialNumber?.trim() ?? '',
                   musteri: musteri,
                   description: ((t.description ?? '').trim().isEmpty)
                       ? '-'
@@ -373,6 +404,9 @@ class NewServiceFormScreen extends HookConsumerWidget {
                   location: t.location ?? '',
                   kullanilanParcalar: parts,
                   photos: photos,
+                  deviceName: t.deviceName?.trim() ?? '',
+                  brand: t.brand?.trim() ?? '',
+                  model: t.model?.trim() ?? '',
                 );
                 
                 try {
