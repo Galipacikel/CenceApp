@@ -5,6 +5,7 @@ import 'package:cence_app/services/username_auth_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
 import 'package:cence_app/features/home/presentation/screens/home_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -19,11 +20,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
   final UsernameAuthService _usernameAuth = UsernameAuthService();
+
+  // SharedPreferences metodları
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUsername = prefs.getString('saved_username');
+    final savedPassword = prefs.getString('saved_password');
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+
+    if (rememberMe && savedUsername != null && savedPassword != null) {
+      setState(() {
+        _usernameController.text = savedUsername;
+        _passwordController.text = savedPassword;
+        _rememberMe = true;
+      });
+    }
+  }
+
+  Future<void> _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setString('saved_username', _usernameController.text.trim());
+      await prefs.setString('saved_password', _passwordController.text.trim());
+      await prefs.setBool('remember_me', true);
+    } else {
+      await _clearCredentials();
+    }
+  }
+
+  Future<void> _clearCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('saved_username');
+    await prefs.remove('saved_password');
+    await prefs.setBool('remember_me', false);
+  }
 
   @override
   void initState() {
@@ -43,6 +79,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
         );
     _animationController.forward();
+    _loadSavedCredentials();
   }
 
   @override
@@ -114,6 +151,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         }
       }
 
+      // Başarılı giriş sonrası kullanıcı bilgilerini kaydet
+      await _saveCredentials();
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
@@ -172,7 +212,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width > 600;
+    final screenSize = MediaQuery.of(context).size;
+    final isWide = screenSize.width > 600;
+    final isTablet = screenSize.width > 768;
+    final isDesktop = screenSize.width > 1024;
+    
+    // Responsive padding ve boyutlar
+    final horizontalPadding = isDesktop ? 48.0 : (isTablet ? 32.0 : 24.0);
+    final containerMaxWidth = isDesktop ? 400.0 : (isTablet ? 500.0 : double.infinity);
+    final logoSize = isDesktop ? 200.0 : (isTablet ? 180.0 : (isWide ? 180.0 : 150.0));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -227,45 +275,52 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 position: _slideAnimation,
                 child: Center(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Logo ve başlık
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(
-                                  20,
-                                ), // 0.08 * 255 ≈ 20
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              // Logo container
-                              Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF23408E).withAlpha(26),
-                                  shape: BoxShape.circle,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: 24,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: containerMaxWidth,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Logo ve başlık
+                          Container(
+                            padding: EdgeInsets.all(isDesktop ? 32 : (isTablet ? 28 : 24)),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(isDesktop ? 24 : 20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(
+                                    20,
+                                  ), // 0.08 * 255 ≈ 20
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
                                 ),
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    'assets/app_icon/cence_logo.jpeg',
-                                    width: isWide ? 180 : 150,
-                                    height: isWide ? 180 : 150,
-                                    fit: BoxFit.cover,
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                // Logo container
+                                Container(
+                                  padding: EdgeInsets.all(isDesktop ? 24 : 20),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF23408E).withAlpha(26),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: ClipOval(
+                                    child: Image.asset(
+                                      'assets/app_icon/cence_logo.jpeg',
+                                      width: logoSize,
+                                      height: logoSize,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 20),
+                                SizedBox(height: isDesktop ? 24 : 20),
 
                               // Cence yazısı
                               RichText(
@@ -313,41 +368,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               _buildLoginForm(),
                             ],
                           ),
-                        ),
+                           ),
 
-                        const SizedBox(height: 40),
+                           SizedBox(height: isDesktop ? 48 : 40),
 
-                        // Alt bilgi
-                        Column(
-                          children: [
-                            Text(
-                              'Cence Medikal Cihazlar',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'v1.0.0',
-                              style: TextStyle(
-                                color: Colors.grey.shade500,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+                           // Alt bilgi
+                           Column(
+                             children: [
+                               Text(
+                                 'Cence Medikal Cihazlar',
+                                 style: TextStyle(
+                                   color: Colors.grey.shade600,
+                                   fontSize: isDesktop ? 16 : 14,
+                                   fontWeight: FontWeight.w500,
+                                 ),
+                               ),
+                               SizedBox(height: isDesktop ? 6 : 4),
+                               Text(
+                                 'v1.0.0',
+                                 style: TextStyle(
+                                   color: Colors.grey.shade500,
+                                   fontSize: isDesktop ? 14 : 12,
+                                 ),
+                               ),
+                             ],
+                           ),
+                         ],
+                       ),
+                     ),
+                   ),
+                 ),
+               ),
+             ),
+           ),
+         ],
+       ),
+     );
   }
 
   Widget _buildLoginForm() {
@@ -374,6 +430,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               _obscurePassword = !_obscurePassword;
             });
           },
+        ),
+        const SizedBox(height: 16),
+
+        // Beni Hatırla checkbox'ı
+        Row(
+          children: [
+            Checkbox(
+              value: _rememberMe,
+              onChanged: (value) {
+                setState(() {
+                  _rememberMe = value ?? false;
+                });
+              },
+              activeColor: const Color(0xFF23408E),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _rememberMe = !_rememberMe;
+                  });
+                },
+                child: Text(
+                  'Beni Hatırla',
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
 
@@ -422,20 +513,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     TextInputType? keyboardType,
     VoidCallback? onTogglePassword,
   }) {
+    final screenSize = MediaQuery.of(context).size;
+    final isDesktop = screenSize.width > 1024;
+    final isTablet = screenSize.width > 768;
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isDesktop ? 16 : 12),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
+        style: TextStyle(
+          fontSize: isDesktop ? 16 : 14,
+        ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey.shade500),
-          prefixIcon: Icon(icon, color: const Color(0xFF23408E)),
+          hintStyle: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: isDesktop ? 16 : 14,
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: const Color(0xFF23408E),
+            size: isDesktop ? 24 : 20,
+          ),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
@@ -443,14 +548,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ? Icons.visibility_off_rounded
                         : Icons.visibility_rounded,
                     color: Colors.grey.shade600,
+                    size: isDesktop ? 24 : 20,
                   ),
                   onPressed: onTogglePassword,
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 20 : 16,
+            vertical: isDesktop ? 20 : 16,
           ),
         ),
       ),
