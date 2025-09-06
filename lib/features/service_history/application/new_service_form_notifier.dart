@@ -231,8 +231,13 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   }
 
   String _getTechnicianName() {
-    // İleride auth/Firestore'dan çekilecek
+    // Başlangıçta boş döndür, appUserProvider listener'ı ile güncellenecek
     return '';
+  }
+
+  // Teknisyen adını başlangıçta yüklemek için
+  void initializeTechnicianName() {
+    // Bu metod screen'den çağrılacak
   }
 }
 

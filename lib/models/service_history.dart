@@ -11,6 +11,9 @@ class ServiceHistory {
   final String location;
   final List<StockPart> kullanilanParcalar;
   final List<String>? photos;
+  final String deviceName;
+  final String brand;
+  final String model;
 
   ServiceHistory({
     required this.id,
@@ -23,6 +26,9 @@ class ServiceHistory {
     this.location = '',
     this.kullanilanParcalar = const [],
     this.photos,
+    this.deviceName = '',
+    this.brand = '',
+    this.model = '',
   });
 
   factory ServiceHistory.fromJson(Map<String, dynamic> json) {
@@ -39,6 +45,9 @@ class ServiceHistory {
           .map((item) => StockPart.fromJson(item))
           .toList(),
       photos: (json['photos'] as List? ?? []).cast<String>(),
+      deviceName: json['deviceName'] ?? '',
+      brand: json['brand'] ?? '',
+      model: json['model'] ?? '',
     );
   }
 
@@ -54,6 +63,9 @@ class ServiceHistory {
       'location': location,
       'kullanilanParcalar': kullanilanParcalar.map((p) => p.toJson()).toList(),
       'photos': photos ?? [],
+      'deviceName': deviceName,
+      'brand': brand,
+      'model': model,
     };
   }
 }

@@ -401,21 +401,39 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                 _buildInfoRow(
                                   icon: Icons.devices_other,
                                   label: 'Cihaz Adı',
-                                  value: device.modelName,
+                                  value: serviceHistory.deviceName.isNotEmpty
+                                      ? serviceHistory.deviceName
+                                      : (device.modelName.isNotEmpty ? device.modelName : 'Belirtilmemiş'),
                                   color: const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
                                 _buildInfoRow(
                                   icon: Icons.qr_code,
                                   label: 'Seri Numarası',
-                                  value: device.serialNumber,
+                                  value: serviceHistory.serialNumber,
                                   color: const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
                                 _buildInfoRow(
                                   icon: Icons.business,
                                   label: 'Firma',
-                                  value: device.customer.isNotEmpty ? device.customer : 'Belirtilmemiş',
+                                  value: serviceHistory.musteri.isNotEmpty
+                                      ? serviceHistory.musteri
+                                      : (device.customer.isNotEmpty ? device.customer : 'Belirtilmemiş'),
+                                  color: const Color(0xFF23408E),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  icon: Icons.memory,
+                                  label: 'Marka',
+                                  value: serviceHistory.brand.isNotEmpty ? serviceHistory.brand : 'Belirtilmemiş',
+                                  color: const Color(0xFF23408E),
+                                ),
+                                const SizedBox(height: 12),
+                                _buildInfoRow(
+                                  icon: Icons.category,
+                                  label: 'Model',
+                                  value: serviceHistory.model.isNotEmpty ? serviceHistory.model : 'Belirtilmemiş',
                                   color: const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
