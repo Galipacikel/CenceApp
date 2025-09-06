@@ -10,6 +10,7 @@ import 'package:cence_app/features/service_history/providers.dart';
 import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
 import 'package:cence_app/features/devices/presentation/providers.dart';
 import 'package:cence_app/services/storage_service.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
 class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   @override
@@ -231,13 +232,19 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   }
 
   String _getTechnicianName() {
-    // Başlangıçta boş döndür, appUserProvider listener'ı ile güncellenecek
-    return '';
+    // Giriş yapan kullanıcının username'ini döndür
+    final asyncUser = ref.read(appUserProvider);
+    return asyncUser.maybeWhen(
+      data: (user) => user?.username ?? '',
+      orElse: () => '',
+    );
   }
 
   // Teknisyen adını başlangıçta yüklemek için
   void initializeTechnicianName() {
     // Bu metod screen'den çağrılacak
+    final technicianName = _getTechnicianName();
+    state = state.copyWith(technicianName: technicianName);
   }
 }
 
