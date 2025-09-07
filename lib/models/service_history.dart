@@ -50,25 +50,11 @@ class ServiceHistory {
       kullanilanParcalar: (json['kullanilanParcalar'] as List? ?? [])
           .map((item) => StockPart.fromJson(item))
           .toList(),
-      photos: _parsePhotos(json['photos']),
+      photos: (json['photos'] as List? ?? []).cast<String>(),
       deviceName: json['deviceName'] ?? '',
       brand: json['brand'] ?? '',
       model: json['model'] ?? '',
     );
-  }
-
-  static List<String> _parsePhotos(dynamic photosData) {
-    if (photosData == null) return [];
-    
-    if (photosData is List) {
-      return photosData.map((item) => item.toString()).toList();
-    }
-    
-    if (photosData is String) {
-      return photosData.isEmpty ? [] : [photosData];
-    }
-    
-    return [];
   }
 
   Map<String, dynamic> toJson() {

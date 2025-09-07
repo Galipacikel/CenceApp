@@ -105,26 +105,10 @@ class FirestoreServiceHistoryRepositoryV2
           .map((d) => _fromFirestore(d.id, d.data()))
           .toList();
 
-      // Formlar koleksiyonundan veri çekmeyi güvenli hale getir
-      List<ServiceHistory> formsList = [];
-      try {
-        final formsSnap = await _firestore.collection(FirestorePaths.forms).get();
-        formsList = formsSnap.docs
-            .map((d) {
-              try {
-                return _fromForms(d.id, d.data());
-              } catch (e) {
-                print('Form verisi dönüştürme hatası (ID: ${d.id}): $e');
-                return null;
-              }
-            })
-            .where((item) => item != null)
-            .cast<ServiceHistory>()
-            .toList();
-      } catch (e) {
-        print('Formlar koleksiyonu okuma hatası: $e');
-        // Formlar koleksiyonunda hata varsa sadece service_history verilerini döndür
-      }
+      final formsSnap = await _firestore.collection(FirestorePaths.forms).get();
+      final formsList = formsSnap.docs
+          .map((d) => _fromForms(d.id, d.data()))
+          .toList();
 
       // Merge and sort by date desc
       final merged = <ServiceHistory>[...list, ...formsList]
@@ -152,28 +136,12 @@ class FirestoreServiceHistoryRepositoryV2
           .map((d) => _fromFirestore(d.id, d.data()))
           .toList();
 
-      // Formlar koleksiyonundan veri çekmeyi güvenli hale getir
-      List<ServiceHistory> formsList = [];
-      try {
-        final formsSnap = await _firestore
-            .collection(FirestorePaths.forms)
-            .get();
-        formsList = formsSnap.docs
-            .map((d) {
-              try {
-                return _fromForms(d.id, d.data());
-              } catch (e) {
-                print('Form verisi dönüştürme hatası (ID: ${d.id}): $e');
-                return null;
-              }
-            })
-            .where((item) => item != null)
-            .cast<ServiceHistory>()
-            .toList();
-      } catch (e) {
-        print('Formlar koleksiyonu okuma hatası: $e');
-        // Formlar koleksiyonunda hata varsa sadece service_history verilerini döndür
-      }
+      final formsSnap = await _firestore
+          .collection(FirestorePaths.forms)
+          .get();
+      final formsList = formsSnap.docs
+          .map((d) => _fromForms(d.id, d.data()))
+          .toList();
 
       final merged = <ServiceHistory>[...list, ...formsList]
         ..sort((a, b) => b.date.compareTo(a.date));
@@ -188,87 +156,67 @@ class FirestoreServiceHistoryRepositoryV2
   }
 
   ServiceHistory _fromForms(String id, Map<String, dynamic> data) {
-    try {
-      DateTime when = DateTime.now();
-      final dynamic rawTarih = data['TARİH'] ?? data['TARIH'] ?? data['tarih'] ?? data['created_at'] ?? data['date'];
-      if (rawTarih is Timestamp) {
-        when = rawTarih.toDate();
-      } else if (rawTarih is String) {
-        final parsed = DateTime.tryParse(rawTarih);
-        if (parsed != null) when = parsed;
+    DateTime when = DateTime.now();
+    final dynamic rawTarih = data['TARİH'] ?? data['TARIH'] ?? data['tarih'] ?? data['created_at'] ?? data['date'];
+    if (rawTarih is Timestamp) {
+      when = rawTarih.toDate();
+    } else if (rawTarih is String) {
+      final parsed = DateTime.tryParse(rawTarih);
+      if (parsed != null) when = parsed;
+    }
+
+    String readString(List<String> keys) {
+      for (final k in keys) {
+        final v = data[k];
+        if (v == null) continue;
+        final s = v.toString().trim();
+        if (s.isNotEmpty) return s;
       }
+      return '';
+    }
 
-      String readString(List<String> keys) {
-        for (final k in keys) {
-          final v = data[k];
-          if (v == null) continue;
-          final s = v.toString().trim();
-          if (s.isNotEmpty) return s;
-        }
-        return '';
+    // Firebase formlar koleksiyonundaki alan isimleri
+    final cihazAdi = readString(['CİHAZ ADI', 'CIHAZ ADI', 'cihaz_adi', 'device_name']);
+    final marka = readString(['MARKA', 'marka', 'brand']);
+    final model = readString(['MODEL', 'model']);
+    final seriNo = readString(['SERİ NO', 'SERI NO', 'seri_no', 'serial_number']);
+    final firma = readString(['FİRMA', 'firma', 'customer_name']);
+    final lokasyon = readString(['LOKASYON', 'lokasyon', 'location']);
+    final yapilanIslem = readString(['YAPILAN İŞLEM', 'YAPILAN ISLEM', 'yapilan_islem', 'description']);
+    final teknisyen = readString(['TEKNİSYEN', 'TEKNISYEN', 'teknisyen', 'technician']);
+    final durum = readString(['DURUM', 'durum', 'status']);
+    
+
+
+    // Seri numarasını string olarak formatla
+    String serialNumber = seriNo;
+    if (serialNumber.isEmpty && data['SERİ NO'] != null) {
+      // Numeric seri numaralarını string'e çevir
+      final rawSerial = data['SERİ NO'];
+      if (rawSerial is num) {
+        serialNumber = rawSerial.toString();
       }
+    }
 
-      // Firebase formlar koleksiyonundaki alan isimleri
-      final cihazAdi = readString(['CİHAZ ADI', 'CIHAZ ADI', 'cihaz_adi', 'device_name']);
-      final marka = readString(['MARKA', 'marka', 'brand']);
-      final model = readString(['MODEL', 'model']);
-      final seriNo = readString(['SERİ NO', 'SERI NO', 'seri_no', 'serial_number']);
-      final firma = readString(['FİRMA', 'firma', 'customer_name']);
-      final lokasyon = readString(['LOKASYON', 'lokasyon', 'location']);
-      final yapilanIslem = readString(['YAPILAN İŞLEM', 'YAPILAN ISLEM', 'yapilan_islem', 'description']);
-      final teknisyen = readString(['TEKNİSYEN', 'TEKNISYEN', 'teknisyen', 'technician']);
-      // final durum = readString(['DURUM', 'durum', 'status']); // Şu an kullanılmıyor
-      
+    // Cihaz bilgilerini birleştir
+    final deviceInfo = [cihazAdi, marka, model].where((e) => e.isNotEmpty).join(' - ');
+    final deviceLabel = deviceInfo.isNotEmpty ? deviceInfo : 'Bilinmeyen Cihaz';
 
-
-      // Seri numarasını string olarak formatla
-       String serialNumber = seriNo;
-       if (serialNumber.isEmpty && data['SERİ NO'] != null) {
-         // Numeric seri numaralarını string'e çevir
-         final rawSerial = data['SERİ NO'];
-         if (rawSerial is num) {
-           serialNumber = rawSerial.toString();
-         }
-       }
-
-       // Cihaz bilgilerini birleştir (şu an kullanılmıyor)
-       // final deviceInfo = [cihazAdi, marka, model].where((e) => e.isNotEmpty).join(' - ');
-       // final deviceLabel = deviceInfo.isNotEmpty ? deviceInfo : 'Bilinmeyen Cihaz';
-
-       return ServiceHistory(
-         id: id,
-         date: when,
-         serialNumber: serialNumber.isNotEmpty ? serialNumber : id,
-         musteri: firma.isNotEmpty ? firma : 'Bilinmeyen Müşteri',
-         description: yapilanIslem.isNotEmpty ? yapilanIslem : 'Kurulum/Bakım işlemi yapıldı',
-         technician: teknisyen.isNotEmpty ? teknisyen : 'Sistem',
-         status: 'Kurulum', // Formlar koleksiyonundaki veriler kurulum olarak işaretlenir
-         location: lokasyon,
-         kullanilanParcalar: const <StockPart>[],
-         photos: const <String>[],
-         deviceName: cihazAdi,
-         brand: marka,
-         model: model,
-       );
-     } catch (e) {
-       // Hata durumunda varsayılan bir ServiceHistory nesnesi döndür
-       print('Form verisi dönüştürme hatası (ID: $id): $e');
-       return ServiceHistory(
-         id: id,
-         date: DateTime.now(),
-         serialNumber: id,
-         musteri: 'Bilinmeyen Müşteri',
-         description: 'Veri dönüştürme hatası',
-         technician: 'Sistem',
-         status: 'Hata',
-         location: '',
-         kullanilanParcalar: const <StockPart>[],
-         photos: const <String>[],
-         deviceName: 'Bilinmeyen Cihaz',
-         brand: '',
-         model: '',
-       );
-     }
+    return ServiceHistory(
+      id: id,
+      date: when,
+      serialNumber: serialNumber.isNotEmpty ? serialNumber : id,
+      musteri: firma.isNotEmpty ? firma : 'Bilinmeyen Müşteri',
+      description: yapilanIslem.isNotEmpty ? yapilanIslem : 'Kurulum/Bakım işlemi yapıldı',
+      technician: teknisyen.isNotEmpty ? teknisyen : 'Sistem',
+      status: 'Kurulum', // Formlar koleksiyonundaki veriler kurulum olarak işaretlenir
+      location: lokasyon,
+      kullanilanParcalar: const <StockPart>[],
+      photos: const <String>[],
+      deviceName: cihazAdi,
+      brand: marka,
+      model: model,
+    );
   }
 
   @override
@@ -369,26 +317,12 @@ class FirestoreServiceHistoryRepositoryV2
        status: (data['service_type'] ?? '') as String,
        location: (data['location'] ?? '') as String,
        kullanilanParcalar: usedParts,
-       photos: _parsePhotos(data['images']),
+       photos: (data['images'] as List<dynamic>? ?? []).cast<String>(),
        deviceName: (data['device_name'] ?? '') as String,
        brand: (data['brand'] ?? '') as String,
        model: (data['model'] ?? '') as String,
      );
    }
-
-  List<String> _parsePhotos(dynamic photosData) {
-    if (photosData == null) return [];
-    
-    if (photosData is List) {
-      return photosData.map((item) => item.toString()).toList();
-    }
-    
-    if (photosData is String) {
-      return photosData.isEmpty ? [] : [photosData];
-    }
-    
-    return [];
-  }
 
   app.Failure _toFailure(FirebaseException e) {
     switch (e.code) {
