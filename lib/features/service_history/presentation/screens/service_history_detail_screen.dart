@@ -30,7 +30,9 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                     return Container(
                       color: Colors.black54,
                       child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
                       ),
                     );
                   },
@@ -63,7 +65,11 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                     color: Colors.black.withAlpha(100),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
               ),
             ),
@@ -260,8 +266,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
 
                   // Fotoğraflar
-                  if (serviceHistory.photos != null &&
-                      serviceHistory.photos!.isNotEmpty) ...[
+                  if (serviceHistory.photos != null && serviceHistory.photos!.isNotEmpty) ...[                    
                     const Text(
                       'Fotoğraflar',
                       style: TextStyle(
@@ -278,10 +283,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                         itemCount: serviceHistory.photos!.length,
                         itemBuilder: (context, index) {
                           return GestureDetector(
-                            onTap: () => _showFullScreenPhoto(
-                              context,
-                              serviceHistory.photos![index],
-                            ),
+                            onTap: () => _showFullScreenPhoto(context, serviceHistory.photos![index]),
                             child: Container(
                               margin: const EdgeInsets.only(right: 12),
                               child: ClipRRect(
@@ -291,19 +293,17 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                   width: 120,
                                   height: 120,
                                   fit: BoxFit.cover,
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null)
-                                          return child;
-                                        return Container(
-                                          width: 120,
-                                          height: 120,
-                                          color: Colors.grey[200],
-                                          child: const Center(
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        );
-                                      },
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      width: 120,
+                                      height: 120,
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
+                                  },
                                   errorBuilder: (context, error, stackTrace) {
                                     return Container(
                                       width: 120,
@@ -341,8 +341,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Oluşturma: ' +
-                              dateFormat.format(serviceHistory.date),
+                          'Oluşturma: ' + dateFormat.format(serviceHistory.date),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -370,7 +369,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                           stockQuantity: 0,
                         ),
                       );
-
+                      
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -400,20 +399,12 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                             child: Column(
                               children: [
                                 _buildInfoRow(
-                                  icon: serviceHistory.status == 'Kurulum'
-                                      ? Icons.build_circle
-                                      : Icons.devices_other,
-                                  label: serviceHistory.status == 'Kurulum'
-                                      ? 'Kurulan Cihaz'
-                                      : 'Cihaz Adı',
+                                  icon: serviceHistory.status == 'Kurulum' ? Icons.build_circle : Icons.devices_other,
+                                  label: serviceHistory.status == 'Kurulum' ? 'Kurulan Cihaz' : 'Cihaz Adı',
                                   value: serviceHistory.deviceName.isNotEmpty
                                       ? serviceHistory.deviceName
-                                      : (device.modelName.isNotEmpty
-                                            ? device.modelName
-                                            : 'Belirtilmemiş'),
-                                  color: serviceHistory.status == 'Kurulum'
-                                      ? Colors.green.shade700
-                                      : const Color(0xFF23408E),
+                                      : (device.modelName.isNotEmpty ? device.modelName : 'Belirtilmemiş'),
+                                  color: serviceHistory.status == 'Kurulum' ? Colors.green.shade700 : const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
                                 _buildInfoRow(
@@ -428,27 +419,21 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                   label: 'Firma',
                                   value: serviceHistory.musteri.isNotEmpty
                                       ? serviceHistory.musteri
-                                      : (device.customer.isNotEmpty
-                                            ? device.customer
-                                            : 'Belirtilmemiş'),
+                                      : (device.customer.isNotEmpty ? device.customer : 'Belirtilmemiş'),
                                   color: const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
                                 _buildInfoRow(
                                   icon: Icons.memory,
                                   label: 'Marka',
-                                  value: serviceHistory.brand.isNotEmpty
-                                      ? serviceHistory.brand
-                                      : 'Belirtilmemiş',
+                                  value: serviceHistory.brand.isNotEmpty ? serviceHistory.brand : 'Belirtilmemiş',
                                   color: const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
                                 _buildInfoRow(
                                   icon: Icons.category,
                                   label: 'Model',
-                                  value: serviceHistory.model.isNotEmpty
-                                      ? serviceHistory.model
-                                      : 'Belirtilmemiş',
+                                  value: serviceHistory.model.isNotEmpty ? serviceHistory.model : 'Belirtilmemiş',
                                   color: const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
@@ -456,9 +441,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                   _buildInfoRow(
                                     icon: Icons.event_available,
                                     label: 'Kurulum Tarihi',
-                                    value: dateFormat.format(
-                                      serviceHistory.date,
-                                    ),
+                                    value: dateFormat.format(serviceHistory.date),
                                     color: Colors.green.shade700,
                                   ),
                                   const SizedBox(height: 12),
@@ -476,9 +459,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                   _buildInfoRow(
                                     icon: Icons.play_circle_outline,
                                     label: 'Servis Başlangıç',
-                                    value: dateFormat.format(
-                                      serviceHistory.serviceStart!,
-                                    ),
+                                    value: dateFormat.format(serviceHistory.serviceStart!),
                                     color: const Color(0xFF23408E),
                                   ),
                                   const SizedBox(height: 12),
@@ -487,9 +468,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                   _buildInfoRow(
                                     icon: Icons.stop_circle_outlined,
                                     label: 'Servis Bitiş',
-                                    value: dateFormat.format(
-                                      serviceHistory.serviceEnd!,
-                                    ),
+                                    value: dateFormat.format(serviceHistory.serviceEnd!),
                                     color: const Color(0xFF23408E),
                                   ),
                                   const SizedBox(height: 12),
@@ -503,12 +482,10 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                     if (end != null) {
                                       final endStr = dateFormat.format(end);
                                       if (DateTime.now().isBefore(end)) {
-                                        text =
-                                            'Garanti: $endStr tarihine kadar devam ediyor';
+                                        text = 'Garanti: $endStr tarihine kadar devam ediyor';
                                         color = const Color(0xFF43A047);
                                       } else {
-                                        text =
-                                            'Garanti: $endStr tarihinde bitti';
+                                        text = 'Garanti: $endStr tarihinde bitti';
                                         color = const Color(0xFFE53935);
                                       }
                                     } else {
@@ -527,9 +504,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                 _buildInfoRow(
                                   icon: Icons.location_on,
                                   label: 'Lokasyon',
-                                  value: serviceHistory.location.isNotEmpty
-                                      ? serviceHistory.location
-                                      : 'Belirtilmemiş',
+                                  value: serviceHistory.location.isNotEmpty ? serviceHistory.location : 'Belirtilmemiş',
                                   color: const Color(0xFF23408E),
                                 ),
                               ],
@@ -539,8 +514,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                         ],
                       );
                     },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: CircularProgressIndicator()),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
 
@@ -702,10 +676,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                         itemCount: serviceHistory.photos!.length,
                         itemBuilder: (context, index) {
                           return GestureDetector(
-                            onTap: () => _showFullScreenPhoto(
-                              context,
-                              serviceHistory.photos![index],
-                            ),
+                            onTap: () => _showFullScreenPhoto(context, serviceHistory.photos![index]),
                             child: Container(
                               margin: const EdgeInsets.only(right: 12),
                               child: ClipRRect(
@@ -717,22 +688,20 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                       width: 120,
                                       height: 120,
                                       fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return Container(
-                                              width: 120,
-                                              height: 120,
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey.shade300,
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: const Icon(
-                                                Icons.error,
-                                                color: Colors.grey,
-                                              ),
-                                            );
-                                          },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Container(
+                                          width: 120,
+                                          height: 120,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade300,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.error,
+                                            color: Colors.grey,
+                                          ),
+                                        );
+                                      },
                                     ),
                                     Positioned(
                                       top: 8,
@@ -741,9 +710,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
                                           color: Colors.black.withAlpha(100),
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
+                                          borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: const Icon(
                                           Icons.zoom_in,
@@ -813,4 +780,5 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
       ],
     );
   }
+
 }

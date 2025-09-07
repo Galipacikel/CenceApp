@@ -40,9 +40,7 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
 
   // Açıklama güncelle
   void updateDescription(String? description) {
-    _updateStateWithNewTabData(
-      state.activeTabData.copyWith(description: description),
-    );
+    _updateStateWithNewTabData(state.activeTabData.copyWith(description: description));
   }
 
   // Cihaz/Müşteri alanlarını güncelle
@@ -111,8 +109,7 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
 
     try {
       final storageService = StorageService();
-      final storagePath =
-          'service_photos/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+      final storagePath = 'service_photos/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
       final downloadUrl = await storageService.uploadFile(
         file: file,
         storagePath: storagePath,
@@ -144,9 +141,7 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
     } else {
       parts.add(SelectedPart(part: part, adet: adet));
     }
-    _updateStateWithNewTabData(
-      state.activeTabData.copyWith(selectedParts: parts),
-    );
+    _updateStateWithNewTabData(state.activeTabData.copyWith(selectedParts: parts));
   }
 
   // Parça sil
@@ -154,9 +149,7 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
     final parts = state.activeTabData.selectedParts
         .where((sp) => sp.part.parcaKodu != part.parcaKodu)
         .toList();
-    _updateStateWithNewTabData(
-      state.activeTabData.copyWith(selectedParts: parts),
-    );
+    _updateStateWithNewTabData(state.activeTabData.copyWith(selectedParts: parts));
   }
 
   // Form submit (eski ekran akışıyla uyum için dış aksiyonla)
@@ -198,25 +191,22 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
         final updateTasks = providerParts
             .where((selectedPart) => selectedPart.part.id.isNotEmpty)
             .map((selectedPart) async {
-              final part = selectedPart.part;
-              final usedQuantity = selectedPart.adet;
-              final currentStock = part.stokAdedi;
-              final newStock = currentStock - usedQuantity;
-              final finalStock = newStock < 0 ? 0 : newStock;
+          final part = selectedPart.part;
+          final usedQuantity = selectedPart.adet;
+          final currentStock = part.stokAdedi;
+          final newStock = currentStock - usedQuantity;
+          final finalStock = newStock < 0 ? 0 : newStock;
 
-              final updatedPart = StockPart(
-                id: part.id,
-                parcaAdi: part.parcaAdi,
-                parcaKodu: part.parcaKodu,
-                stokAdedi: finalStock,
-                criticalLevel: part.criticalLevel,
-              );
+          final updatedPart = StockPart(
+            id: part.id,
+            parcaAdi: part.parcaAdi,
+            parcaKodu: part.parcaKodu,
+            stokAdedi: finalStock,
+            criticalLevel: part.criticalLevel,
+          );
 
-              return ref
-                  .read(inventoryProvider.notifier)
-                  .updatePart(updatedPart);
-            })
-            .toList();
+          return ref.read(inventoryProvider.notifier).updatePart(updatedPart);
+        }).toList();
         await Future.wait(updateTasks);
       }
 
@@ -258,7 +248,6 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   }
 }
 
-final newServiceFormProvider =
-    NotifierProvider<NewServiceFormNotifier, NewServiceFormState>(
-      NewServiceFormNotifier.new,
-    );
+final newServiceFormProvider = NotifierProvider<NewServiceFormNotifier, NewServiceFormState>(
+  NewServiceFormNotifier.new,
+);
