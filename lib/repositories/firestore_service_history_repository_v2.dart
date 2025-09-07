@@ -14,6 +14,52 @@ class FirestoreServiceHistoryRepositoryV2
   FirestoreServiceHistoryRepositoryV2({FirebaseFirestore? firestore})
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
+  /// Formlar koleksiyonundaki verileri service_history koleksiyonuna migrate eder
+  Future<Result<Unit, app.Failure>> migrateFormsToServiceHistory() async {
+    try {
+      // Önce formlar koleksiyonundaki tüm verileri al
+      final formsSnapshot = await _firestore.collection(FirestorePaths.forms).get();
+      
+      // Service_history koleksiyonundaki mevcut verileri al
+      final serviceHistorySnapshot = await _firestore.collection(FirestorePaths.serviceHistory).get();
+      final existingIds = serviceHistorySnapshot.docs.map((doc) => doc.id).toSet();
+      
+      final batch = _firestore.batch();
+      int migratedCount = 0;
+      
+      for (final formDoc in formsSnapshot.docs) {
+        // Eğer bu form verisi zaten service_history'de varsa atla
+        if (existingIds.contains(formDoc.id)) continue;
+        
+        // Form verisini ServiceHistory nesnesine çevir
+        final serviceHistory = _fromForms(formDoc.id, formDoc.data());
+        
+        // Service_history koleksiyonuna ekle
+        final serviceHistoryRef = _firestore
+            .collection(FirestorePaths.serviceHistory)
+            .doc(formDoc.id);
+        
+        final serviceHistoryData = _toFirestoreMap(serviceHistory, id: formDoc.id);
+        batch.set(serviceHistoryRef, serviceHistoryData);
+        
+        migratedCount++;
+      }
+      
+      if (migratedCount > 0) {
+        await batch.commit();
+        print('Migration tamamlandı: $migratedCount kayıt aktarıldı.');
+      } else {
+        print('Migration gerekli değil: Tüm veriler zaten mevcut.');
+      }
+      
+      return Result.ok(const Unit());
+    } on FirebaseException catch (e) {
+      return Result.err(_toFailure(e));
+    } catch (e) {
+      return Result.err(app.UnknownFailure(e.toString()));
+    }
+  }
+
   @override
   Future<Result<Unit, app.Failure>> add(ServiceHistory history) async {
     try {
@@ -139,6 +185,8 @@ class FirestoreServiceHistoryRepositoryV2
     final yapilanIslem = readString(['YAPILAN İŞLEM', 'YAPILAN ISLEM', 'yapilan_islem', 'description']);
     final teknisyen = readString(['TEKNİSYEN', 'TEKNISYEN', 'teknisyen', 'technician']);
     final durum = readString(['DURUM', 'durum', 'status']);
+    
+
 
     // Seri numarasını string olarak formatla
     String serialNumber = seriNo;

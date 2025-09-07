@@ -8,17 +8,16 @@ import 'package:cence_app/models/service_history.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';
 import 'package:cence_app/features/service_history/providers.dart';
 import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
-import 'package:cence_app/features/stock/providers.dart' as stock;
-// removed inventory notifier import as stocks are not mutated here
 import 'package:cence_app/features/devices/presentation/providers.dart';
 import 'package:cence_app/services/storage_service.dart';
+import 'package:cence_app/core/providers/firebase_providers.dart';
 
-class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
+class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   @override
   NewServiceFormState build() {
-    // Başlangıç state'i: Tüm alanlar boş
+    // Başlangıç state'i: Kurulum sekmesi bugünün tarihiyle başlasın
     return NewServiceFormState(
-      kurulumData: const FormTabData(),
+      kurulumData: FormTabData(date: DateTime.now()),
       arizaData: const FormTabData(),
       technicianName: _getTechnicianName(),
     );
@@ -34,8 +33,6 @@ class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
     _updateStateWithNewTabData(state.activeTabData.copyWith(date: newDate));
   }
 
-  // Servis başlangıç/bitiş tarihleri UI tarafında ayrı provider ile tutuluyor
-
   // Garanti süresi güncelle
   void updateWarranty(String months) {
     _updateStateWithNewTabData(state.activeTabData.copyWith(warranty: months));
@@ -43,7 +40,9 @@ class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
 
   // Açıklama güncelle
   void updateDescription(String? description) {
-    _updateStateWithNewTabData(state.activeTabData.copyWith(description: description));
+    _updateStateWithNewTabData(
+      state.activeTabData.copyWith(description: description),
+    );
   }
 
   // Cihaz/Müşteri alanlarını güncelle
@@ -81,24 +80,20 @@ class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
         ),
       );
     } else {
-      final brand = _extractBrand(device.modelName);
-      final model = _extractModel(device.modelName);
       _updateStateWithNewTabData(
         state.activeTabData.copyWith(
           selectedDevice: device,
           serialNumber: device.serialNumber,
-          deviceName: device.customer,
-          brand: brand,
-          model: model,
-          // location bilgisi cihaz kaydında olmayabilir, mevcutu koru
+          deviceName: device.modelName,
+          brand: device.modelName,
+          model: device.modelName,
+          company: device.customer,
+          // location bilgisi cihaz modelinde olmayabilir, mevcutu koru
           location: state.activeTabData.location,
-          // giriş modu UI state'inde tutuluyor
         ),
       );
     }
   }
-
-  // Giriş modu UI provider'ında tutuluyor; burada yönetilmiyor
 
   // Teknisyen adını güncelle
   void setTechnicianName(String name) {
@@ -116,7 +111,8 @@ class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
 
     try {
       final storageService = StorageService();
-      final storagePath = 'service_photos/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+      final storagePath =
+          'service_photos/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
       final downloadUrl = await storageService.uploadFile(
         file: file,
         storagePath: storagePath,
@@ -148,7 +144,9 @@ class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
     } else {
       parts.add(SelectedPart(part: part, adet: adet));
     }
-    _updateStateWithNewTabData(state.activeTabData.copyWith(selectedParts: parts));
+    _updateStateWithNewTabData(
+      state.activeTabData.copyWith(selectedParts: parts),
+    );
   }
 
   // Parça sil
@@ -156,7 +154,9 @@ class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
     final parts = state.activeTabData.selectedParts
         .where((sp) => sp.part.parcaKodu != part.parcaKodu)
         .toList();
-    _updateStateWithNewTabData(state.activeTabData.copyWith(selectedParts: parts));
+    _updateStateWithNewTabData(
+      state.activeTabData.copyWith(selectedParts: parts),
+    );
   }
 
   // Form submit (eski ekran akışıyla uyum için dış aksiyonla)
@@ -192,15 +192,38 @@ class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
       // 1) Servis kaydını ekle
       await ref.read(addServiceHistoryUseCaseProvider)(history);
 
-      // 2) Stok düş: hem UI state'i güncelle hem de repo üzerinden Firestore'da azalt
-      // Firestore stok düşümü repository içinde yapılır; burada ekstra işlem yok
+      // 2) Stok düş
+      final providerParts = state.activeTabData.selectedParts;
+      if (providerParts.isNotEmpty) {
+        final updateTasks = providerParts
+            .where((selectedPart) => selectedPart.part.id.isNotEmpty)
+            .map((selectedPart) async {
+              final part = selectedPart.part;
+              final usedQuantity = selectedPart.adet;
+              final currentStock = part.stokAdedi;
+              final newStock = currentStock - usedQuantity;
+              final finalStock = newStock < 0 ? 0 : newStock;
+
+              final updatedPart = StockPart(
+                id: part.id,
+                parcaAdi: part.parcaAdi,
+                parcaKodu: part.parcaKodu,
+                stokAdedi: finalStock,
+                criticalLevel: part.criticalLevel,
+              );
+
+              return ref
+                  .read(inventoryProvider.notifier)
+                  .updatePart(updatedPart);
+            })
+            .toList();
+        await Future.wait(updateTasks);
+      }
 
       // 3) Liste sağlayıcılarını tazele
       ref.invalidate(serviceHistoryListProvider);
       ref.invalidate(recentServiceHistoryProvider(3));
       ref.invalidate(devicesListProvider);
-      ref.invalidate(stock.stockPartsProvider);
-      ref.invalidate(inventoryProvider);
 
       state = state.copyWith(isSaving: false, lastSubmitSuccess: true);
     } catch (e) {
@@ -219,27 +242,23 @@ class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
   }
 
   String _getTechnicianName() {
-    // Başlangıçta boş döndür, appUserProvider listener'ı ile güncellenecek
-    return '';
-  }
-
-  // "Marka Model" biçimindeki birleşik adı ayırmak için yardımcılar
-  String _extractBrand(String full) {
-    final i = full.indexOf(' ');
-    return i == -1 ? full.trim() : full.substring(0, i).trim();
-  }
-
-  String _extractModel(String full) {
-    final i = full.indexOf(' ');
-    return i == -1 ? '' : full.substring(i + 1).trim();
+    // Giriş yapan kullanıcının username'ini döndür
+    final asyncUser = ref.read(appUserProvider);
+    return asyncUser.maybeWhen(
+      data: (user) => user?.username ?? '',
+      orElse: () => '',
+    );
   }
 
   // Teknisyen adını başlangıçta yüklemek için
   void initializeTechnicianName() {
     // Bu metod screen'den çağrılacak
+    final technicianName = _getTechnicianName();
+    state = state.copyWith(technicianName: technicianName);
   }
 }
 
-final newServiceFormProvider = AutoDisposeNotifierProvider<NewServiceFormNotifier, NewServiceFormState>(
-  NewServiceFormNotifier.new,
-);
+final newServiceFormProvider =
+    NotifierProvider<NewServiceFormNotifier, NewServiceFormState>(
+      NewServiceFormNotifier.new,
+    );

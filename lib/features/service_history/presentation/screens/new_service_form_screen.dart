@@ -59,13 +59,13 @@ class NewServiceFormScreen extends HookConsumerWidget {
       text: formState.activeTabData.warranty,
     );
     final technicianController = useMemoized(() => TextEditingController());
-    
+
     // Teknisyen controller'ını güncelle
     useEffect(() {
       technicianController.text = formState.technicianName;
       return null;
     }, [formState.technicianName]);
-    
+
     // Controller'ı dispose et
     useEffect(() {
       return () => technicianController.dispose();
@@ -77,8 +77,8 @@ class NewServiceFormScreen extends HookConsumerWidget {
         final appUserAsync = ref.read(appUserProvider);
         appUserAsync.when(
           data: (appUser) {
-            final uname = (appUser?.username ?? appUser?.usernameLowercase ?? '')
-                .trim();
+            final uname =
+                (appUser?.username ?? appUser?.usernameLowercase ?? '').trim();
             if (uname.isNotEmpty) {
               notifier.setTechnicianName(uname);
             }
@@ -454,39 +454,39 @@ class NewServiceFormScreen extends HookConsumerWidget {
               onSubmit: () async {
                 final t = ref.read(newServiceFormProvider).activeTabData;
                 final form = ref.read(newServiceFormProvider);
-                
+
                 final musteri = t.company?.trim() ?? '';
                 final deviceLabel = [
-                    t.deviceName?.trim() ?? '',
-                    t.serialNumber?.trim() ?? '',
-                  ].where((e) => e.isNotEmpty).join(' ').trim();
-                
+                  t.deviceName?.trim() ?? '',
+                  t.serialNumber?.trim() ?? '',
+                ].where((e) => e.isNotEmpty).join(' ').trim();
+
                 if (musteri.isEmpty || deviceLabel.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Lütfen Firma ve Cihaz bilgilerini doldurun.'),
+                      content: Text(
+                        'Lütfen Firma ve Cihaz bilgilerini doldurun.',
+                      ),
                       duration: Duration(seconds: 3),
                     ),
                   );
                   return;
                 }
-                
-                final parts = t.selectedParts
-                      .map((sp) {
-                        // "Diğer Parça" özel kaydı, repo'ya gider ama stok işlemez
-                        final isCustom = sp.part.id.startsWith('custom_');
-                        return StockPart(
-                          id: isCustom ? sp.part.id : sp.part.id,
-                          parcaAdi: sp.part.parcaAdi,
-                          parcaKodu: sp.part.parcaKodu,
-                          stokAdedi: sp.adet,
-                          criticalLevel: sp.part.criticalLevel,
-                        );
-                      })
-                      .toList();
-                
+
+                final parts = t.selectedParts.map((sp) {
+                  // "Diğer Parça" özel kaydı, repo'ya gider ama stok işlemez
+                  final isCustom = sp.part.id.startsWith('custom_');
+                  return StockPart(
+                    id: isCustom ? sp.part.id : sp.part.id,
+                    parcaAdi: sp.part.parcaAdi,
+                    parcaKodu: sp.part.parcaKodu,
+                    stokAdedi: sp.adet,
+                    criticalLevel: sp.part.criticalLevel,
+                  );
+                }).toList();
+
                 final photos = t.uploadedPhotos;
-                
+
                 final history = ServiceHistory(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   date: t.date ?? DateTime.now(),
@@ -508,14 +508,18 @@ class NewServiceFormScreen extends HookConsumerWidget {
                   brand: t.brand?.trim() ?? '',
                   model: t.model?.trim() ?? '',
                 );
-                
+
                 try {
                   await notifier.saveHistoryAndDeductStock(history);
                   // Otomatik modda (hem Kurulum hem Arıza): Seçili cihazın stok adedini 0'a çek
                   final isManual = ref.read(manualEntryProvider);
                   if (!isManual && t.selectedDevice != null) {
-                    final updated = t.selectedDevice!.copyWith(stockQuantity: 0);
-                    await ref.read(inventoryProvider.notifier).updateDevice(updated);
+                    final updated = t.selectedDevice!.copyWith(
+                      stockQuantity: 0,
+                    );
+                    await ref
+                        .read(inventoryProvider.notifier)
+                        .updateDevice(updated);
                     ref.invalidate(devicesListProvider);
                     ref.invalidate(inventoryProvider);
                   }
@@ -526,7 +530,7 @@ class NewServiceFormScreen extends HookConsumerWidget {
                         children: const [
                           Icon(Icons.check_circle, color: Colors.white),
                           SizedBox(width: 8),
-                          Text('Kayıt başarılı')
+                          Text('Kayıt başarılı'),
                         ],
                       ),
                       backgroundColor: Colors.green.shade700,

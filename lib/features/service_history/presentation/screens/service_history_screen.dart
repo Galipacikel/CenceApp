@@ -19,11 +19,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedStatus = 'Tümü';
-  final List<String> _statusOptions = [
-    'Tümü',
-    'Kurulum',
-    'Başarılı',
-  ];
+  final List<String> _statusOptions = ['Tümü', 'Kurulum', 'Başarılı'];
 
   @override
   void initState() {
@@ -316,7 +312,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
                   ),
                 ),
               ),
-              if (!_isSelectionMode) ...[  
+              if (!_isSelectionMode) ...[
                 IconButton(
                   icon: const Icon(
                     Icons.select_all,
@@ -779,7 +775,10 @@ class _ServisKaydiCard extends StatelessWidget {
                   children: [
                     if (kayit.brand.isNotEmpty) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.shade50,
                           borderRadius: BorderRadius.circular(4),
@@ -798,7 +797,10 @@ class _ServisKaydiCard extends StatelessWidget {
                     ],
                     if (kayit.model.isNotEmpty) ...[
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.blue.shade50,
                           borderRadius: BorderRadius.circular(4),
@@ -818,7 +820,10 @@ class _ServisKaydiCard extends StatelessWidget {
                     if (kayit.musteri.isNotEmpty) ...[
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.orange.shade50,
                             borderRadius: BorderRadius.circular(4),
