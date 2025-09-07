@@ -316,6 +316,7 @@ class NewServiceFormScreen extends HookConsumerWidget {
               const SizedBox(height: 12),
             ],
 
+            // Garanti Süresi alanı: Yalnızca Kurulum sekmesinde
             if (formState.formTipi == 0) ...[
               const Text(
                 'Garanti Süresi (Ay)',

@@ -464,14 +464,32 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 12),
                                 ],
-                                // Kurulum tarihi arıza kaydı için gösterilmesin
-                                _buildInfoRow(
-                                  icon: Icons.verified,
-                                  label: 'Garanti Durumu',
-                                  value: device.warrantyStatus,
-                                  color: device.warrantyStatus == 'Devam Ediyor' 
-                                      ? const Color(0xFF43A047) 
-                                      : const Color(0xFFE53935),
+                                // Garanti bilgisini detaylı göster
+                                Builder(
+                                  builder: (_) {
+                                    String text;
+                                    Color color;
+                                    final end = device.warrantyEndDate;
+                                    if (end != null) {
+                                      final endStr = dateFormat.format(end);
+                                      if (DateTime.now().isBefore(end)) {
+                                        text = 'Garanti: $endStr tarihine kadar devam ediyor';
+                                        color = const Color(0xFF43A047);
+                                      } else {
+                                        text = 'Garanti: $endStr tarihinde bitti';
+                                        color = const Color(0xFFE53935);
+                                      }
+                                    } else {
+                                      text = 'Garanti bilgisi belirtilmemiş';
+                                      color = const Color(0xFF23408E);
+                                    }
+                                    return _buildInfoRow(
+                                      icon: Icons.verified,
+                                      label: 'Garanti',
+                                      value: text,
+                                      color: color,
+                                    );
+                                  },
                                 ),
                                 const SizedBox(height: 12),
                                 _buildInfoRow(
