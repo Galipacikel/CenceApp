@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:cence_app/features/devices/presentation/providers.dart';
+// devices provider import removed; using inventoryProvider for live devices
+import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
 import 'package:cence_app/models/device.dart';
 import 'package:cence_app/features/service_history/application/new_service_form_notifier.dart';
 import 'package:cence_app/features/service_history/presentation/providers/entry_mode_and_dates.dart';
@@ -26,14 +27,15 @@ class DeviceSelectionSection extends HookConsumerWidget {
 
     // Device search query and results
     final query = deviceSearchController.text;
-    // Watch all devices to build a more flexible suggestion logic
-    final asyncDevices = ref.watch(devicesListProvider);
+    // Kaynak: inventoryProvider (stok ekranındaki anlık güncellemeleri de yansıtır)
+    final invAsync = ref.watch(inventoryProvider);
     final selectedDevice = formState.activeTabData.selectedDevice;
-    final filteredDevices = asyncDevices.maybeWhen(
-      data: (devices) {
+    final filteredDevices = invAsync.maybeWhen(
+      data: (invState) {
+        final devices = invState.devices;
         final q = query.trim().toLowerCase();
         final manual = ref.watch(manualEntryProvider);
-        // Otomatik girişte stokta olmayan cihazlar listelenmesin
+        // Otomatik girişte stokta olmayan cihazlar listelenmesin (remote güncel state)
         final baseList = manual ? devices : devices.where((d) => d.stockQuantity > 0).toList();
         // If no query, show all devices
         if (q.isEmpty) return baseList;
@@ -54,6 +56,7 @@ class DeviceSelectionSection extends HookConsumerWidget {
       },
       orElse: () => const <Device>[],
     );
+    final isLoadingDevices = invAsync.isLoading;
 
     final manual = ref.watch(manualEntryProvider);
 
@@ -187,11 +190,16 @@ class DeviceSelectionSection extends HookConsumerWidget {
                 ),
               ],
             ),
-            child: filteredDevices.isEmpty
-                ? const Padding(
+            child: isLoadingDevices
+                ? const Center(child: Padding(
                     padding: EdgeInsets.all(12.0),
-                    child: Text('Sonuç bulunamadı'),
-                  )
+                    child: CircularProgressIndicator(),
+                  ))
+                : filteredDevices.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: Text('Sonuç bulunamadı'),
+                      )
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: filteredDevices.length,

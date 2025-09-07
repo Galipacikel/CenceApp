@@ -471,13 +471,17 @@ class NewServiceFormScreen extends HookConsumerWidget {
                 }
                 
                 final parts = t.selectedParts
-                      .map((sp) => StockPart(
-                            id: sp.part.id,
-                            parcaAdi: sp.part.parcaAdi,
-                            parcaKodu: sp.part.parcaKodu,
-                            stokAdedi: sp.adet,
-                            criticalLevel: sp.part.criticalLevel,
-                          ))
+                      .map((sp) {
+                        // "Diğer Parça" özel kaydı, repo'ya gider ama stok işlemez
+                        final isCustom = sp.part.id.startsWith('custom_');
+                        return StockPart(
+                          id: isCustom ? sp.part.id : sp.part.id,
+                          parcaAdi: sp.part.parcaAdi,
+                          parcaKodu: sp.part.parcaKodu,
+                          stokAdedi: sp.adet,
+                          criticalLevel: sp.part.criticalLevel,
+                        );
+                      })
                       .toList();
                 
                 final photos = t.uploadedPhotos;
@@ -506,12 +510,13 @@ class NewServiceFormScreen extends HookConsumerWidget {
                 
                 try {
                   await notifier.saveHistoryAndDeductStock(history);
-                  // Kurulum sekmesinde: Otomatik modda seçili cihazın stok adedini 0'a çek
+                  // Otomatik modda (hem Kurulum hem Arıza): Seçili cihazın stok adedini 0'a çek
                   final isManual = ref.read(manualEntryProvider);
-                  if (form.formTipi == 0 && !isManual && t.selectedDevice != null) {
+                  if (!isManual && t.selectedDevice != null) {
                     final updated = t.selectedDevice!.copyWith(stockQuantity: 0);
                     await ref.read(inventoryProvider.notifier).updateDevice(updated);
                     ref.invalidate(devicesListProvider);
+                    ref.invalidate(inventoryProvider);
                   }
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(

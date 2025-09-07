@@ -83,8 +83,8 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
     switch (status) {
       case 'Kurulum':
         return Colors.green.shade800;
-      case 'Arıza':
-        return Colors.red.shade800;
+      case 'Başarılı':
+        return Colors.green.shade800;
       default:
         return Colors.grey.shade800;
     }
@@ -98,8 +98,8 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
     switch (status) {
       case 'Kurulum':
         return 'Kurulum';
-      case 'Arıza':
-        return 'Arıza';
+      case 'Başarılı':
+        return 'Başarılı';
       default:
         return status;
     }
@@ -109,8 +109,8 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
     switch (status) {
       case 'Kurulum':
         return Icons.check_circle_rounded;
-      case 'Arıza':
-        return Icons.error_rounded;
+      case 'Başarılı':
+        return Icons.check_circle_rounded;
       default:
         return Icons.info_outline_rounded;
     }

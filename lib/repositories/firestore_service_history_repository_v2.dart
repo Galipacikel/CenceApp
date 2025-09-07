@@ -25,9 +25,10 @@ class FirestoreServiceHistoryRepositoryV2
       final recordData = _toFirestoreMap(history, id: recordsRef.id);
       batch.set(recordsRef, recordData);
 
-      // Stok düş: kullanılan her parça kadar Firestore'da azalt
+      // Stok düş: Sadece envanterdeki gerçek parçalarda uygula
       for (final used in history.kullanilanParcalar) {
         if (used.id.isEmpty) continue;
+        if (used.id.startsWith('custom_')) continue; // "Diğer Parça" ise stoktan düşme
         final partDoc = _firestore
             .collection(FirestorePaths.spareParts)
             .doc(used.id);
