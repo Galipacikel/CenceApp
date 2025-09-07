@@ -129,26 +129,45 @@ class FirestoreServiceHistoryRepositoryV2
       return '';
     }
 
-    final model = readString(['MODEL', 'model', 'CİHAZ ADI', 'CIHAZ ADI']);
-    final seri = readString(['SERİ NO', 'SERI NO', 'SERINO', 'seri_no', 'serial', 'serialNumber']);
-    final musteri = readString(['FİRMA', 'firma', 'MÜŞTERİ', 'MUSTERİ', 'MUSTERI', 'musteri', 'customer']);
-    final aciklama = readString(['AÇIKLAMA', 'ACIKLAMA', 'açıklama', 'aciklama', 'description']);
-    final teknisyen = readString(['TEKNİSYEN', 'TEKNISYEN', 'teknisyen', 'technician', 'teknisyen_adi']);
+    // Firebase formlar koleksiyonundaki alan isimleri
+    final cihazAdi = readString(['CİHAZ ADI', 'CIHAZ ADI', 'cihaz_adi', 'device_name']);
+    final marka = readString(['MARKA', 'marka', 'brand']);
+    final model = readString(['MODEL', 'model']);
+    final seriNo = readString(['SERİ NO', 'SERI NO', 'seri_no', 'serial_number']);
+    final firma = readString(['FİRMA', 'firma', 'customer_name']);
+    final lokasyon = readString(['LOKASYON', 'lokasyon', 'location']);
+    final yapilanIslem = readString(['YAPILAN İŞLEM', 'YAPILAN ISLEM', 'yapilan_islem', 'description']);
+    final teknisyen = readString(['TEKNİSYEN', 'TEKNISYEN', 'teknisyen', 'technician']);
     final durum = readString(['DURUM', 'durum', 'status']);
 
-    final deviceLabel = [model, seri].where((e) => e.isNotEmpty).join(' ').trim();
+    // Seri numarasını string olarak formatla
+    String serialNumber = seriNo;
+    if (serialNumber.isEmpty && data['SERİ NO'] != null) {
+      // Numeric seri numaralarını string'e çevir
+      final rawSerial = data['SERİ NO'];
+      if (rawSerial is num) {
+        serialNumber = rawSerial.toString();
+      }
+    }
+
+    // Cihaz bilgilerini birleştir
+    final deviceInfo = [cihazAdi, marka, model].where((e) => e.isNotEmpty).join(' - ');
+    final deviceLabel = deviceInfo.isNotEmpty ? deviceInfo : 'Bilinmeyen Cihaz';
 
     return ServiceHistory(
       id: id,
       date: when,
-      serialNumber: deviceLabel.isNotEmpty ? deviceLabel : id,
-      musteri: musteri,
-      description: aciklama,
-      technician: teknisyen.isNotEmpty ? teknisyen : '-',
-      status: durum.isNotEmpty ? durum : 'Başarılı',
-      location: '',
+      serialNumber: serialNumber.isNotEmpty ? serialNumber : id,
+      musteri: firma.isNotEmpty ? firma : 'Bilinmeyen Müşteri',
+      description: yapilanIslem.isNotEmpty ? yapilanIslem : 'Kurulum/Bakım işlemi yapıldı',
+      technician: teknisyen.isNotEmpty ? teknisyen : 'Sistem',
+      status: 'Kurulum', // Formlar koleksiyonundaki veriler kurulum olarak işaretlenir
+      location: lokasyon,
       kullanilanParcalar: const <StockPart>[],
       photos: const <String>[],
+      deviceName: cihazAdi,
+      brand: marka,
+      model: model,
     );
   }
 

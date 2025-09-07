@@ -399,12 +399,12 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                             child: Column(
                               children: [
                                 _buildInfoRow(
-                                  icon: Icons.devices_other,
-                                  label: 'Cihaz Adı',
+                                  icon: serviceHistory.status == 'Kurulum' ? Icons.build_circle : Icons.devices_other,
+                                  label: serviceHistory.status == 'Kurulum' ? 'Kurulan Cihaz' : 'Cihaz Adı',
                                   value: serviceHistory.deviceName.isNotEmpty
                                       ? serviceHistory.deviceName
                                       : (device.modelName.isNotEmpty ? device.modelName : 'Belirtilmemiş'),
-                                  color: const Color(0xFF23408E),
+                                  color: serviceHistory.status == 'Kurulum' ? Colors.green.shade700 : const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
                                 _buildInfoRow(
@@ -442,9 +442,18 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                     icon: Icons.event_available,
                                     label: 'Kurulum Tarihi',
                                     value: dateFormat.format(serviceHistory.date),
-                                    color: const Color(0xFF23408E),
+                                    color: Colors.green.shade700,
                                   ),
                                   const SizedBox(height: 12),
+                                  if (serviceHistory.location.isNotEmpty) ...[
+                                    _buildInfoRow(
+                                      icon: Icons.location_on,
+                                      label: 'Kurulum Lokasyonu',
+                                      value: serviceHistory.location,
+                                      color: Colors.green.shade700,
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
                                 ],
                                 if (serviceHistory.serviceStart != null) ...[
                                   _buildInfoRow(
