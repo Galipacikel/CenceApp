@@ -258,7 +258,7 @@ class _UsedPartsSectionState extends ConsumerState<UsedPartsSection> {
                     orElse: () => SelectedPart(part: part, adet: 0),
                   );
                   final isSelected = selected.adet > 0;
-                  final isOutOfStock = part.stokAdedi == 0;
+                  final isOutOfStock = part.stokAdedi <= 0;
 
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -291,24 +291,14 @@ class _UsedPartsSectionState extends ConsumerState<UsedPartsSection> {
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: isOutOfStock
-                              ? () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('${part.parcaAdi} stokta bulunmuyor.'),
-                                      backgroundColor: Colors.red,
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                }
-                              : () {
-                                  final notifier = ref.read(newServiceFormProvider.notifier);
-                                  if (isSelected) {
-                                    notifier.removePart(part);
-                                  } else {
-                                    notifier.addOrUpdatePart(part, 1);
-                                  }
-                                },
+                          onTap: () {
+                            final notifier = ref.read(newServiceFormProvider.notifier);
+                            if (isSelected) {
+                              notifier.removePart(part);
+                            } else {
+                              notifier.addOrUpdatePart(part, 1);
+                            }
+                          },
                           child: Container(
                             width: 28,
                             height: 28,
@@ -431,7 +421,7 @@ class _UsedPartsSectionState extends ConsumerState<UsedPartsSection> {
                             ],
                           ),
                         ),
-                        if (!isOutOfStock && isSelected)
+                        if (isSelected)
                           Row(
                             children: [
                               IconButton(
@@ -462,20 +452,10 @@ class _UsedPartsSectionState extends ConsumerState<UsedPartsSection> {
                                   color: Color(0xFF23408E),
                                 ),
                                 splashRadius: 20,
-                                onPressed: part.stokAdedi > selected.adet
-                                    ? () {
-                                        final notifier = ref.read(newServiceFormProvider.notifier);
-                                        notifier.addOrUpdatePart(part, selected.adet + 1);
-                                      }
-                                    : () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Stokta sadece ${part.stokAdedi} adet ${part.parcaAdi} bulunuyor.'),
-                                            backgroundColor: Colors.red,
-                                            duration: const Duration(seconds: 2),
-                                          ),
-                                        );
-                                      },
+                                onPressed: () {
+                                  final notifier = ref.read(newServiceFormProvider.notifier);
+                                  notifier.addOrUpdatePart(part, selected.adet + 1);
+                                },
                               ),
                             ],
                           ),

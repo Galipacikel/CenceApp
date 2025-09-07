@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:cence_app/features/devices/presentation/providers.dart';
 import 'package:cence_app/models/device.dart';
 import 'package:cence_app/features/service_history/application/new_service_form_notifier.dart';
+import 'package:cence_app/features/service_history/presentation/providers/entry_mode_and_dates.dart';
 import 'package:cence_app/features/service_history/presentation/providers/new_service_form_state.dart';
 
 class DeviceSelectionSection extends HookConsumerWidget {
@@ -31,16 +32,19 @@ class DeviceSelectionSection extends HookConsumerWidget {
     final filteredDevices = asyncDevices.maybeWhen(
       data: (devices) {
         final q = query.trim().toLowerCase();
+        final manual = ref.watch(manualEntryProvider);
+        // Otomatik girişte stokta olmayan cihazlar listelenmesin
+        final baseList = manual ? devices : devices.where((d) => d.stockQuantity > 0).toList();
         // If no query, show all devices
-        if (q.isEmpty) return devices;
+        if (q.isEmpty) return baseList;
         // If a device is already selected and the query equals that selection's model or serial,
         // show all devices again so that the user can easily change their selection.
         if (selectedDevice != null &&
             (q == selectedDevice.modelName.toLowerCase() ||
              q == selectedDevice.serialNumber.toLowerCase())) {
-          return devices;
+          return baseList;
         }
-        return devices
+        return baseList
             .where(
               (d) => d.modelName.toLowerCase().contains(q) ||
                   d.serialNumber.toLowerCase().contains(q) ||
@@ -51,58 +55,125 @@ class DeviceSelectionSection extends HookConsumerWidget {
       orElse: () => const <Device>[],
     );
 
+    final manual = ref.watch(manualEntryProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE0E6EF)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Giriş Yöntemi Seçin',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Manuel giriş: Stokta olmayan cihaz için (stok etkisi yok)\nOtomatik giriş: Stoktaki cihaz seçimi (stok miktarı azalır)',
+                style: TextStyle(fontSize: 11, color: Colors.black54, height: 1.2),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => ref.read(manualEntryProvider.notifier).state = true,
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: manual ? const Color(0xFF23408E) : Colors.white,
+                        side: const BorderSide(color: Color(0xFF23408E)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text(
+                        'Manuel Giriş',
+                        style: TextStyle(
+                          color: manual ? Colors.white : const Color(0xFF23408E),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => ref.read(manualEntryProvider.notifier).state = false,
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: manual ? Colors.white : const Color(0xFF23408E),
+                        side: const BorderSide(color: Color(0xFF23408E)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text(
+                        'Otomatik Giriş',
+                        style: TextStyle(
+                          color: manual ? const Color(0xFF23408E) : Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
         const Text(
           'Cihaz Bilgileri',
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
         const SizedBox(height: 16),
 
-        const Text(
-            'Cihaz Seç',
-            style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-          ),
-          const SizedBox(height: 4),
-        TextField(
-            controller: deviceSearchController,
-            keyboardType: TextInputType.text,
-            style: const TextStyle(color: Colors.black87),
-            onTap: () => showDeviceSuggestions.value = true,
-            onChanged: (_) => showDeviceSuggestions.value = true,
-            decoration: InputDecoration(
-              hintText: 'Cihaz ara (model veya seri no)',
-              hintStyle: const TextStyle(color: Colors.black54),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 16,
-                horizontal: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
-              ),
-              suffixIcon: (selectedDevice != null || deviceSearchController.text.isNotEmpty)
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        deviceSearchController.clear();
-                        showDeviceSuggestions.value = true; // yeniden listeyi göster
-                        serialNumberController.clear();
-                        deviceNameController.clear();
-                        brandController.clear();
-                        modelController.clear();
-                        notifier.setSelectedDevice(null);
-                      },
-                    )
-                  : null,
+        if (!manual) ...[
+          const Text(
+              'Cihaz Seç',
+              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
             ),
-          ),
-        const SizedBox(height: 8),
+            const SizedBox(height: 4),
+          TextField(
+              controller: deviceSearchController,
+              keyboardType: TextInputType.text,
+              style: const TextStyle(color: Colors.black87),
+              onTap: () => showDeviceSuggestions.value = true,
+              onChanged: (_) => showDeviceSuggestions.value = true,
+              decoration: InputDecoration(
+                hintText: 'Cihaz ara (model veya seri no)',
+                hintStyle: const TextStyle(color: Colors.black54),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                  horizontal: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon: (selectedDevice != null || deviceSearchController.text.isNotEmpty)
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          deviceSearchController.clear();
+                          showDeviceSuggestions.value = true; // yeniden listeyi göster
+                          serialNumberController.clear();
+                          deviceNameController.clear();
+                          brandController.clear();
+                          modelController.clear();
+                          notifier.setSelectedDevice(null);
+                        },
+                      )
+                    : null,
+              ),
+            ),
+          const SizedBox(height: 8),
+        ],
 
-        if (showDeviceSuggestions.value)
+        if (!manual && showDeviceSuggestions.value)
           Container(
             constraints: const BoxConstraints(maxHeight: 220),
             decoration: BoxDecoration(
@@ -135,17 +206,21 @@ class DeviceSelectionSection extends HookConsumerWidget {
                           notifier.setSelectedDevice(d);
                           deviceSearchController.text = d.modelName;
                           showDeviceSuggestions.value = false;
+                          // Otomatik doldurma: serial/institution_name/brand/model
                           serialNumberController.text = d.serialNumber;
-                          deviceNameController.text = d.modelName;
-                          brandController.text = d.modelName;
-                          modelController.text = d.modelName;
+                          deviceNameController.text = d.customer;
+                          final i = d.modelName.indexOf(' ');
+                          final brand = i == -1 ? d.modelName : d.modelName.substring(0, i).trim();
+                          final model = i == -1 ? '' : d.modelName.substring(i + 1).trim();
+                          brandController.text = brand;
+                          modelController.text = model;
                         },
                       );
                     },
                   ),
           ),
 
-        if (selectedDevice != null) ...[
+        if (!manual && selectedDevice != null) ...[
           const SizedBox(height: 8),
           Container(
             width: double.infinity,

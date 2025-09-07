@@ -20,17 +20,6 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
     final t = ref.read(newServiceFormProvider).activeTabData;
     _companyController.text = t.company ?? '';
     _locationController.text = t.location ?? '';
-
-    // Listen provider changes to keep controllers in sync
-    ref.listen(newServiceFormProvider, (prev, next) {
-      final nt = next.activeTabData;
-      if (_companyController.text != (nt.company ?? '')) {
-        _companyController.text = nt.company ?? '';
-      }
-      if (_locationController.text != (nt.location ?? '')) {
-        _locationController.text = nt.location ?? '';
-      }
-    });
   }
 
   @override
@@ -42,6 +31,16 @@ class _CustomerInfoSectionState extends ConsumerState<CustomerInfoSection> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen provider changes within build (valid Riverpod lifecycle)
+    ref.listen(newServiceFormProvider, (prev, next) {
+      final nt = next.activeTabData;
+      if (_companyController.text != (nt.company ?? '')) {
+        _companyController.text = nt.company ?? '';
+      }
+      if (_locationController.text != (nt.location ?? '')) {
+        _locationController.text = nt.location ?? '';
+      }
+    });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

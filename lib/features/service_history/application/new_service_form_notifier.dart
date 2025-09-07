@@ -8,15 +8,17 @@ import 'package:cence_app/models/service_history.dart';
 import 'package:cence_app/features/service_history/use_cases.dart';
 import 'package:cence_app/features/service_history/providers.dart';
 import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
+import 'package:cence_app/features/stock/providers.dart' as stock;
+// removed inventory notifier import as stocks are not mutated here
 import 'package:cence_app/features/devices/presentation/providers.dart';
 import 'package:cence_app/services/storage_service.dart';
 
-class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
+class NewServiceFormNotifier extends AutoDisposeNotifier<NewServiceFormState> {
   @override
   NewServiceFormState build() {
-    // Başlangıç state'i: Kurulum sekmesi bugünün tarihiyle başlasın
+    // Başlangıç state'i: Tüm alanlar boş
     return NewServiceFormState(
-      kurulumData: FormTabData(date: DateTime.now()),
+      kurulumData: const FormTabData(),
       arizaData: const FormTabData(),
       technicianName: _getTechnicianName(),
     );
@@ -31,6 +33,8 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
   void updateDate(DateTime newDate) {
     _updateStateWithNewTabData(state.activeTabData.copyWith(date: newDate));
   }
+
+  // Servis başlangıç/bitiş tarihleri UI tarafında ayrı provider ile tutuluyor
 
   // Garanti süresi güncelle
   void updateWarranty(String months) {
@@ -77,20 +81,24 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
         ),
       );
     } else {
+      final brand = _extractBrand(device.modelName);
+      final model = _extractModel(device.modelName);
       _updateStateWithNewTabData(
         state.activeTabData.copyWith(
           selectedDevice: device,
           serialNumber: device.serialNumber,
-          deviceName: device.modelName,
-          brand: device.modelName,
-          model: device.modelName,
-          company: device.customer,
-          // location bilgisi cihaz modelinde olmayabilir, mevcutu koru
+          deviceName: device.customer,
+          brand: brand,
+          model: model,
+          // location bilgisi cihaz kaydında olmayabilir, mevcutu koru
           location: state.activeTabData.location,
+          // giriş modu UI state'inde tutuluyor
         ),
       );
     }
   }
+
+  // Giriş modu UI provider'ında tutuluyor; burada yönetilmiyor
 
   // Teknisyen adını güncelle
   void setTechnicianName(String name) {
@@ -184,35 +192,15 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
       // 1) Servis kaydını ekle
       await ref.read(addServiceHistoryUseCaseProvider)(history);
 
-      // 2) Stok düş
-      final providerParts = state.activeTabData.selectedParts;
-      if (providerParts.isNotEmpty) {
-        final updateTasks = providerParts
-            .where((selectedPart) => selectedPart.part.id.isNotEmpty)
-            .map((selectedPart) async {
-          final part = selectedPart.part;
-          final usedQuantity = selectedPart.adet;
-          final currentStock = part.stokAdedi;
-          final newStock = currentStock - usedQuantity;
-          final finalStock = newStock < 0 ? 0 : newStock;
-
-          final updatedPart = StockPart(
-            id: part.id,
-            parcaAdi: part.parcaAdi,
-            parcaKodu: part.parcaKodu,
-            stokAdedi: finalStock,
-            criticalLevel: part.criticalLevel,
-          );
-
-          return ref.read(inventoryProvider.notifier).updatePart(updatedPart);
-        }).toList();
-        await Future.wait(updateTasks);
-      }
+      // 2) Stok düş: hem UI state'i güncelle hem de repo üzerinden Firestore'da azalt
+      // Firestore stok düşümü repository içinde yapılır; burada ekstra işlem yok
 
       // 3) Liste sağlayıcılarını tazele
       ref.invalidate(serviceHistoryListProvider);
       ref.invalidate(recentServiceHistoryProvider(3));
       ref.invalidate(devicesListProvider);
+      ref.invalidate(stock.stockPartsProvider);
+      ref.invalidate(inventoryProvider);
 
       state = state.copyWith(isSaving: false, lastSubmitSuccess: true);
     } catch (e) {
@@ -235,12 +223,23 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
     return '';
   }
 
+  // "Marka Model" biçimindeki birleşik adı ayırmak için yardımcılar
+  String _extractBrand(String full) {
+    final i = full.indexOf(' ');
+    return i == -1 ? full.trim() : full.substring(0, i).trim();
+  }
+
+  String _extractModel(String full) {
+    final i = full.indexOf(' ');
+    return i == -1 ? '' : full.substring(i + 1).trim();
+  }
+
   // Teknisyen adını başlangıçta yüklemek için
   void initializeTechnicianName() {
     // Bu metod screen'den çağrılacak
   }
 }
 
-final newServiceFormProvider = NotifierProvider<NewServiceFormNotifier, NewServiceFormState>(
+final newServiceFormProvider = AutoDisposeNotifierProvider<NewServiceFormNotifier, NewServiceFormState>(
   NewServiceFormNotifier.new,
 );

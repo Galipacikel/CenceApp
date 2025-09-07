@@ -17,7 +17,7 @@ class StockPartTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isOutOfStock = part.stokAdedi == 0;
+    final bool isOutOfStock = part.stokAdedi <= 0;
     final bool isCritical = !isOutOfStock && part.stokAdedi <= part.criticalLevel;
 
     return AnimatedContainer(

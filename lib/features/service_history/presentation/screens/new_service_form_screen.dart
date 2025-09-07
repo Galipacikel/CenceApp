@@ -11,6 +11,9 @@ import 'package:cence_app/features/service_history/application/new_service_form_
 import 'package:cence_app/features/service_history/presentation/widgets/photo_picker.dart';
 import 'package:cence_app/widgets/service/form_sections/used_parts_section.dart';
 import 'package:cence_app/features/service_history/presentation/providers/new_service_form_state.dart';
+import 'package:cence_app/features/devices/presentation/providers.dart';
+import 'package:cence_app/features/stock_tracking/application/inventory_notifier.dart';
+import 'package:cence_app/features/service_history/presentation/providers/entry_mode_and_dates.dart';
 import 'package:cence_app/models/service_history.dart';
 import 'package:cence_app/models/stock_part.dart';
 import 'package:cence_app/features/home/presentation/screens/home_page.dart';
@@ -44,6 +47,8 @@ class NewServiceFormScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formState = ref.watch(newServiceFormProvider);
+    final serviceStart = ref.watch(serviceStartDateProvider);
+    final serviceEnd = ref.watch(serviceEndDateProvider);
     final notifier = ref.read(newServiceFormProvider.notifier);
 
     // Hook tabanlı controllerlar
@@ -182,47 +187,134 @@ class NewServiceFormScreen extends HookConsumerWidget {
             ),
             const SizedBox(height: 8),
 
-            const Text(
-              'Kurulum Tarihi',
-              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-            ),
-            const SizedBox(height: 4),
-            InkWell(
-              onTap: () async {
-                final now = DateTime.now();
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: formState.activeTabData.date ?? now,
-                  firstDate: DateTime(now.year - 5),
-                  lastDate: DateTime(now.year + 5),
-                  locale: const Locale('tr', 'TR'),
-                );
-                if (picked != null) {
-                  notifier.updateDate(picked);
-                }
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  hintText: 'gg.aa.yyyy',
-                  suffixIcon: const Icon(Icons.calendar_today_outlined),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 16,
-                    horizontal: 14,
+            if (formState.formTipi == 0) ...[
+              const Text(
+                'Kurulum Tarihi',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              ),
+              const SizedBox(height: 4),
+              InkWell(
+                onTap: () async {
+                  final now = DateTime.now();
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: formState.activeTabData.date ?? now,
+                    firstDate: DateTime(now.year - 5),
+                    lastDate: DateTime(now.year + 5),
+                    locale: const Locale('tr', 'TR'),
+                  );
+                  if (picked != null) {
+                    notifier.updateDate(picked);
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    hintText: 'gg.aa.yyyy',
+                    suffixIcon: const Icon(Icons.calendar_today_outlined),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 14,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
+                  child: Text(
+                    _formatDate(formState.activeTabData.date),
+                    style: const TextStyle(fontSize: 16),
                   ),
-                ),
-                child: Text(
-                  _formatDate(formState.activeTabData.date),
-                  style: const TextStyle(fontSize: 16),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
+            ] else ...[
+              // Arıza için servis başlangıç/bitiş
+              const Text(
+                'Servis Başlangıç Tarihi (Opsiyonel)',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              ),
+              const SizedBox(height: 4),
+              InkWell(
+                onTap: () async {
+                  final now = DateTime.now();
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: serviceStart ?? now,
+                    firstDate: DateTime(now.year - 5),
+                    lastDate: DateTime(now.year + 5),
+                    locale: const Locale('tr', 'TR'),
+                  );
+                  if (picked != null) {
+                    ref.read(serviceStartDateProvider.notifier).state = picked;
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    hintText: 'gg.aa.yyyy',
+                    suffixIcon: const Icon(Icons.calendar_today_outlined),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 14,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  child: Text(
+                    _formatDate(serviceStart),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Servis Bitiş Tarihi (Opsiyonel)',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              ),
+              const SizedBox(height: 4),
+              InkWell(
+                onTap: () async {
+                  final now = DateTime.now();
+                  final start = serviceStart ?? now;
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: serviceEnd ?? start,
+                    firstDate: start,
+                    lastDate: DateTime(now.year + 5),
+                    locale: const Locale('tr', 'TR'),
+                  );
+                  if (picked != null) {
+                    ref.read(serviceEndDateProvider.notifier).state = picked;
+                  }
+                },
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    hintText: 'gg.aa.yyyy',
+                    suffixIcon: const Icon(Icons.calendar_today_outlined),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 14,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  child: Text(
+                    _formatDate(serviceEnd),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
 
             if (formState.formTipi == 0) ...[
               const Text(
@@ -318,14 +410,15 @@ class NewServiceFormScreen extends HookConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            const Text(
-              'Kullanılan Parçalar (Opsiyonel)',
-              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-            ),
-            const SizedBox(height: 4),
-
-            const UsedPartsSection(),
-            const SizedBox(height: 12),
+            if (formState.formTipi != 0) ...[
+              const Text(
+                'Kullanılan Parçalar (Opsiyonel)',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              ),
+              const SizedBox(height: 4),
+              const UsedPartsSection(),
+              const SizedBox(height: 12),
+            ],
 
             const Text(
               'Açıklama',
@@ -392,6 +485,8 @@ class NewServiceFormScreen extends HookConsumerWidget {
                 final history = ServiceHistory(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   date: t.date ?? DateTime.now(),
+                  serviceStart: serviceStart,
+                  serviceEnd: serviceEnd,
                   serialNumber: t.serialNumber?.trim() ?? '',
                   musteri: musteri,
                   description: ((t.description ?? '').trim().isEmpty)
@@ -400,7 +495,7 @@ class NewServiceFormScreen extends HookConsumerWidget {
                   technician: (form.technicianName.trim().isEmpty)
                       ? '-'
                       : form.technicianName.trim(),
-                  status: form.formTipi == 0 ? 'Kurulum' : 'Arıza',
+                  status: form.formTipi == 0 ? 'Kurulum' : 'Başarılı',
                   location: t.location ?? '',
                   kullanilanParcalar: parts,
                   photos: photos,
@@ -411,11 +506,29 @@ class NewServiceFormScreen extends HookConsumerWidget {
                 
                 try {
                   await notifier.saveHistoryAndDeductStock(history);
+                  // Kurulum sekmesinde: Otomatik modda seçili cihazın stok adedini 0'a çek
+                  final isManual = ref.read(manualEntryProvider);
+                  if (form.formTipi == 0 && !isManual && t.selectedDevice != null) {
+                    final updated = t.selectedDevice!.copyWith(stockQuantity: 0);
+                    await ref.read(inventoryProvider.notifier).updateDevice(updated);
+                    ref.invalidate(devicesListProvider);
+                  }
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Kayıt başarılı'),
-                      duration: Duration(seconds: 2),
+                    SnackBar(
+                      content: Row(
+                        children: const [
+                          Icon(Icons.check_circle, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Kayıt başarılı')
+                        ],
+                      ),
+                      backgroundColor: Colors.green.shade700,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                   Navigator.of(context).pushAndRemoveUntil(

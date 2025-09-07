@@ -25,6 +25,7 @@ class FirestoreServiceHistoryRepositoryV2
       final recordData = _toFirestoreMap(history, id: recordsRef.id);
       batch.set(recordsRef, recordData);
 
+      // Stok düş: kullanılan her parça kadar Firestore'da azalt
       for (final used in history.kullanilanParcalar) {
         if (used.id.isEmpty) continue;
         final partDoc = _firestore
@@ -206,7 +207,12 @@ class FirestoreServiceHistoryRepositoryV2
              },
            )
            .toList(),
-       'created_at': Timestamp.fromDate(history.date),
+      'created_at': Timestamp.fromDate(history.date),
+      'service_start': history.serviceStart != null ? Timestamp.fromDate(history.serviceStart!) : null,
+      'service_end': history.serviceEnd != null ? Timestamp.fromDate(history.serviceEnd!) : null,
+      'device_name': history.deviceName,
+      'brand': history.brand,
+      'model': history.model,
       'customer_name': history.musteri,
        'is_synced': true,
      };
@@ -234,6 +240,8 @@ class FirestoreServiceHistoryRepositoryV2
      return ServiceHistory(
        id: id,
        date: when,
+       serviceStart: (data['service_start'] is Timestamp) ? (data['service_start'] as Timestamp).toDate() : null,
+       serviceEnd: (data['service_end'] is Timestamp) ? (data['service_end'] as Timestamp).toDate() : null,
        serialNumber: (data['device_id'] ?? '') as String,
       musteri: (data['customer_name'] ?? '') as String,
        description: (data['description'] ?? '') as String,
@@ -242,6 +250,9 @@ class FirestoreServiceHistoryRepositoryV2
        location: (data['location'] ?? '') as String,
        kullanilanParcalar: usedParts,
        photos: (data['images'] as List<dynamic>? ?? []).cast<String>(),
+       deviceName: (data['device_name'] ?? '') as String,
+       brand: (data['brand'] ?? '') as String,
+       model: (data['model'] ?? '') as String,
      );
    }
 

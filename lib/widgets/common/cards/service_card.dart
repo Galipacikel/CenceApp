@@ -26,6 +26,13 @@ class ModernServiceCard extends StatelessWidget {
           'bgColor': Colors.red.shade100,
           'icon': Icons.error_rounded,
         };
+      case 'Başarılı':
+        return {
+          'label': 'Başarılı',
+          'color': Colors.green.shade800,
+          'bgColor': Colors.green.shade100,
+          'icon': Icons.check_circle_rounded,
+        };
       default:
         return {
           'label': item.status,

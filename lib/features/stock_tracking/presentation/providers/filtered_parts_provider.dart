@@ -25,7 +25,7 @@ final filteredPartsProvider = Provider<AsyncValue<List<StockPart>>>((ref) {
       final showOnlyCritical = state.showOnlyCritical;
 
       final sortedParts = [
-        ...parts.where((p) => p.stokAdedi == 0),
+        ...parts.where((p) => p.stokAdedi <= 0),
         ...parts.where((p) => p.stokAdedi > 0),
       ];
 

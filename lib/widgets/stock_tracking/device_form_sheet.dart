@@ -107,18 +107,19 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
                 label: 'Model',
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: stokAdediCtrl,
-                label: 'Stok Adedi',
-                keyboardType: TextInputType.number,
-                validator: (v) {
-                  if (v!.isEmpty) return 'Bu alan boş bırakılamaz';
-                  if (int.tryParse(v) == null) {
-                    return 'Lütfen geçerli bir sayı girin';
-                  }
-                  return null;
-                },
-              ),
+              if (isEditing)
+                _buildTextField(
+                  controller: stokAdediCtrl,
+                  label: 'Stok Adedi',
+                  keyboardType: TextInputType.number,
+                  validator: (v) {
+                    if (v!.isEmpty) return 'Bu alan boş bırakılamaz';
+                    if (int.tryParse(v) == null) {
+                      return 'Lütfen geçerli bir sayı girin';
+                    }
+                    return null;
+                  },
+                ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -206,7 +207,7 @@ class _DeviceFormSheetState extends ConsumerState<DeviceFormSheet> {
         warrantyStatus: 'Devam Ediyor',
         lastMaintenance: DateTime.now().toString().split(' ')[0],
         warrantyEndDate: DateTime.now().add(const Duration(days: 365)),
-        stockQuantity: int.parse(stokAdediCtrl.text),
+        stockQuantity: 1,
       );
       
       final success = await ref.read(inventoryProvider.notifier).addDevice(newDevice);

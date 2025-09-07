@@ -3,6 +3,8 @@ import 'package:cence_app/models/stock_part.dart';
 class ServiceHistory {
   final String id;
   final DateTime date;
+  final DateTime? serviceStart;
+  final DateTime? serviceEnd;
   final String serialNumber;
   final String musteri;
   final String description;
@@ -18,6 +20,8 @@ class ServiceHistory {
   ServiceHistory({
     required this.id,
     required this.date,
+    this.serviceStart,
+    this.serviceEnd,
     required this.serialNumber,
     required this.musteri,
     required this.description,
@@ -35,6 +39,8 @@ class ServiceHistory {
     return ServiceHistory(
       id: json['id'] ?? '',
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+      serviceStart: json['serviceStart'] != null ? DateTime.tryParse(json['serviceStart']) : null,
+      serviceEnd: json['serviceEnd'] != null ? DateTime.tryParse(json['serviceEnd']) : null,
       serialNumber: json['serialNumber'] ?? json['deviceId'] ?? '',
       musteri: json['musteri'] ?? '',
       description: json['description'] ?? '',
@@ -55,6 +61,8 @@ class ServiceHistory {
     return {
       'id': id,
       'date': date.toIso8601String(),
+      'serviceStart': serviceStart?.toIso8601String(),
+      'serviceEnd': serviceEnd?.toIso8601String(),
       'serialNumber': serialNumber,
       'musteri': musteri,
       'description': description,

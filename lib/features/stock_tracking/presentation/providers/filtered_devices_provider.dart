@@ -10,23 +10,13 @@ final filteredDevicesProvider = Provider<AsyncValue<List<Device>>>((ref) {
       final devices = state.devices;
       final query = state.deviceSearch;
 
-      // Unique by modelName + serialNumber
-      final uniqueKeys = <String>{};
-      final uniqueDevices = <Device>[];
-      for (final d in devices) {
-        final key = '${d.modelName}_${d.serialNumber}';
-        if (!uniqueKeys.contains(key)) {
-          uniqueKeys.add(key);
-          uniqueDevices.add(d);
-        }
-      }
+      // Basit sıralama
+      final sorted = [...devices]..sort((a, b) => a.modelName.compareTo(b.modelName));
 
-      uniqueDevices.sort((a, b) => a.modelName.compareTo(b.modelName));
-
-      if (query.isEmpty) return AsyncData(uniqueDevices);
+      if (query.isEmpty) return AsyncData(sorted);
       final q = query.toLowerCase();
-      final filtered = uniqueDevices
-          .where((d) => d.modelName.toLowerCase().contains(q))
+      final filtered = sorted
+          .where((d) => d.modelName.toLowerCase().contains(q) || d.serialNumber.toLowerCase().contains(q))
           .toList();
       return AsyncData(filtered);
     },

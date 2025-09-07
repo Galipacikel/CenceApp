@@ -325,7 +325,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 20),
                   ],
 
-                  // Tarih
+                  // Tarih (sadece Oluşturma)
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -341,7 +341,7 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          dateFormat.format(serviceHistory.date),
+                          'Oluşturma: ' + dateFormat.format(serviceHistory.date),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -437,13 +437,34 @@ class ServiceHistoryDetailScreen extends ConsumerWidget {
                                   color: const Color(0xFF23408E),
                                 ),
                                 const SizedBox(height: 12),
-                                _buildInfoRow(
-                                  icon: Icons.calendar_today,
-                                  label: 'Kurulum Tarihi',
-                                  value: device.installDate.isNotEmpty ? device.installDate : 'Belirtilmemiş',
-                                  color: const Color(0xFF23408E),
-                                ),
-                                const SizedBox(height: 12),
+                                if (serviceHistory.status == 'Kurulum') ...[
+                                  _buildInfoRow(
+                                    icon: Icons.event_available,
+                                    label: 'Kurulum Tarihi',
+                                    value: dateFormat.format(serviceHistory.date),
+                                    color: const Color(0xFF23408E),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                if (serviceHistory.serviceStart != null) ...[
+                                  _buildInfoRow(
+                                    icon: Icons.play_circle_outline,
+                                    label: 'Servis Başlangıç',
+                                    value: dateFormat.format(serviceHistory.serviceStart!),
+                                    color: const Color(0xFF23408E),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                if (serviceHistory.serviceEnd != null) ...[
+                                  _buildInfoRow(
+                                    icon: Icons.stop_circle_outlined,
+                                    label: 'Servis Bitiş',
+                                    value: dateFormat.format(serviceHistory.serviceEnd!),
+                                    color: const Color(0xFF23408E),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                // Kurulum tarihi arıza kaydı için gösterilmesin
                                 _buildInfoRow(
                                   icon: Icons.verified,
                                   label: 'Garanti Durumu',

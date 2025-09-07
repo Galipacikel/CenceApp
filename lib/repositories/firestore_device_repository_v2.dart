@@ -33,7 +33,8 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
   Future<Result<Unit, app.Failure>> add(Device device) async {
     try {
       final devicesRef = _firestore.collection(FirestorePaths.devices);
-      await devicesRef.add(_toFirestoreMap(device));
+      // Doc ID'yi cihaz id'si (barcode_number) ile aynı yap
+      await devicesRef.doc(device.id).set(_toFirestoreMap(device));
       return Result.ok(const Unit());
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -45,10 +46,11 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
   @override
   Future<Result<Unit, app.Failure>> update(Device device) async {
     try {
-      await _firestore
-          .collection(FirestorePaths.devices)
-          .doc(device.id)
-          .update(_toFirestoreMap(device));
+      final ref = await _resolveDeviceDocRef(device.id);
+      if (ref == null) {
+        return Result.err(app.NotFoundFailure('Cihaz bulunamadı', code: 'not-found'));
+      }
+      await ref.update(_toFirestoreMap(device));
       return Result.ok(const Unit());
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -60,7 +62,11 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
   @override
   Future<Result<Unit, app.Failure>> delete(String id) async {
     try {
-      await _firestore.collection(FirestorePaths.devices).doc(id).delete();
+      final ref = await _resolveDeviceDocRef(id);
+      if (ref == null) {
+        return Result.err(app.NotFoundFailure('Cihaz bulunamadı', code: 'not-found'));
+      }
+      await ref.delete();
       return Result.ok(const Unit());
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
@@ -91,11 +97,16 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
   }
 
   Map<String, dynamic> _toFirestoreMap(Device device) {
+    final full = (device.modelName).trim();
+    final firstSpace = full.indexOf(' ');
+    final brand = firstSpace == -1 ? full : full.substring(0, firstSpace).trim();
+    final model = firstSpace == -1 ? '' : full.substring(firstSpace + 1).trim();
+
     return {
       'barcode_number': device.id,
       'serial_number': device.serialNumber,
-      'brand': device.modelName,
-      'model': device.modelName,
+      'brand': brand,
+      'model': model,
       'institution_name': device.customer,
       'installation_date': device.installDate,
       'warranty_end_date': device.warrantyEndDate,
@@ -114,9 +125,15 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
       }
     }
 
+    final brand = (data['brand'] ?? '') as String;
+    final model = (data['model'] ?? '') as String;
+    final combinedModelName = [brand, model]
+        .where((e) => e.trim().isNotEmpty)
+        .join(' ');
+
     return Device(
       id: id,
-      modelName: (data['model'] ?? data['brand'] ?? '') as String,
+      modelName: combinedModelName,
       serialNumber: (data['serial_number'] ?? '') as String,
       customer: (data['institution_name'] ?? '') as String,
       installDate: (data['installation_date']?.toString() ?? ''),
@@ -128,6 +145,18 @@ class FirestoreDeviceRepositoryV2 implements DeviceRepositoryV2 {
       warrantyEndDate: warrantyEndDate,
       stockQuantity: (data['stock_quantity'] ?? 1) as int,
     );
+  }
+
+  // Eski kayıtlar için: Doc ID veya 'barcode_number' ile kayıt referansını bul
+  Future<DocumentReference<Map<String, dynamic>>?> _resolveDeviceDocRef(String id) async {
+    final collection = _firestore.collection(FirestorePaths.devices);
+    final byIdRef = collection.doc(id);
+    final byId = await byIdRef.get();
+    if (byId.exists) return byIdRef;
+
+    final byBarcode = await collection.where('barcode_number', isEqualTo: id).limit(1).get();
+    if (byBarcode.docs.isNotEmpty) return byBarcode.docs.first.reference;
+    return null;
   }
 
   app.Failure _toFailure(FirebaseException e) {

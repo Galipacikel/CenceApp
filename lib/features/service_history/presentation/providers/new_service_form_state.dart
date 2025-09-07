@@ -33,7 +33,6 @@ class FormTabData with _$FormTabData {
     String? model,
     String? company,
     String? location,
-
     // Form Detayları
     DateTime? date,
     @Default('24') String warranty,
