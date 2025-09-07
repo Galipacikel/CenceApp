@@ -369,12 +369,26 @@ class FirestoreServiceHistoryRepositoryV2
        status: (data['service_type'] ?? '') as String,
        location: (data['location'] ?? '') as String,
        kullanilanParcalar: usedParts,
-       photos: (data['images'] as List<dynamic>? ?? []).cast<String>(),
+       photos: _parsePhotos(data['images']),
        deviceName: (data['device_name'] ?? '') as String,
        brand: (data['brand'] ?? '') as String,
        model: (data['model'] ?? '') as String,
      );
    }
+
+  List<String> _parsePhotos(dynamic photosData) {
+    if (photosData == null) return [];
+    
+    if (photosData is List) {
+      return photosData.map((item) => item.toString()).toList();
+    }
+    
+    if (photosData is String) {
+      return photosData.isEmpty ? [] : [photosData];
+    }
+    
+    return [];
+  }
 
   app.Failure _toFailure(FirebaseException e) {
     switch (e.code) {
