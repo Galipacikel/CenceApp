@@ -83,9 +83,19 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
           selectedDevice: device,
           serialNumber: device.serialNumber,
           deviceName: device.modelName,
-          brand: device.modelName,
-          model: device.modelName,
-          company: device.customer,
+          // brand ve model'i veritabanındaki değerlerle eşle: modelName'i ilk boşlukta ayır
+          brand: (() {
+            final full = (device.modelName).trim();
+            final idx = full.indexOf(' ');
+            return idx == -1 ? full : full.substring(0, idx).trim();
+          })(),
+          model: (() {
+            final full = (device.modelName).trim();
+            final idx = full.indexOf(' ');
+            return idx == -1 ? '' : full.substring(idx + 1).trim();
+          })(),
+          // Otomatik girişte firma alanı otomatik dolmasın; mevcut değeri koru
+          company: state.activeTabData.company,
           // location bilgisi cihaz modelinde olmayabilir, mevcutu koru
           location: state.activeTabData.location,
         ),
@@ -194,17 +204,19 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
           final part = selectedPart.part;
           final usedQuantity = selectedPart.adet;
           final currentStock = part.stokAdedi;
-          final newStock = currentStock - usedQuantity;
-          final finalStock = newStock < 0 ? 0 : newStock;
+          final newStock = currentStock - usedQuantity; // negatif değerlere izin ver
 
           final updatedPart = StockPart(
             id: part.id,
             parcaAdi: part.parcaAdi,
             parcaKodu: part.parcaKodu,
-            stokAdedi: finalStock,
+            stokAdedi: newStock,
             criticalLevel: part.criticalLevel,
           );
 
+          // 2a) UI'da anında yansıt (optimistic update)
+          ref.read(inventoryProvider.notifier).decreaseQuantityLocal(part.id, usedQuantity);
+          // 2b) Veritabanını güncelle
           return ref.read(inventoryProvider.notifier).updatePart(updatedPart);
         }).toList();
         await Future.wait(updateTasks);

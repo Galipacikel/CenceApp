@@ -195,6 +195,23 @@ class InventoryNotifier extends AsyncNotifier<InventoryState> {
     }
   }
 
+  // Uygulama içinde anlık stok düşümü (veritabanına yazmadan)
+  void decreaseQuantityLocal(String partId, int amount) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final updatedParts = current.parts.map((p) {
+      if (p.id != partId) return p;
+      return StockPart(
+        id: p.id,
+        parcaAdi: p.parcaAdi,
+        parcaKodu: p.parcaKodu,
+        stokAdedi: p.stokAdedi - amount,
+        criticalLevel: p.criticalLevel,
+      );
+    }).toList();
+    state = AsyncData(current.copyWith(parts: updatedParts));
+  }
+
   Future<bool> deletePart(String partId) async {
     final current = state.valueOrNull;
     if (current == null || !current.isAdmin) return false;
