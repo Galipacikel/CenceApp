@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'core/providers/firebase_providers.dart';
@@ -73,13 +74,50 @@ class MyApp extends rp.ConsumerWidget {
       home: ref
           .watch(authUserChangesProvider)
           .when(
-            data: (user) =>
-                user != null ? const HomePage() : const LoginScreen(),
+            data: (user) => _handleAuthState(user),
             loading: () => const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             ),
             error: (_, __) => const LoginScreen(),
           ),
     );
+  }
+
+  Widget _handleAuthState(User? user) {
+    if (user == null) {
+      return const LoginScreen();
+    }
+    
+    // Kullanıcı oturum açmış, ancak "Beni Hatırla" kontrolü yapalım
+    return FutureBuilder<bool>(
+      future: _checkRememberMe(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        
+        final rememberMe = snapshot.data ?? false;
+        if (rememberMe) {
+          return const HomePage();
+        } else {
+          // "Beni Hatırla" aktif değilse, oturumu kapat ve login ekranına yönlendir
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            FirebaseAuth.instance.signOut();
+          });
+          return const LoginScreen();
+        }
+      },
+    );
+  }
+
+  Future<bool> _checkRememberMe() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('remember_me') ?? false;
+    } catch (e) {
+      return false;
+    }
   }
 }
