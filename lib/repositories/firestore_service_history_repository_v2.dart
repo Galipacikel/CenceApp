@@ -271,17 +271,35 @@ class FirestoreServiceHistoryRepositoryV2
      DateTime when = DateTime.now();
      if (createdAt is Timestamp) when = createdAt.toDate();
 
-     final usedParts = (data['used_parts'] as List<dynamic>? ?? [])
-         .map(
-           (raw) => StockPart(
-             id: (raw['part_id'] ?? '') as String,
-             parcaAdi: (raw['part_name'] ?? '') as String,
-             parcaKodu: (raw['stock_code'] ?? '') as String,
-             stokAdedi: (raw['quantity'] ?? 1) as int,
-             criticalLevel: 0,
-           ),
-         )
-         .toList();
+     // used_parts alanını güvenli şekilde parse et
+     List<StockPart> usedParts = [];
+     final usedPartsData = data['used_parts'];
+     if (usedPartsData is List) {
+       usedParts = usedPartsData
+           .map(
+             (raw) => StockPart(
+               id: (raw['part_id'] ?? '') as String,
+               parcaAdi: (raw['part_name'] ?? '') as String,
+               parcaKodu: (raw['stock_code'] ?? '') as String,
+               stokAdedi: (raw['quantity'] ?? 1) as int,
+               criticalLevel: 0,
+             ),
+           )
+           .toList();
+     } else if (usedPartsData is String) {
+       // String olarak saklanmışsa boş liste döndür
+       usedParts = [];
+     }
+
+     // images alanını güvenli şekilde parse et
+     List<String> photos = [];
+     final imagesData = data['images'];
+     if (imagesData is List) {
+       photos = imagesData.cast<String>();
+     } else if (imagesData is String) {
+       // String olarak saklanmışsa boş liste döndür
+       photos = [];
+     }
 
     final String technicianStr = (data['technician_name'] ?? data['technician_id'] ?? '') as String;
 
@@ -297,7 +315,7 @@ class FirestoreServiceHistoryRepositoryV2
        status: (data['service_type'] ?? '') as String,
        location: (data['location'] ?? '') as String,
        kullanilanParcalar: usedParts,
-       photos: (data['images'] as List<dynamic>? ?? []).cast<String>(),
+       photos: photos,
        deviceName: (data['device_name'] ?? '') as String,
        brand: (data['brand'] ?? '') as String,
        model: (data['model'] ?? '') as String,
