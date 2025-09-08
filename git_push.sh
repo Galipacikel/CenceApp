@@ -39,12 +39,12 @@ else
     echo -e "${GREEN}✅ Commit başarılı!${NC}"
 fi
 
-# Remote repository kontrolü
-if git remote get-url origin > /dev/null 2>&1; then
-    echo -e "${GREEN}🌐 Remote repository bulundu, push yapılıyor...${NC}"
+# Remote repository kontrolü - ali remote'unu kullan
+if git remote get-url ali > /dev/null 2>&1; then
+    echo -e "${GREEN}🌐 Ali remote repository bulundu, push yapılıyor...${NC}"
     
     # Push yap
-    if git push origin main 2>/dev/null || git push origin master 2>/dev/null; then
+    if git push ali main 2>/dev/null || git push ali master 2>/dev/null; then
         echo -e "${GREEN}🎉 Push başarılı!${NC}"
     else
         echo -e "${RED}❌ Push başarısız! Manuel olarak kontrol edin.${NC}"
