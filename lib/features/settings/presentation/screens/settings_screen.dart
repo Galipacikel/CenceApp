@@ -5,7 +5,7 @@ import 'package:cence_app/features/settings/presentation/screens/theme_settings_
 import 'package:cence_app/features/support/presentation/screens/help_center_screen.dart';
 import 'package:cence_app/features/support/presentation/screens/support_request_screen.dart';
 import 'package:cence_app/features/settings/presentation/screens/privacy_policy_screen.dart';
-import 'package:cence_app/features/service_history/presentation/screens/migration_test_screen.dart';
+import 'package:cence_app/features/settings/presentation/screens/migration_test_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';

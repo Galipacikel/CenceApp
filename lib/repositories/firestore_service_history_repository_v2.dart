@@ -96,7 +96,7 @@ class FirestoreServiceHistoryRepositoryV2
   @override
   Future<Result<List<ServiceHistory>, app.Failure>> getAll() async {
     try {
-      // Fetch from new top-level service_history collection
+      // Fetch from new top-level service_history collection only
       final snapshot = await _firestore
           .collection(FirestorePaths.serviceHistory)
           .orderBy('created_at', descending: true)
@@ -105,16 +105,7 @@ class FirestoreServiceHistoryRepositoryV2
           .map((d) => _fromFirestore(d.id, d.data()))
           .toList();
 
-      final formsSnap = await _firestore.collection(FirestorePaths.forms).get();
-      final formsList = formsSnap.docs
-          .map((d) => _fromForms(d.id, d.data()))
-          .toList();
-
-      // Merge and sort by date desc
-      final merged = <ServiceHistory>[...list, ...formsList]
-        ..sort((a, b) => b.date.compareTo(a.date));
-
-      return Result.ok(merged);
+      return Result.ok(list);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
     } catch (e) {
@@ -130,24 +121,13 @@ class FirestoreServiceHistoryRepositoryV2
       final serviceHistorySnap = await _firestore
           .collection(FirestorePaths.serviceHistory)
           .orderBy('created_at', descending: true)
-          .limit(count * 3)
+          .limit(count)
           .get();
       final list = serviceHistorySnap.docs
           .map((d) => _fromFirestore(d.id, d.data()))
           .toList();
 
-      final formsSnap = await _firestore
-          .collection(FirestorePaths.forms)
-          .get();
-      final formsList = formsSnap.docs
-          .map((d) => _fromForms(d.id, d.data()))
-          .toList();
-
-      final merged = <ServiceHistory>[...list, ...formsList]
-        ..sort((a, b) => b.date.compareTo(a.date));
-
-      final limited = merged.take(count).toList();
-      return Result.ok(limited);
+      return Result.ok(list);
     } on FirebaseException catch (e) {
       return Result.err(_toFailure(e));
     } catch (e) {
