@@ -38,10 +38,10 @@ class FormTabData with _$FormTabData {
     @Default('24') String warranty,
     String? description,
 
-    // Fotoğraf
+    // Fotoğraf (tek fotoğraf)
     Uint8List? photoBytes,
     XFile? photoFile,
-    @Default(<String>[]) List<String> uploadedPhotos,
+    String? photoUrl, // Tek fotoğraf URL'si
 
     // Parçalar
     @Default(<SelectedPart>[]) List<SelectedPart> selectedParts,

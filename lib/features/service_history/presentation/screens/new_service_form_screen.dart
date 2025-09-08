@@ -485,7 +485,8 @@ class NewServiceFormScreen extends HookConsumerWidget {
                   );
                 }).toList();
 
-                final photos = t.uploadedPhotos;
+                // Tek fotoğraf için photos listesi oluştur
+                final photos = t.photoUrl != null ? [t.photoUrl!] : <String>[];
 
                 final history = ServiceHistory(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),

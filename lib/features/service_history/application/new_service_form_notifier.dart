@@ -108,31 +108,35 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
     state = state.copyWith(technicianName: name);
   }
 
-  // Fotoğraf güncelle
+  // Fotoğraf güncelle (tek fotoğraf)
   Future<void> updatePhoto({Uint8List? bytes, XFile? file}) async {
     if (file == null) {
+      // Fotoğraf temizle
       _updateStateWithNewTabData(
-        state.activeTabData.copyWith(photoBytes: bytes, photoFile: file),
+        state.activeTabData.copyWith(
+          photoBytes: null,
+          photoFile: null,
+          photoUrl: null,
+        ),
       );
       return;
     }
 
     try {
       final storageService = StorageService();
-      final storagePath = 'service_photos/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+      final serviceId = DateTime.now().millisecondsSinceEpoch.toString();
+      final storagePath = 'service_photos/$serviceId/${file.name}';
       final downloadUrl = await storageService.uploadFile(
         file: file,
         storagePath: storagePath,
       );
 
-      final currentPhotos = state.activeTabData.uploadedPhotos;
-      final updatedPhotos = List<String>.from(currentPhotos)..add(downloadUrl);
-
+      // Tek fotoğraf - önceki fotoğrafı değiştir
       _updateStateWithNewTabData(
         state.activeTabData.copyWith(
           photoBytes: bytes,
           photoFile: file,
-          uploadedPhotos: updatedPhotos,
+          photoUrl: downloadUrl, // Tek fotoğraf URL'si
         ),
       );
     } catch (e) {
@@ -140,6 +144,17 @@ class NewServiceFormNotifier extends Notifier<NewServiceFormState> {
         state.activeTabData.copyWith(photoBytes: bytes, photoFile: file),
       );
     }
+  }
+
+  // Fotoğraf sil
+  void removePhoto() {
+    _updateStateWithNewTabData(
+      state.activeTabData.copyWith(
+        photoBytes: null,
+        photoFile: null,
+        photoUrl: null,
+      ),
+    );
   }
 
   // Parça ekle/güncelle

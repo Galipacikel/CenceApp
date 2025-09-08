@@ -320,11 +320,13 @@ mixin _$FormTabData {
   String? get location => throw _privateConstructorUsedError; // Form Detayları
   DateTime? get date => throw _privateConstructorUsedError;
   String get warranty => throw _privateConstructorUsedError;
-  String? get description => throw _privateConstructorUsedError; // Fotoğraf
+  String? get description =>
+      throw _privateConstructorUsedError; // Fotoğraf (tek fotoğraf)
   Uint8List? get photoBytes => throw _privateConstructorUsedError;
   XFile? get photoFile => throw _privateConstructorUsedError;
-  List<String> get uploadedPhotos =>
-      throw _privateConstructorUsedError; // Parçalar
+  String? get photoUrl =>
+      throw _privateConstructorUsedError; // Tek fotoğraf URL'si
+  // Parçalar
   List<SelectedPart> get selectedParts => throw _privateConstructorUsedError;
 
   /// Create a copy of FormTabData
@@ -354,7 +356,7 @@ abstract class $FormTabDataCopyWith<$Res> {
     String? description,
     Uint8List? photoBytes,
     XFile? photoFile,
-    List<String> uploadedPhotos,
+    String? photoUrl,
     List<SelectedPart> selectedParts,
   });
 }
@@ -386,7 +388,7 @@ class _$FormTabDataCopyWithImpl<$Res, $Val extends FormTabData>
     Object? description = freezed,
     Object? photoBytes = freezed,
     Object? photoFile = freezed,
-    Object? uploadedPhotos = null,
+    Object? photoUrl = freezed,
     Object? selectedParts = null,
   }) {
     return _then(
@@ -439,10 +441,10 @@ class _$FormTabDataCopyWithImpl<$Res, $Val extends FormTabData>
                 ? _value.photoFile
                 : photoFile // ignore: cast_nullable_to_non_nullable
                       as XFile?,
-            uploadedPhotos: null == uploadedPhotos
-                ? _value.uploadedPhotos
-                : uploadedPhotos // ignore: cast_nullable_to_non_nullable
-                      as List<String>,
+            photoUrl: freezed == photoUrl
+                ? _value.photoUrl
+                : photoUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
             selectedParts: null == selectedParts
                 ? _value.selectedParts
                 : selectedParts // ignore: cast_nullable_to_non_nullable
@@ -475,7 +477,7 @@ abstract class _$$FormTabDataImplCopyWith<$Res>
     String? description,
     Uint8List? photoBytes,
     XFile? photoFile,
-    List<String> uploadedPhotos,
+    String? photoUrl,
     List<SelectedPart> selectedParts,
   });
 }
@@ -506,7 +508,7 @@ class __$$FormTabDataImplCopyWithImpl<$Res>
     Object? description = freezed,
     Object? photoBytes = freezed,
     Object? photoFile = freezed,
-    Object? uploadedPhotos = null,
+    Object? photoUrl = freezed,
     Object? selectedParts = null,
   }) {
     return _then(
@@ -559,10 +561,10 @@ class __$$FormTabDataImplCopyWithImpl<$Res>
             ? _value.photoFile
             : photoFile // ignore: cast_nullable_to_non_nullable
                   as XFile?,
-        uploadedPhotos: null == uploadedPhotos
-            ? _value._uploadedPhotos
-            : uploadedPhotos // ignore: cast_nullable_to_non_nullable
-                  as List<String>,
+        photoUrl: freezed == photoUrl
+            ? _value.photoUrl
+            : photoUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
         selectedParts: null == selectedParts
             ? _value._selectedParts
             : selectedParts // ignore: cast_nullable_to_non_nullable
@@ -588,10 +590,9 @@ class _$FormTabDataImpl implements _FormTabData {
     this.description,
     this.photoBytes,
     this.photoFile,
-    final List<String> uploadedPhotos = const <String>[],
+    this.photoUrl,
     final List<SelectedPart> selectedParts = const <SelectedPart>[],
-  }) : _uploadedPhotos = uploadedPhotos,
-       _selectedParts = selectedParts;
+  }) : _selectedParts = selectedParts;
 
   // Cihaz ve Müşteri Bilgileri
   @override
@@ -616,22 +617,17 @@ class _$FormTabDataImpl implements _FormTabData {
   final String warranty;
   @override
   final String? description;
-  // Fotoğraf
+  // Fotoğraf (tek fotoğraf)
   @override
   final Uint8List? photoBytes;
   @override
   final XFile? photoFile;
-  final List<String> _uploadedPhotos;
   @override
-  @JsonKey()
-  List<String> get uploadedPhotos {
-    if (_uploadedPhotos is EqualUnmodifiableListView) return _uploadedPhotos;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_uploadedPhotos);
-  }
-
+  final String? photoUrl;
+  // Tek fotoğraf URL'si
   // Parçalar
   final List<SelectedPart> _selectedParts;
+  // Tek fotoğraf URL'si
   // Parçalar
   @override
   @JsonKey()
@@ -643,7 +639,7 @@ class _$FormTabDataImpl implements _FormTabData {
 
   @override
   String toString() {
-    return 'FormTabData(selectedDevice: $selectedDevice, serialNumber: $serialNumber, deviceName: $deviceName, brand: $brand, model: $model, company: $company, location: $location, date: $date, warranty: $warranty, description: $description, photoBytes: $photoBytes, photoFile: $photoFile, uploadedPhotos: $uploadedPhotos, selectedParts: $selectedParts)';
+    return 'FormTabData(selectedDevice: $selectedDevice, serialNumber: $serialNumber, deviceName: $deviceName, brand: $brand, model: $model, company: $company, location: $location, date: $date, warranty: $warranty, description: $description, photoBytes: $photoBytes, photoFile: $photoFile, photoUrl: $photoUrl, selectedParts: $selectedParts)';
   }
 
   @override
@@ -673,10 +669,8 @@ class _$FormTabDataImpl implements _FormTabData {
             ) &&
             (identical(other.photoFile, photoFile) ||
                 other.photoFile == photoFile) &&
-            const DeepCollectionEquality().equals(
-              other._uploadedPhotos,
-              _uploadedPhotos,
-            ) &&
+            (identical(other.photoUrl, photoUrl) ||
+                other.photoUrl == photoUrl) &&
             const DeepCollectionEquality().equals(
               other._selectedParts,
               _selectedParts,
@@ -698,7 +692,7 @@ class _$FormTabDataImpl implements _FormTabData {
     description,
     const DeepCollectionEquality().hash(photoBytes),
     photoFile,
-    const DeepCollectionEquality().hash(_uploadedPhotos),
+    photoUrl,
     const DeepCollectionEquality().hash(_selectedParts),
   );
 
@@ -725,7 +719,7 @@ abstract class _FormTabData implements FormTabData {
     final String? description,
     final Uint8List? photoBytes,
     final XFile? photoFile,
-    final List<String> uploadedPhotos,
+    final String? photoUrl,
     final List<SelectedPart> selectedParts,
   }) = _$FormTabDataImpl;
 
@@ -749,13 +743,14 @@ abstract class _FormTabData implements FormTabData {
   @override
   String get warranty;
   @override
-  String? get description; // Fotoğraf
+  String? get description; // Fotoğraf (tek fotoğraf)
   @override
   Uint8List? get photoBytes;
   @override
   XFile? get photoFile;
   @override
-  List<String> get uploadedPhotos; // Parçalar
+  String? get photoUrl; // Tek fotoğraf URL'si
+  // Parçalar
   @override
   List<SelectedPart> get selectedParts;
 
