@@ -23,6 +23,7 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
     'Tümü',
     'Kurulum',
     'Başarılı',
+    'Eski Formlar',
   ];
 
   @override
@@ -269,7 +270,27 @@ class _ServisGecmisiScreenState extends ConsumerState<ServisGecmisiScreen> {
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
     // final isAdmin = ref.watch(isAdminProvider);
-    final asyncList = ref.watch(serviceHistoryListProvider);
+    final asyncServiceHistory = ref.watch(serviceHistoryListProvider);
+    final asyncFormlar = ref.watch(formlarListProvider);
+    
+    // Verileri birleştir
+    AsyncValue<List<ServiceHistory>> asyncList;
+    
+    if (_selectedStatus == 'Eski Formlar') {
+      asyncList = asyncFormlar;
+    } else if (_selectedStatus == 'Tümü') {
+      asyncList = asyncServiceHistory.when(
+        data: (serviceHistoryList) => asyncFormlar.when(
+          data: (formlarList) => AsyncValue.data([...serviceHistoryList, ...formlarList]),
+          loading: () => const AsyncValue.loading(),
+          error: (error, stack) => AsyncValue.error(error, stack),
+        ),
+        loading: () => const AsyncValue.loading(),
+        error: (error, stack) => AsyncValue.error(error, stack),
+      );
+    } else {
+      asyncList = asyncServiceHistory;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
