@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
@@ -162,6 +163,22 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
             onPressed: () async {
               final navigator = Navigator.of(context);
               final messenger = ScaffoldMessenger.of(context);
+              
+              // Web platformunda permission kontrolü
+              if (kIsWeb) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Kamera izni web platformunda otomatik olarak verilir'),
+                  ),
+                );
+                navigator.push(
+                  MaterialPageRoute(
+                    builder: (context) => const BarcodeScannerScreen(),
+                  ),
+                );
+                return;
+              }
+              
               final status = await Permission.camera.request();
               if (!context.mounted) return;
               if (status.isGranted) {
@@ -448,6 +465,26 @@ class _CihazSorgulaScreenState extends ConsumerState<CihazSorgulaScreen>
                 onPressed: () async {
                   final navigator = Navigator.of(context);
                   final messenger = ScaffoldMessenger.of(context);
+                  
+                  // Web platformunda permission kontrolü
+                  if (kIsWeb) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Kamera izni web platformunda otomatik olarak verilir'),
+                      ),
+                    );
+                    final code = await navigator.push<String>(
+                      MaterialPageRoute(
+                        builder: (_) => const BarcodeScannerScreen(),
+                      ),
+                    );
+                    if (!context.mounted) return;
+                    if (code != null && code.isNotEmpty) {
+                       _searchController?.text = code;
+                     }
+                    return;
+                  }
+                  
                   final status = await Permission.camera.request();
                   if (!context.mounted) return;
                   if (status.isGranted) {

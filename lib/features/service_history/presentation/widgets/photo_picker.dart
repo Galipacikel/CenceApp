@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 class PhotoSelection {
@@ -36,6 +37,26 @@ class _PhotoPickerState extends State<PhotoPicker> {
   }
 
   Future<void> _selectSourceAndPick() async {
+    // Web platformunda sadece galeri seçeneği sunulur
+    if (kIsWeb) {
+      try {
+        final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+        if (picked == null) return;
+
+        final bytes = await picked.readAsBytes();
+        setState(() {
+           _bytes = bytes;
+        });
+        widget.onChanged(PhotoSelection(file: picked, bytes: bytes));
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fotoğraf seçilirken hata: $e')),
+        );
+      }
+      return;
+    }
+    
     final source = await showModalBottomSheet<ImageSource?>(
       context: context,
       builder: (ctx) {

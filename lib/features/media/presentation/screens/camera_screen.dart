@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart';
 
 class CameraScreen extends StatefulWidget {
@@ -21,7 +22,24 @@ class _CameraScreenState extends State<CameraScreen> {
 
   Future<void> _initCamera() async {
     try {
+      // Web platformunda kamera desteği kontrolü
+      if (kIsWeb) {
+        setState(() {
+          _error = 'Kamera özelliği web platformunda henüz desteklenmiyor';
+          _isLoading = false;
+        });
+        return;
+      }
+      
       final cameras = await availableCameras();
+      if (cameras.isEmpty) {
+        setState(() {
+          _error = 'Hiç kamera bulunamadı';
+          _isLoading = false;
+        });
+        return;
+      }
+      
       final camera = cameras.first;
       _controller = CameraController(camera, ResolutionPreset.medium);
       await _controller!.initialize();

@@ -45,6 +45,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   Future<void> _pickImage() async {
+    // Web platformunda sadece galeri seçeneği sunulur
+    if (kIsWeb) {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() {
+          _profileImage = picked;
+          _profileImageBytes = bytes;
+        });
+      }
+      return;
+    }
+    
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(

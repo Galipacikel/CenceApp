@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cence_app/features/profile/presentation/screens/profile_edit_screen.dart';
 import 'package:cence_app/features/settings/presentation/screens/notification_settings_screen.dart';
 import 'package:cence_app/features/settings/presentation/screens/theme_settings_screen.dart';
@@ -7,7 +8,7 @@ import 'package:cence_app/features/support/presentation/screens/support_request_
 import 'package:cence_app/features/settings/presentation/screens/privacy_policy_screen.dart';
 import 'package:cence_app/features/settings/presentation/screens/migration_test_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:io';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cence_app/core/providers/firebase_providers.dart';
@@ -83,12 +84,12 @@ class SettingsScreen extends ConsumerWidget {
                                     final hasImage =
                                         path != null &&
                                         path.isNotEmpty &&
-                                        File(path).existsSync();
+                                        !kIsWeb;
                                     return CircleAvatar(
                                       radius: 32,
                                       backgroundColor: primaryBlue,
-                                      backgroundImage: hasImage
-                                          ? FileImage(File(path))
+                                      backgroundImage: hasImage && !kIsWeb
+                                          ? NetworkImage(path!)
                                           : null,
                                       child: !hasImage
                                           ? Icon(
